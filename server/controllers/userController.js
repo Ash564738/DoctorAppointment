@@ -1,0 +1,446 @@
+const User = require("../models/userModel");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const Doctor = require("../models/doctorModel");
+const Appointment = require("../models/appointmentModel");
+const nodemailer = require("nodemailer");
+require("dotenv").config();
+
+const getuser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+
+    // If user is a doctor, include doctor information
+    if (user && user.role === 'Doctor') {
+      const doctorInfo = await Doctor.findOne({ userId: user._id });
+      if (doctorInfo) {
+        user._doc.doctorInfo = {
+          specialization: doctorInfo.specialization,
+          experience: doctorInfo.experience,
+          fees: doctorInfo.fees,
+          timing: doctorInfo.timing,
+          isDoctor: doctorInfo.isDoctor
+        };
+      }
+    }
+
+    return res.send(user);
+  } catch (error) {
+    res.status(500).send("Unable to get user");
+  }
+};
+
+const getallusers = async (req, res) => {
+  try {
+    const users = await User.find()
+      .find({ _id: { $ne: req.locals } })
+      .select("-password");
+
+    // Check which users are doctors by looking up Doctor records and calculate age
+    const usersWithDoctorStatus = await Promise.all(
+      users.map(async (user) => {
+        const doctorRecord = await Doctor.findOne({ userId: user._id });
+        const userObj = user.toObject();
+
+        // Calculate age if dateOfBirth exists
+        let calculatedAge = userObj.age;
+        if (userObj.dateOfBirth) {
+          const today = new Date();
+          const birthDate = new Date(userObj.dateOfBirth);
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+          calculatedAge = age;
+        }
+
+        return {
+          ...userObj,
+          age: calculatedAge,
+          isDoctor: doctorRecord ? doctorRecord.isDoctor : false
+        };
+      })
+    );
+
+    return res.send(usersWithDoctorStatus);
+  } catch (error) {
+    res.status(500).send("Unable to get all users");
+  }
+};
+
+const login = async (req, res) => {
+  try {
+    const emailPresent = await User.findOne({ email: req.body.email }).select('+password');
+    if (!emailPresent) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect credentials"
+      });
+    }
+
+    const verifyPass = await bcrypt.compare(
+      req.body.password,
+      emailPresent.password
+    );
+    if (!verifyPass) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect credentials"
+      });
+    }
+
+    const token = jwt.sign(
+      { userId: emailPresent._id, isAdmin: emailPresent.isAdmin, role:emailPresent.role },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "2 days",
+      }
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: "User logged in successfully",
+      token
+    });
+  } catch (error) {
+    console.error('Login error:', error.message);
+    console.error('Request body:', req.body);
+    console.error('Stack:', error.stack);
+    res.status(500).json({
+      success: false,
+      message: "Unable to login user"
+    });
+  }
+};
+
+const register = async (req, res) => {
+  try {
+    // Prevent public registration of Admin users
+    if (req.body.role === 'Admin') {
+      return res.status(403).json({
+        success: false,
+        message: "Admin registration is not allowed. Contact system administrator."
+      });
+    }    // Check if email already exists
+    const emailPresent = await User.findOne({ email: req.body.email });
+    if (emailPresent) {
+      // Delete the existing user with corrupted password and recreate
+      await User.deleteOne({ email: req.body.email });
+    }
+
+    // Create user object (password will be hashed automatically by the model)
+    const userData = { ...req.body };
+
+    const user = new User(userData);
+    const result = await user.save();
+
+    if (!result) {
+      console.error('User save failed - no result returned');
+      return res.status(500).json({
+        success: false,
+        message: "Unable to register user"
+      });
+    }
+
+    // If user is registering as a doctor, create doctor profile
+    if (req.body.role === 'Doctor' && req.body.doctorInfo) {
+      try {
+        const Doctor = require('../models/doctorModel');
+        const doctorData = {
+          userId: result._id,
+          specialization: req.body.doctorInfo.specialization,
+          experience: req.body.doctorInfo.experience,
+          fees: req.body.doctorInfo.fees,
+          timing: req.body.doctorInfo.timing,
+          isDoctor: false // Will be set to true when admin approves
+        };
+
+        const doctor = new Doctor(doctorData);
+        await doctor.save();
+
+        const newDoctor = new Doctor({
+          userId: user._id,
+          specialization: req.body.specialization,
+          experience: req.body.experience,
+          fees: req.body.fees,
+          timing: req.body.timing
+        });
+        await newDoctor.save();
+      } catch (doctorError) {
+        console.error('Error creating doctor profile:', doctorError);
+        // Don't fail the registration if doctor profile creation fails
+        // Admin can handle this manually
+      }
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      userId: result._id
+    });
+  } catch (error) {
+    console.error('Registration error:', error.message);
+
+    // Check if it's a validation error
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: validationErrors
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to register user",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+const updateprofile = async (req, res) => {
+  try {
+    // Remove password fields from the update data
+    const { password, confpassword, ...updateData } = req.body;
+
+    // Find the user first to see current state
+    const currentUser = await User.findById(req.locals);
+
+    const result = await User.findByIdAndUpdate(
+      req.locals,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!result) {
+      return res.status(500).send("Unable to update user");
+    }
+
+    // Clear cache for this user
+    const { invalidateUserCache } = require('../middleware/cache');
+    invalidateUserCache(req.locals);
+
+    return res.status(201).send("User updated successfully");
+  } catch (error) {
+    console.error('Profile update error:', error);
+    console.error('Error details:', error.message);
+    if (error.name === 'ValidationError') {
+      console.error('Validation errors:', error.errors);
+    }
+    res.status(500).send(`Unable to update user: ${error.message}`);
+  }
+};
+const changepassword = async (req, res) => {
+  try {
+    console.log(req.body);
+    const { userId, currentPassword, newPassword, confirmNewPassword } = req.body;
+    // console.log("Received newPassword:", newPassword); 
+    if (newPassword !== confirmNewPassword) {
+      return res.status(400).send("Passwords do not match");
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    const isPasswordMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordMatch) {
+      return res.status(400).send("Incorrect current password");
+    }
+
+    const saltRounds = 10;
+    // console.log("Using saltRounds:", saltRounds); 
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
+    // console.log("Hashed new password:", hashedNewPassword); 
+
+    user.password = hashedNewPassword;
+    await user.save();
+
+    return res.status(200).send("Password changed successfully");
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send("Internal Server Error");
+  }
+};
+
+
+
+const deleteuser = async (req, res) => {
+  try {
+    const result = await User.findByIdAndDelete(req.body.userId);
+    const removeDoc = await Doctor.findOneAndDelete({
+      userId: req.body.userId,
+    });
+    const removeAppoint = await Appointment.findOneAndDelete({
+      userId: req.body.userId,
+    });
+    return res.send("User deleted successfully");
+  } catch (error) {
+    res.status(500).send("Unable to delete user");
+  }
+};
+
+const forgotpassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    // console.log(user,email);
+    if (!user) {
+      return res.status(404).send({ status: "User not found" });
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1m" });
+// console.log(token)
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "tarun.kumar.csbs25@heritageit.edu.in",
+        pass: "qfhv wohg gjtf ikvz", 
+      },
+    });
+    // console.log(transporter);
+
+    const mailOptions = {
+      from: "tarun.kumar.csbs25@heritageit.edu.in",
+      to: email,
+      subject: "Reset Password Link",
+      text: `https://appointmentdoctor.netlify.app/resetpassword/${user._id}/${token}`,
+    };
+    // console.log(mailOptions);
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log(error);
+        return res.status(500).send({ status: "Error sending email" });
+      } else {
+        return res.status(200).send({ status: "Email sent successfully" });
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({ status: "Internal Server Error" });
+  }
+};
+
+const resetpassword = async (req, res) => {
+  try {
+    const { id, token } = req.params;
+    const { password } = req.body;
+    // console.log(token)
+    // console.log(password);
+    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+      if (err) {
+        console.log(err);
+        return res.status(400).send({ error: "Invalid or expired token" });
+      }
+     
+      try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await User.findByIdAndUpdate(id, { password: hashedPassword });
+        return res.status(200).send({ success: "Password reset successfully" });
+      } catch (updateError) {
+        console.error("Error updating password:", updateError);
+        return res.status(500).send({ error: "Failed to update password" });
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({ error: "Internal Server Error" });
+  }
+};
+
+
+const updatedoctorinfo = async (req, res) => {
+  try {
+    const { specialization, experience, fees, timing } = req.body;
+    const userId = req.locals;
+
+    // Validate required fields
+    if (!specialization || !experience || !fees || !timing) {
+      return res.status(400).json({
+        success: false,
+        message: "All doctor fields are required"
+      });
+    }
+
+    // Validate numeric fields
+    if (isNaN(experience) || experience < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Experience must be a valid positive number"
+      });
+    }
+
+    if (isNaN(fees) || fees < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Fees must be a valid positive number"
+      });
+    }
+
+    // Check if user exists and is a doctor
+    const user = await User.findById(userId);
+    if (!user || user.role !== 'Doctor') {
+      return res.status(403).json({
+        success: false,
+        message: "Only doctors can update doctor information"
+      });
+    }
+
+    // Update doctor information
+    const Doctor = require('../models/doctorModel');
+    const updatedDoctor = await Doctor.findOneAndUpdate(
+      { userId: userId },
+      {
+        specialization,
+        experience: parseInt(experience),
+        fees: parseInt(fees),
+        timing
+      },
+      { new: true }
+    );
+
+    if (!updatedDoctor) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor profile not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Doctor information updated successfully",
+      doctorInfo: {
+        specialization: updatedDoctor.specialization,
+        experience: updatedDoctor.experience,
+        fees: updatedDoctor.fees,
+        timing: updatedDoctor.timing,
+        isDoctor: updatedDoctor.isDoctor
+      }
+    });
+  } catch (error) {
+    console.error('Update doctor info error:', error);
+    res.status(500).json({
+      success: false,
+      message: "Unable to update doctor information"
+    });
+  }
+};
+
+module.exports = {
+  getuser,
+  getallusers,
+  login,
+  register,
+  updateprofile,
+  deleteuser,
+  changepassword,
+  forgotpassword,
+  resetpassword,
+  updatedoctorinfo,
+};

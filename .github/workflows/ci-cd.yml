@@ -1,0 +1,244 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+  MONGODB_VERSION: '6.0'
+
+jobs:
+  # Test Job
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:6.0
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: password
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd mongo
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: |
+          server/package-lock.json
+          client/package-lock.json
+
+    - name: Install backend dependencies
+      run: |
+        cd server
+        npm ci
+
+    - name: Install frontend dependencies
+      run: |
+        cd client
+        npm ci
+
+    - name: Run backend tests
+      env:
+        NODE_ENV: test
+        MONGODB_TEST_URI: mongodb://admin:password@localhost:27017/doctor_appointment_test?authSource=admin
+        JWT_SECRET: test_jwt_secret
+      run: |
+        cd server
+        npm test
+
+    - name: Run frontend tests
+      run: |
+        cd client
+        npm test -- --coverage --watchAll=false
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        directory: ./server/coverage
+        flags: backend
+        name: backend-coverage
+
+    - name: Upload frontend coverage
+      uses: codecov/codecov-action@v3
+      with:
+        directory: ./client/coverage
+        flags: frontend
+        name: frontend-coverage
+
+  # Security Scan Job
+  security:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        cd server && npm ci
+        cd ../client && npm ci
+
+    - name: Run security audit
+      run: |
+        cd server && npm audit --audit-level moderate
+        cd ../client && npm audit --audit-level moderate
+
+    - name: Run Snyk security scan
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high
+
+  # Build Job
+  build:
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: |
+          server/package-lock.json
+          client/package-lock.json
+
+    - name: Install dependencies
+      run: |
+        cd server && npm ci --only=production
+        cd ../client && npm ci
+
+    - name: Build frontend
+      run: |
+        cd client
+        npm run build
+
+    - name: Build Docker image
+      run: |
+        docker build -t doctor-appointment:${{ github.sha }} .
+        docker tag doctor-appointment:${{ github.sha }} doctor-appointment:latest
+
+    - name: Save Docker image
+      run: |
+        docker save doctor-appointment:latest | gzip > doctor-appointment.tar.gz
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: docker-image
+        path: doctor-appointment.tar.gz
+        retention-days: 7
+
+  # Deploy Job (to staging)
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+    - name: Download build artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: docker-image
+
+    - name: Load Docker image
+      run: |
+        docker load < doctor-appointment.tar.gz
+
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your staging deployment commands here
+        # Example: kubectl apply -f k8s/staging/
+        # Example: docker-compose -f docker-compose.staging.yml up -d
+
+  # Deploy Job (to production)
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Download build artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: docker-image
+
+    - name: Load Docker image
+      run: |
+        docker load < doctor-appointment.tar.gz
+
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production environment..."
+        # Add your production deployment commands here
+        # Example: kubectl apply -f k8s/production/
+        # Example: docker-compose -f docker-compose.prod.yml up -d
+
+    - name: Health check
+      run: |
+        echo "Running health checks..."
+        # Add health check commands here
+        # Example: curl -f http://your-app.com/api/health
+
+    - name: Notify deployment
+      if: success()
+      run: |
+        echo "Deployment successful!"
+        # Add notification logic here (Slack, email, etc.)
+
+  # Cleanup Job
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+    
+    steps:
+    - name: Cleanup artifacts
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            run_id: context.runId,
+          });
+          
+          for (const artifact of artifacts.data.artifacts) {
+            if (artifact.name === 'docker-image') {
+              await github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+              });
+            }
+          }
