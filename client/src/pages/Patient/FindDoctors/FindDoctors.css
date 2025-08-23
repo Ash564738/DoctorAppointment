@@ -1,0 +1,422 @@
+/* Find Doctors Page Styles */
+.findDoctors_page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+}
+
+.findDoctors_container {
+  margin: 0 auto;
+  padding: var(--spacing-md) 0;
+  width: 70vw;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.findDoctors_content {
+
+}
+
+.findDoctors_heading {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  color: #1f2937;
+  position: relative;
+  margin-bottom: var(--spacing-lg);
+}
+
+.findDoctors_heading::after {
+}
+
+/* Enhanced Filters Section */
+.findDoctors_filtersSection {
+  background: #ffffff;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.findDoctors_searchWrapper {
+  position: relative;
+  margin-bottom: var(--spacing-lg);
+}
+
+.findDoctors_searchIcon {
+  position: absolute;
+  left: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: #64748b;
+}
+
+.findDoctors_searchInput {
+  width: 100%;
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) calc(2 * var(--spacing-lg));
+  border: 1px solid #d1d5db;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  transition: all 0.2s ease;
+  background: #ffffff;
+  color: #374151;
+}
+
+.findDoctors_searchInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.findDoctors_filtersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.findDoctors_filterGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.findDoctors_filterLabel {
+  font-weight: var(--font-weight-medium);
+  color: #374151;
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+}
+
+.findDoctors_select {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid #d1d5db;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  background: #ffffff;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  color: #374151;
+}
+
+.findDoctors_select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.findDoctors_filterActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.findDoctors_clearButton,
+.findDoctors_clearButtonLarge {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-base);
+  margin-top: var(--spacing-xs);
+}
+
+.findDoctors_clearButton:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.findDoctors_clearButtonLarge {
+  font-size: var(--font-size-lg);
+  margin-top: var(--spacing-md);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md) var(--spacing-xl);
+}
+
+.findDoctors_clearButtonLarge:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.findDoctors_activeFiltersCount {
+  background: #3b82f6;
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: 16px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Enhanced Results Section */
+.findDoctors_resultsInfo {
+}
+
+.findDoctors_resultsSummary {
+  background: #ffffff;
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  border: 1px solid #e5e7eb;
+}
+
+.findDoctors_resultsSummary h3 {
+  color: #1f2937;
+  margin-bottom: var(--spacing-xs);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+}
+
+.findDoctors_resultsText {
+  color: #6b7280;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.findDoctors_resultsText strong {
+  color: #3b82f6;
+  font-weight: var(--font-weight-bold);
+}
+
+.findDoctors_filterBadge {
+  background: #3b82f6;
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: 12px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .findDoctors_statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .findDoctors_statCard {
+    padding: 1rem;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
+  }
+  
+  .findDoctors_filtersGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .findDoctors_filterActions {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .findDoctors_resultsText {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .findDoctors_statsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .findDoctors_filtersSection {
+    padding: 1rem;
+  }
+  
+  .stat-icon {
+    font-size: 2rem;
+  }
+  
+  .stat-number {
+    font-size: 1.25rem;
+  }
+}
+
+.findDoctors_cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--spacing-xl);
+}
+
+.findDoctors_emptyState {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  padding: 2rem;
+}
+
+.findDoctors_emptyMessage {
+  margin-top: var(--spacing-md);
+  font-size: var(--font-size-base);
+  color: #6b7280;
+  text-align: center;
+  font-weight: var(--font-weight-regular);
+}
+
+/* Doctor Card Styles - Component specific */
+.findDoctors_doctorCard {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.findDoctors_doctorCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
+}
+
+.findDoctors_doctorImage {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.findDoctors_doctorContent {
+  padding: var(--spacing-lg);
+}
+
+.findDoctors_doctorName {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-xs);
+  color: #1e293b;
+}
+
+.findDoctors_doctorSpecialization {
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-md);
+  color: #667eea;
+}
+
+.findDoctors_doctorDetails {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-lg);
+}
+
+.findDoctors_doctorDetail {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: #64748b;
+}
+
+.findDoctors_doctorButton {
+  width: 100%;
+  background: #6c757d;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  color: white;
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: var(--font-size-base);
+}
+
+.findDoctors_doctorButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* Loading State */
+.findDoctors_loadingSpinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  background: white;
+  border-radius: 12px;
+  margin: 2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1300px) {
+  .findDoctors_container {
+    width: 90vw;
+  }
+}
+
+@media (max-width: 768px) {
+  .findDoctors_heading {
+    font-size: var(--font-size-lg);
+  }
+  .findDoctors_cardsGrid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-lg);
+    padding: 0 var(--spacing-sm);
+  }
+  .findDoctors_filtersSection {
+    padding: var(--spacing-lg);
+  }
+  .findDoctors_filtersGrid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  .findDoctors_filterActions {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: stretch;
+  }
+  .findDoctors_resultsText {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  .findDoctors_heading {
+    font-size: var(--font-size-base);
+  }
+  .findDoctors_cardsGrid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  .findDoctors_content {
+    padding: var(--spacing-lg) 0;
+  }
+  .findDoctors_filtersSection {
+    padding: var(--spacing-md);
+  }
+}
+
+  .findDoctors_content {
+    padding: 2rem 0;
+  }
+
+  .findDoctors_filtersSection {
+    padding: 1rem;
+  }

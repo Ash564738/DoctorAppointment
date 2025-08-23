@@ -3,16 +3,20 @@ const mongoose = require("mongoose");
 mongoose.set("strictQuery", false);
 require("dotenv").config();
 
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/doctorappointment";
+
 const client = mongoose
-  .connect(process.env.MONGO_URI, {
+  .connect(MONGO_URI, {
     useNewUrlParser: true,
+    useUnifiedTopology: true
   })
   .then(() => {
-    console.log("✅ Database connected successfully");
+    console.log("✅ Database connected successfully to", MONGO_URI);
+    return mongoose.connection;
   })
   .catch((error) => {
     console.error("❌ Database connection failed:", error.message);
-    return error;
+    throw error;
   });
 
 module.exports = client;

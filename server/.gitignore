@@ -106,3 +106,24 @@ dist
 /client/node_modules
 /client/.env
 /client/.vscode
+
+# Editor files
+.idea
+*.swp
+*.swo
+
+# Test files (keep directory structure)
+test-login*.js
+*.backup
+*.temp
+
+# Setup script duplicates in root
+createAdmin.js
+createSampleUsers.js
+resetAdmin.js
+seedUsers.js
+updatePasswords.js
+
+# Log files (keep directory, but ignore large logs)
+/logs/*.log
+!/logs/.gitkeep

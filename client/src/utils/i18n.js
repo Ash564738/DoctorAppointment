@@ -1,0 +1,128 @@
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+
+const resources = {
+  en: {
+    translation: {
+      'Book Appointment': 'Book Appointment',
+      'Select Doctor': 'Select Doctor',
+      'Appointment Date': 'Appointment Date',
+      'Appointment Time': 'Appointment Time',
+      'Reason for Visit': 'Reason for Visit',
+      'Back to Doctors': 'Back to Doctors',
+      'Book as recurring appointment': 'Book as recurring appointment',
+      'Save': 'Save',
+      'Cancel': 'Cancel',
+      'Insurance Information': 'Insurance Information',
+      'Provider': 'Provider',
+      'Policy Number': 'Policy Number',
+      'Group Number': 'Group Number',
+      'Coverage Type': 'Coverage Type',
+      'Valid From': 'Valid From',
+      'Valid To': 'Valid To',
+      'Notes': 'Notes',
+      'Payments & Billing': 'Payments & Billing',
+      'Payment History': 'Payment History',
+      'Pending Payments': 'Pending Payments',
+      'Pay Now': 'Pay Now',
+      'Payment Method': 'Payment Method',
+      'Payment Summary': 'Payment Summary',
+      'Total Paid': 'Total Paid',
+      'Total Transactions': 'Total Transactions',
+      'Calendar Sync': 'Calendar Sync',
+      'Provider': 'Provider',
+      'Access Token': 'Access Token',
+      'Refresh Token': 'Refresh Token',
+      'Sync to Google Calendar': 'Sync to Google Calendar',
+      'Delete': 'Delete',
+      'Edit': 'Edit',
+      'Home': 'Home',
+      'Login': 'Login',
+      'Register': 'Register',
+      'Dashboard': 'Dashboard',
+      'Profile': 'Profile',
+      'Notifications': 'Notifications',
+      'Change Password': 'Change Password',
+      'Forgot Password': 'Forgot Password',
+      'Error': 'Error',
+      'Doctors': 'Doctors',
+      'My Appointments': 'My Appointments',
+      'My Medical Records': 'My Medical Records',
+      'Admin Dashboard': 'Admin Dashboard',
+      'Users': 'Users',
+      'Leave Management': 'Leave Management',
+      'Video Consultations': 'Video Consultations',
+      'Chats': 'Chats',
+      'Walk-In Queue': 'Walk-In Queue',
+      'Reminders': 'Reminders'
+    }
+  },
+  es: {
+    translation: {
+      'Book Appointment': 'Reservar cita',
+      'Select Doctor': 'Seleccionar médico',
+      'Appointment Date': 'Fecha de la cita',
+      'Appointment Time': 'Hora de la cita',
+      'Reason for Visit': 'Motivo de la visita',
+      'Back to Doctors': 'Volver a médicos',
+      'Book as recurring appointment': 'Reservar como cita recurrente',
+      'Save': 'Guardar',
+      'Cancel': 'Cancelar',
+      'Insurance Information': 'Información del seguro',
+      'Provider': 'Proveedor',
+      'Policy Number': 'Número de póliza',
+      'Group Number': 'Número de grupo',
+      'Coverage Type': 'Tipo de cobertura',
+      'Valid From': 'Válido desde',
+      'Valid To': 'Válido hasta',
+      'Notes': 'Notas',
+      'Payments & Billing': 'Pagos y facturación',
+      'Payment History': 'Historial de pagos',
+      'Pending Payments': 'Pagos pendientes',
+      'Pay Now': 'Pagar ahora',
+      'Payment Method': 'Método de pago',
+      'Payment Summary': 'Resumen de pagos',
+      'Total Paid': 'Total pagado',
+      'Total Transactions': 'Total de transacciones',
+      'Calendar Sync': 'Sincronización de calendario',
+      'Provider': 'Proveedor',
+      'Access Token': 'Token de acceso',
+      'Refresh Token': 'Token de actualización',
+      'Sync to Google Calendar': 'Sincronizar con Google Calendar',
+      'Delete': 'Eliminar',
+      'Edit': 'Editar',
+      'Home': 'Inicio',
+      'Login': 'Iniciar sesión',
+      'Register': 'Registrarse',
+      'Dashboard': 'Panel',
+      'Profile': 'Perfil',
+      'Notifications': 'Notificaciones',
+      'Change Password': 'Cambiar contraseña',
+      'Forgot Password': 'Olvidé mi contraseña',
+      'Error': 'Error',
+      'Doctors': 'Médicos',
+      'My Appointments': 'Mis citas',
+      'My Medical Records': 'Mis registros médicos',
+      'Admin Dashboard': 'Panel de administrador',
+      'Users': 'Usuarios',
+      'Leave Management': 'Gestión de ausencias',
+      'Video Consultations': 'Consultas por video',
+      'Chats': 'Chats',
+      'Walk-In Queue': 'Cola de llegada',
+      'Reminders': 'Recordatorios'
+    }
+  }
+};
+
+i18n
+  .use(initReactI18next)
+  .init({
+    resources,
+    lng: 'en',
+    fallbackLng: 'en',
+    interpolation: {
+      escapeValue: false
+    }
+  });
+
+export default i18n;

@@ -36,9 +36,20 @@ const auth = (req, res, next) => {
       });
     }
 
+    // Debug: log the decoded token
+    console.log('[AUTH DEBUG] Decoded JWT:', verifyToken);
+
     req.locals = verifyToken.userId;
     req.user = verifyToken;
-    req.userId = verifyToken.userId; // Add this for appointment controller
+    // Ensure _id is set for compatibility with controllers
+    if (!req.user._id && verifyToken.userId) {
+      req.user._id = verifyToken.userId;
+    }
+    req.userId = verifyToken.userId;
+
+    // Debug: log the req.user after assignment
+    console.log('[AUTH DEBUG] req.user after assignment:', req.user);
+
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {

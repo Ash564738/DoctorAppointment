@@ -2,8 +2,11 @@ import axios from "axios";
 import logger from "../utils/logger";
 
 // Configure axios with the correct base URL structure
+// Determine server root (no trailing slash)
+const rawServer = process.env.REACT_APP_SERVER_URL || 'http://localhost:5015';
+const SERVER_ROOT = rawServer.replace(/\/$/, '');
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_SERVER_URL + '/api' || 'http://localhost:5015/api'
+  baseURL: SERVER_ROOT + '/api'
 });
 
 // Request interceptor for timing
@@ -129,6 +132,22 @@ const apiCall = {
       const response = await axiosInstance.delete(url, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
+          ...config.headers
+        },
+        ...config
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  patch: async (url, data = {}, config = {}) => {
+    try {
+      const response = await axiosInstance.patch(url, data, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          'Content-Type': 'application/json',
           ...config.headers
         },
         ...config

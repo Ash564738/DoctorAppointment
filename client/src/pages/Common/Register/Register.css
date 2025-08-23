@@ -1,0 +1,323 @@
+/* Register Component Styles */
+.register_container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.register_content {
+  width: 30vw;
+  height: 100%;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2vh;
+}
+
+/* Header Styles */
+.register_header {
+}
+
+.register_title {
+  color: #1a202c;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+}
+
+.register_subtitle {
+  color: #718096;
+  font-size: 0.9rem;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Form Styles */
+.register_form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  text-align: left;
+}
+
+.register_formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.register_formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.register_label {
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.register_input,
+.register_select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #374151;
+  background: #ffffff;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.register_input:focus,
+.register_select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.register_input::placeholder {
+  color: #9ca3af;
+}
+
+/* File Input Styles */
+.register_fileInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #374151;
+  background: #f9fafb;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.register_fileInput:hover {
+  border-color: #3b82f6;
+  background: #f0f9ff;
+}
+
+.register_fileInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: #f0f9ff;
+}
+
+.register_fileHint {
+  color: #6b7280;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+/* Doctor Fields Section */
+.register_doctorFields {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 10px;
+}
+
+.register_sectionTitle {
+  color: #374151;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 15px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Submit Button */
+.register_submitButton {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 14px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.register_submitButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.register_submitButton:active {
+  transform: translateY(0);
+}
+
+.register_submitButton:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Login Link Section */
+.register_loginLink {
+}
+
+.register_link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.register_link:hover {
+  text-decoration: underline;
+}
+
+.register_loginText {
+  color: #718096;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* Loading State */
+.register_loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.register_spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #e2e8f0;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: register_spin 1s linear infinite;
+}
+
+@keyframes register_spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error and Success States */
+.register_error {
+  color: #dc2626;
+  font-size: 0.8rem;
+  margin-top: 5px;
+}
+
+.register_success {
+  color: #16a34a;
+  font-size: 0.8rem;
+  margin-top: 5px;
+}
+
+/* Form Validation */
+.register_input:invalid {
+  border-color: #ef4444;
+}
+
+.register_input:valid {
+  border-color: #10b981;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .register_container {
+    padding: 15px;
+  }
+
+  .register_content {
+    max-width: 100%;
+    padding: 10px;
+  }
+
+  .register_header {
+    padding: 20px;
+  }
+
+  .register_title {
+    font-size: 1.5rem;
+  }
+
+  .register_form {
+    padding: 20px;
+  }
+
+  .register_formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .register_doctorFields {
+    padding: 15px;
+  }
+
+  .register_loginLink {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .register_container {
+    padding: 10px;
+  }
+
+  .register_header {
+    padding: 15px;
+  }
+
+  .register_form {
+    padding: 15px;
+    gap: 15px;
+  }
+
+  .register_input,
+  .register_select {
+    padding: 10px 12px;
+  }
+
+  .register_submitButton {
+    padding: 12px 20px;
+  }
+
+  .register_doctorFields {
+    padding: 12px;
+  }
+
+  .register_loginLink {
+    padding: 12px;
+  }
+}
+
+/* Hide spinner arrows for number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+

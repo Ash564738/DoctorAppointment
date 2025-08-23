@@ -1,0 +1,594 @@
+/* BillingReports specific styles */
+.billingReports_page {
+  min-height: 100vh;
+  background-color: var(--background-color, #f8fafc);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+}
+
+.billingReports_container {
+  margin: 0 auto;
+  padding: var(--spacing-md) 0;
+  width: 70vw;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.billingReports_header {
+  margin-bottom: var(--spacing-sm);
+}
+
+.billingReports_title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
+}
+
+.billingReports_subtitle {
+  color: var(--text-color-light);
+  font-size: var(--font-size-base);
+  margin-bottom: 0;
+  font-weight: var(--font-weight-regular);
+}
+
+.billingReports_filters {
+  background: var(--white);
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.billingReports_filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 150px;
+}
+
+.billingReports_filterLabel {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-color);
+  font-size: var(--font-size-sm);
+}
+
+.billingReports_filterSelect,
+.billingReports_filterInput {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid #ddd;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-base);
+  background: var(--white);
+  transition: border-color 0.2s;
+}
+
+.billingReports_filterSelect:focus,
+.billingReports_filterInput:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(45, 171, 196, 0.08);
+}
+
+.billingReports_button {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--border-radius-sm);
+  padding: 8px 18px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.billingReports_filterButton {
+  background: var(--primary-color);
+  color: var(--white);
+}
+
+.billingReports_filterButton:hover {
+  background: var(--primary-color-dark);
+}
+
+.billingReports_clearFiltersButton {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.billingReports_clearFiltersButton:hover {
+  background: #e5e7eb;
+}
+
+.billingReports_loadingContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px;
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.billingReports_spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--primary-color);
+  border-radius: 50%;
+  animation: billingReportsSpinner 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes billingReportsSpinner {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.billingReports_errorContainer {
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.billingReports_errorMessage {
+  color: var(--danger-color);
+  font-weight: var(--font-weight-medium);
+}
+
+.billingReports_errorTitle {
+  margin: 0 0 0.5rem 0;
+  color: var(--danger-color);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.billingReports_errorText {
+  margin: 0 0 1rem 0;
+  color: var(--text-color-light);
+  line-height: 1.5;
+}
+
+.billingReports_retryButton {
+  background: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  padding: 8px 18px;
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.billingReports_retryButton:hover:not(:disabled) {
+  background: var(--primary-color-dark);
+}
+
+.billingReports_summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.billingReports_card {
+  background: var(--white);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.billingReports_cardIcon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  background: #f3f4f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color);
+  font-size: 24px;
+}
+
+.billingReports_cardTitle {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  color: #374151;
+}
+
+.billingReports_cardValue {
+  color: var(--text-color);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: 0;
+}
+
+.billingReports_tableSection {
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.billingReports_tableHeader {
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9fafb;
+}
+
+.billingReports_tableTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
+}
+
+.billingReports_tableActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.billingReports_refreshButton {
+  background: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  padding: 8px 18px;
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.billingReports_refreshButton:hover:not(:disabled) {
+  background: var(--primary-color-dark);
+}
+
+.billingReports_refreshButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.billingReports_table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--white);
+}
+
+.billingReports_tableHead {
+  background: var(--background-color);
+}
+
+.billingReports_tableHeaderCell {
+  padding: var(--spacing-md) var(--spacing-sm);
+  text-align: left;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  color: var(--text-color);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.billingReports_tableBody {
+  background: var(--white);
+}
+
+.billingReports_tableRow {
+  border-bottom: 1px solid #f1f3f4;
+  transition: background-color 0.2s ease;
+}
+
+.billingReports_tableRow:hover {
+  background-color: var(--background-color);
+}
+
+.billingReports_tableRow:last-child {
+  border-bottom: none;
+}
+
+.billingReports_tableCell {
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--text-color);
+  font-size: var(--font-size-base);
+  vertical-align: middle;
+}
+
+.billingReports_invoiceNumber {
+  font-family: 'Courier New', monospace;
+  font-weight: var(--font-weight-bold);
+  color: var(--primary-color);
+}
+
+.billingReports_patientName {
+  font-weight: var(--font-weight-medium);
+  color: var(--text-color);
+}
+
+.billingReports_doctorName {
+  color: var(--primary-color);
+  font-weight: var(--font-weight-medium);
+}
+
+.billingReports_amount {
+  font-weight: var(--font-weight-bold);
+  color: var(--accent-color);
+  font-size: 1.1rem;
+}
+
+.billingReports_status {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: capitalize;
+  display: inline-block;
+}
+
+.billingReports_statusPaid {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.billingReports_statusPending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.billingReports_statusOverdue {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.billingReports_statusPartial {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.billingReports_date {
+  font-size: var(--font-size-sm);
+}
+
+.billingReports_noDataContainer {
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.billingReports_noDataMessage {
+  color: var(--text-color-light);
+}
+
+.billingReports_noDataTitle {
+  margin: 0 0 0.5rem 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
+}
+
+.billingReports_noDataText {
+  margin: 0 0 1.5rem 0;
+  color: var(--text-color-light);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.billingReports_pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-md);
+  gap: 10px;
+}
+
+.billingReports_paginationButton {
+  background: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  padding: 8px 18px;
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.billingReports_paginationButton:hover {
+  background: var(--primary-color-dark);
+}
+
+.billingReports_paginationButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.billingReports_paginationInfo {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  gap: 0.25rem;
+}
+
+.billingReports_totalCount {
+  font-size: var(--font-size-sm);
+  color: var(--text-color-light);
+}
+
+/* Responsive design */
+@media (max-width: 1300px) {
+  .billingReports_container {
+    width: 90vw;
+  }
+}
+@media (max-width: 900px) {
+  .billingReports_summaryGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .billingReports_container {
+    padding: var(--spacing-xs);
+  }
+  .billingReports_summaryGrid {
+    grid-template-columns: 1fr;
+  }
+  .billingReports_filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-xs);
+  }
+  .billingReports_tableHeader,
+  .billingReports_tableCell,
+  .billingReports_tableHeaderCell {
+    padding: var(--spacing-xs) var(--spacing-xs);
+    font-size: var(--font-size-sm);
+  }
+  .billingReports_noDataContainer {
+    padding: var(--spacing-lg);
+  }
+}
+.billingReports_refreshButton:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.billingReports_refreshButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Enhanced pagination */
+.billingReports_paginationInfo {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  gap: 0.25rem;
+}
+
+.billingReports_totalCount {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Enhanced error handling */
+.billingReports_errorContainer {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.billingReports_errorMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.billingReports_errorIcon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.billingReports_errorContent {
+  max-width: 500px;
+}
+
+.billingReports_errorTitle {
+  margin: 0 0 0.5rem 0;
+  color: #dc2626;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.billingReports_errorText {
+  margin: 0 0 1rem 0;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.billingReports_retryButton {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.billingReports_retryButton:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.billingReports_retryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Enhanced no data message */
+.billingReports_noDataContainer {
+  background: white;
+  border-radius: 8px;
+  padding: 3rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.billingReports_noDataIcon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.billingReports_noDataTitle {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.billingReports_noDataText {
+  margin: 0 0 1.5rem 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.billingReports_clearFiltersButton {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.billingReports_clearFiltersButton:hover {
+  background: #e5e7eb;
+}

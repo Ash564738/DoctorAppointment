@@ -1,0 +1,664 @@
+/* DoctorScheduling Component Styles */
+
+.doctorScheduling_page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+}
+
+.doctorScheduling_container {
+  margin: 0 auto;
+  padding: var(--spacing-md) 0;
+  width: 70vw;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.doctorScheduling_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.doctorScheduling_title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: #333;
+  margin-bottom: var(--spacing-xs);
+}
+
+.doctorScheduling_description {
+  color: #666;
+  font-size: var(--font-size-base);
+  margin-bottom: 0;
+  font-weight: var(--font-weight-regular);
+}
+
+.doctorScheduling_addButton {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.doctorScheduling_addButton:hover {
+  background: var(--primary-color-dark);
+}
+
+/* Filters */
+.doctorScheduling_filters {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  margin: var(--spacing-sm) 0;
+}
+
+.doctorScheduling_filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.doctorScheduling_filterLabel {
+  font-weight: var(--font-weight-medium);
+  color: #333;
+  font-size: var(--font-size-base);
+}
+
+.doctorScheduling_filterSelect,
+.doctorScheduling_filterInput {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 2px solid #e9ecef;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  min-width: 200px;
+}
+
+.doctorScheduling_filterSelect:focus,
+.doctorScheduling_filterInput:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+/* Form Section */
+.doctorScheduling_formSection,
+.doctorScheduling_section {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: var(--spacing-md);
+  overflow: hidden;
+}
+
+.doctorScheduling_formHeader,
+.doctorScheduling_sectionHeader {
+  padding: var(--spacing-lg) var(--spacing-lg) 0 var(--spacing-lg);
+  border-bottom: 1px solid #e9ecef;
+}
+
+.doctorScheduling_formTitle,
+.doctorScheduling_sectionTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  color: #333;
+  margin-bottom: var(--spacing-sm);
+  margin-top: 0;
+}
+
+.doctorScheduling_formContent {
+  padding: var(--spacing-lg);
+}
+
+.doctorScheduling_formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.doctorScheduling_formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.doctorScheduling_label {
+  font-weight: var(--font-weight-medium);
+  color: #333;
+  font-size: var(--font-size-base);
+}
+
+.doctorScheduling_input,
+.doctorScheduling_select,
+.doctorScheduling_textarea {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid #e9ecef;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  transition: border-color 0.2s;
+}
+
+.doctorScheduling_input:focus,
+.doctorScheduling_select:focus,
+.doctorScheduling_textarea:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.doctorScheduling_formActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+}
+
+.doctorScheduling_saveButton,
+.doctorScheduling_cancelButton {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  font-weight: var(--font-weight-medium);
+}
+
+.doctorScheduling_saveButton {
+  background: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.doctorScheduling_saveButton:hover {
+  background: #218838;
+}
+
+.doctorScheduling_cancelButton {
+  background: #6c757d;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.doctorScheduling_cancelButton:hover {
+  background: #5a6268;
+}
+
+/* Calendar */
+.doctorScheduling_calendar {
+  padding: 24px;
+}
+
+.doctorScheduling_calendarHeader {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  margin-bottom: 16px;
+}
+
+.doctorScheduling_dayHeader {
+  background: #f8fafc;
+  padding: 16px 8px;
+  text-align: center;
+  border-radius: 8px;
+}
+
+.doctorScheduling_dayName {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.doctorScheduling_dayDate {
+  color: #666;
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+.doctorScheduling_calendarBody {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  min-height: 400px;
+}
+
+.doctorScheduling_dayColumn {
+  background: #f8fafc;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.doctorScheduling_scheduleCard {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #007bff;
+}
+
+.doctorScheduling_scheduleHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.doctorScheduling_doctorName {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.doctorScheduling_statusBadge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.doctorScheduling_statusAvailable {
+  background: #d4edda;
+  color: #155724;
+}
+
+.doctorScheduling_statusUnavailable {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.doctorScheduling_statusHoliday {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.doctorScheduling_statusEmergency {
+  background: #f0e68c;
+  color: #b7791f;
+}
+
+.doctorScheduling_scheduleTime {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.doctorScheduling_breakTime {
+  color: #666;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.doctorScheduling_scheduleInfo {
+  color: #666;
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+}
+
+.doctorScheduling_scheduleActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.doctorScheduling_deleteButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.doctorScheduling_deleteButton:hover {
+  background: #c82333;
+}
+
+.doctorScheduling_noSchedule {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+  font-size: 0.9rem;
+}
+
+/* Admin Management Tabs */
+.doctorScheduling_tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.doctorScheduling_tabButton {
+  background: #f1f5f9;
+  color: #333;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px 6px 0 0;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.doctorScheduling_tabButton.active {
+  background: #007bff;
+  color: #fff;
+}
+
+/* Admin Requests Table */
+.doctorScheduling_requestsTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  margin-bottom: 32px;
+  overflow: hidden;
+}
+.doctorScheduling_requestsTable th,
+.doctorScheduling_requestsTable td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #e9ecef;
+  text-align: left;
+  font-size: 0.97rem;
+}
+.doctorScheduling_requestsTable th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #333;
+}
+.doctorScheduling_requestsTable tr:last-child td {
+  border-bottom: none;
+}
+.doctorScheduling_requestsTable td {
+  color: #444;
+}
+.doctorScheduling_requestsTable .doctorScheduling_actionButton {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin-right: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.doctorScheduling_requestsTable .doctorScheduling_actionButton:last-child {
+  margin-right: 0;
+}
+.doctorScheduling_requestsTable .doctorScheduling_actionButton:hover {
+  background: #0056b3;
+}
+.doctorScheduling_requestsTable .doctorScheduling_actionButton.reject {
+  background: #dc3545;
+}
+.doctorScheduling_requestsTable .doctorScheduling_actionButton.reject:hover {
+  background: #b52a37;
+}
+.doctorScheduling_requestsTable .doctorScheduling_actionButton.cancel {
+  background: #6c757d;
+}
+.doctorScheduling_requestsTable .doctorScheduling_actionButton.cancel:hover {
+  background: #495057;
+}
+
+/* Error and Loading States for Requests */
+.doctorScheduling_requestsError {
+  color: #dc3545;
+  font-size: 1rem;
+  margin: 12px 0;
+  text-align: left;
+}
+.doctorScheduling_requestsLoading {
+  color: #007bff;
+  font-size: 1rem;
+  margin: 12px 0;
+  text-align: left;
+}
+
+/* Loading and Error States */
+.doctorScheduling_loadingContainer,
+.doctorScheduling_errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-xl) var(--spacing-md);
+}
+
+.doctorScheduling_spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: doctorScheduling_spin 1s linear infinite;
+}
+
+.doctorScheduling_loadingText {
+  margin-top: var(--spacing-sm);
+  color: #666;
+  font-size: var(--font-size-base);
+}
+
+.doctorScheduling_errorMessage {
+  color: #dc3545;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-sm);
+}
+
+.doctorScheduling_retryButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.doctorScheduling_retryButton:hover {
+  background: #0056b3;
+}
+
+@keyframes doctorScheduling_spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 1300px) {
+  .doctorScheduling_container {
+    width: 90vw;
+  }
+}
+@media (max-width: 1024px) {
+  .doctorScheduling_calendarHeader,
+  .doctorScheduling_calendarBody {
+    grid-template-columns: 1fr;
+  }
+  .doctorScheduling_dayColumn {
+    margin-bottom: var(--spacing-sm);
+  }
+  .doctorScheduling_dayHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .doctorScheduling_container {
+    padding: var(--spacing-sm);
+  }
+  .doctorScheduling_title {
+    font-size: var(--font-size-lg);
+  }
+  .doctorScheduling_header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .doctorScheduling_filters {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+  .doctorScheduling_filterSelect,
+  .doctorScheduling_filterInput {
+    min-width: auto;
+  }
+  .doctorScheduling_formGrid {
+    grid-template-columns: 1fr;
+  }
+  .doctorScheduling_formActions {
+    justify-content: stretch;
+    flex-direction: column;
+  }
+}
+
+/* Day Selector Styles */
+.doctorScheduling_formGroupFull {
+  grid-column: 1 / -1;
+}
+
+.doctorScheduling_daySelector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.doctorScheduling_dayOption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.doctorScheduling_dayOption:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+}
+
+.doctorScheduling_dayCheckbox {
+  margin: 0;
+}
+
+.doctorScheduling_dayCheckbox:checked + .doctorScheduling_dayLabel {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.doctorScheduling_dayOption:has(.doctorScheduling_dayCheckbox:checked) {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.doctorScheduling_dayLabel {
+  font-size: 0.9rem;
+  color: #374151;
+  user-select: none;
+}
+
+.doctorScheduling_textarea {
+  padding: 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s ease;
+}
+
+.doctorScheduling_textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Enhanced Schedule Card Styles */
+.doctorScheduling_scheduleTitle {
+  font-size: 0.9rem;
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.doctorScheduling_infoRow {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.doctorScheduling_scheduleNotes {
+  font-size: 0.8rem;
+  color: #666;
+  font-style: italic;
+  margin-top: 8px;
+  padding: 6px 8px;
+  background: #f8fafc;
+  border-radius: 4px;
+  border-left: 3px solid #3b82f6;
+}
+
+@media (max-width: 480px) {
+  .doctorScheduling_title {
+    font-size: var(--font-size-base);
+  }
+  .doctorScheduling_formContent {
+    padding: var(--spacing-sm);
+  }
+  .doctorScheduling_scheduleCard {
+    padding: var(--spacing-xs);
+  }
+  .doctorScheduling_scheduleHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+  .doctorScheduling_daySelector {
+    gap: var(--spacing-xs);
+  }
+  .doctorScheduling_dayOption {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+}
+  .doctorScheduling_formContent {
+    padding: 16px;
+  }
+  
+  .doctorScheduling_scheduleCard {
+    padding: 8px;
+  }
+  
+  .doctorScheduling_scheduleHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .doctorScheduling_daySelector {
+    gap: 8px;
+  }
+  
+  .doctorScheduling_dayOption {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }

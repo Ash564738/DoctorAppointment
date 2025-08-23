@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const Doctor = require("../models/doctorModel");
 const Appointment = require("../models/appointmentModel");
 const nodemailer = require("nodemailer");
+const Notification = require("../models/notificationModel"); // <-- Add this line
 require("dotenv").config();
 
 const getuser = async (req, res) => {
@@ -18,7 +19,7 @@ const getuser = async (req, res) => {
           specialization: doctorInfo.specialization,
           experience: doctorInfo.experience,
           fees: doctorInfo.fees,
-          timing: doctorInfo.timing,
+          department: doctorInfo.department, // ensure department is included
           isDoctor: doctorInfo.isDoctor
         };
       }
@@ -32,9 +33,39 @@ const getuser = async (req, res) => {
 
 const getallusers = async (req, res) => {
   try {
-    const users = await User.find()
-      .find({ _id: { $ne: req.locals } })
-      .select("-password");
+    // Get the current user to check their role
+    const currentUser = await User.findById(req.locals);
+    console.log('=== getallusers DEBUG ===');
+    console.log('Current user:', {
+      id: currentUser?._id,
+      email: currentUser?.email,
+      role: currentUser?.role,
+      roleType: typeof currentUser?.role,
+      roleLowercase: currentUser?.role?.toLowerCase()
+    });
+    
+    // Check for admin role with case insensitive comparison
+    const isAdmin = currentUser?.role?.toLowerCase() === 'admin';
+    console.log('Is admin check:', isAdmin);
+    
+    // If the current user is an admin, include all users (including themselves)
+    // Otherwise, exclude the current user from the results
+    let userQuery = User.find();
+    if (!isAdmin) {
+      console.log('Non-admin user, excluding current user from results');
+      userQuery = userQuery.find({ _id: { $ne: req.locals } });
+    } else {
+      console.log('Admin user detected, including all users in results');
+    }
+    
+    const users = await userQuery.select("-password");
+    console.log('Found users count:', users.length);
+    console.log('All users with roles:', users.map(u => ({ 
+      id: u._id, 
+      email: u.email, 
+      role: u.role,
+      roleType: typeof u.role 
+    })));
 
     // Check which users are doctors by looking up Doctor records and calculate age
     const usersWithDoctorStatus = await Promise.all(
@@ -64,26 +95,74 @@ const getallusers = async (req, res) => {
       })
     );
 
+    console.log('Final result count:', usersWithDoctorStatus.length);
+    console.log('Role distribution:', {
+      admin: usersWithDoctorStatus.filter(u => u.role?.toLowerCase() === 'admin').length,
+      doctor: usersWithDoctorStatus.filter(u => u.role?.toLowerCase() === 'doctor').length,
+      patient: usersWithDoctorStatus.filter(u => u.role?.toLowerCase() === 'patient').length
+    });
+    console.log('=== END DEBUG ===');
+    
     return res.send(usersWithDoctorStatus);
   } catch (error) {
+    console.error('Error in getallusers:', error);
     res.status(500).send("Unable to get all users");
   }
 };
 
 const login = async (req, res) => {
   try {
+    console.log('Login attempt:', {
+      email: req.body.email,
+      hasPassword: !!req.body.password,
+      passwordLength: req.body.password?.length || 0,
+      body: req.body
+    });
+
+    // Add this check for missing fields
+    if (!req.body.email || !req.body.password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required"
+      });
+    }
+
     const emailPresent = await User.findOne({ email: req.body.email }).select('+password');
     if (!emailPresent) {
+      console.log('User not found:', req.body.email);
       return res.status(400).json({
         success: false,
         message: "Incorrect credentials"
       });
     }
 
+    console.log('User found:', {
+      id: emailPresent._id,
+      email: emailPresent.email,
+      role: emailPresent.role,
+      hasPassword: !!emailPresent.password,
+      passwordLength: emailPresent.password?.length || 0,
+      user: emailPresent.toObject()
+    });
+
+    console.log('Attempting password verification:', {
+      hasProvidedPassword: !!req.body.password,
+      providedPasswordLength: req.body.password?.length || 0,
+      hasStoredHash: !!emailPresent.password,
+      storedHashLength: emailPresent.password?.length || 0
+    });
+
     const verifyPass = await bcrypt.compare(
       req.body.password,
       emailPresent.password
     );
+    
+    console.log('Password verification:', {
+      email: emailPresent.email,
+      verified: verifyPass,
+      passwordMatch: verifyPass
+    });
+
     if (!verifyPass) {
       return res.status(400).json({
         success: false,
@@ -92,7 +171,14 @@ const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: emailPresent._id, isAdmin: emailPresent.isAdmin, role:emailPresent.role },
+      { 
+        userId: emailPresent._id, 
+        isAdmin: emailPresent.isAdmin, 
+        role: emailPresent.role,
+        firstname: emailPresent.firstname,
+        lastname: emailPresent.lastname,
+        email: emailPresent.email
+      },
       process.env.JWT_SECRET,
       {
         expiresIn: "2 days",
@@ -132,17 +218,12 @@ const register = async (req, res) => {
 
     // Create user object (password will be hashed automatically by the model)
     const userData = { ...req.body };
+    console.log('Registering user with password (should be plain text):', userData.password);
 
     const user = new User(userData);
     const result = await user.save();
 
-    if (!result) {
-      console.error('User save failed - no result returned');
-      return res.status(500).json({
-        success: false,
-        message: "Unable to register user"
-      });
-    }
+    console.log('User saved. Password hash in DB:', result.password);
 
     // If user is registering as a doctor, create doctor profile
     if (req.body.role === 'Doctor' && req.body.doctorInfo) {
@@ -153,27 +234,26 @@ const register = async (req, res) => {
           specialization: req.body.doctorInfo.specialization,
           experience: req.body.doctorInfo.experience,
           fees: req.body.doctorInfo.fees,
-          timing: req.body.doctorInfo.timing,
+          department: req.body.doctorInfo.department, // required
           isDoctor: false // Will be set to true when admin approves
         };
 
         const doctor = new Doctor(doctorData);
         await doctor.save();
 
-        const newDoctor = new Doctor({
-          userId: user._id,
-          specialization: req.body.specialization,
-          experience: req.body.experience,
-          fees: req.body.fees,
-          timing: req.body.timing
-        });
-        await newDoctor.save();
+        // Remove the duplicate creation of newDoctor (not needed)
       } catch (doctorError) {
         console.error('Error creating doctor profile:', doctorError);
         // Don't fail the registration if doctor profile creation fails
         // Admin can handle this manually
       }
     }
+
+    // --- Notify user after registration ---
+    await Notification.create({
+      userId: result._id,
+      content: `Welcome to the platform, ${result.firstname || 'User'}! Your registration was successful.`
+    });
 
     return res.status(201).json({
       success: true,
@@ -219,6 +299,20 @@ const updateprofile = async (req, res) => {
       return res.status(500).send("Unable to update user");
     }
 
+    // If doctorInfo is present, update Doctor model as well
+    if (req.body.doctorInfo) {
+      await Doctor.findOneAndUpdate(
+        { userId: req.locals },
+        {
+          specialization: req.body.doctorInfo.specialization,
+          experience: req.body.doctorInfo.experience,
+          fees: req.body.doctorInfo.fees,
+          department: req.body.doctorInfo.department
+        },
+        { new: true, runValidators: true }
+      );
+    }
+
     // Clear cache for this user
     const { invalidateUserCache } = require('../middleware/cache');
     invalidateUserCache(req.locals);
@@ -261,6 +355,12 @@ const changepassword = async (req, res) => {
     user.password = hashedNewPassword;
     await user.save();
 
+    // --- Notify user after password change ---
+    await Notification.create({
+      userId: user._id,
+      content: "Your password was changed successfully."
+    });
+
     return res.status(200).send("Password changed successfully");
   } catch (error) {
     console.error(error);
@@ -272,12 +372,16 @@ const changepassword = async (req, res) => {
 
 const deleteuser = async (req, res) => {
   try {
-    const result = await User.findByIdAndDelete(req.body.userId);
+    const userId = req.params.id || req.body.userId;
+    if (!userId) {
+      return res.status(400).send("User ID is required");
+    }
+    const result = await User.findByIdAndDelete(userId);
     const removeDoc = await Doctor.findOneAndDelete({
-      userId: req.body.userId,
+      userId: userId,
     });
     const removeAppoint = await Appointment.findOneAndDelete({
-      userId: req.body.userId,
+      userId: userId,
     });
     return res.send("User deleted successfully");
   } catch (error) {
@@ -357,11 +461,11 @@ const resetpassword = async (req, res) => {
 
 const updatedoctorinfo = async (req, res) => {
   try {
-    const { specialization, experience, fees, timing } = req.body;
+    const { specialization, experience, fees, department } = req.body;
     const userId = req.locals;
 
     // Validate required fields
-    if (!specialization || !experience || !fees || !timing) {
+    if (!specialization || !experience || !fees || !department) {
       return res.status(400).json({
         success: false,
         message: "All doctor fields are required"
@@ -400,7 +504,7 @@ const updatedoctorinfo = async (req, res) => {
         specialization,
         experience: parseInt(experience),
         fees: parseInt(fees),
-        timing
+        department
       },
       { new: true }
     );
@@ -419,7 +523,7 @@ const updatedoctorinfo = async (req, res) => {
         specialization: updatedDoctor.specialization,
         experience: updatedDoctor.experience,
         fees: updatedDoctor.fees,
-        timing: updatedDoctor.timing,
+        department: updatedDoctor.department,
         isDoctor: updatedDoctor.isDoctor
       }
     });
@@ -428,6 +532,55 @@ const updatedoctorinfo = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Unable to update doctor information"
+    });
+  }
+};
+
+const adminUpdateUser = async (req, res) => {
+  try {
+    // Check if the current user is an admin
+    const currentUser = await User.findById(req.locals);
+    if (currentUser?.role?.toLowerCase() !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin privileges required."
+      });
+    }
+
+    const userId = req.params.id;
+    const updateData = req.body;
+
+    // Remove sensitive fields that shouldn't be updated this way
+    const { password, confpassword, _id, __v, ...safeUpdateData } = updateData;
+
+    // Find and update the user
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      safeUpdateData,
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Clear cache for the updated user
+    const { invalidateUserCache } = require('../middleware/cache');
+    invalidateUserCache(userId);
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Admin update user error:', error);
+    res.status(500).json({
+      success: false,
+      message: `Unable to update user: ${error.message}`
     });
   }
 };
@@ -443,4 +596,5 @@ module.exports = {
   forgotpassword,
   resetpassword,
   updatedoctorinfo,
+  adminUpdateUser,
 };

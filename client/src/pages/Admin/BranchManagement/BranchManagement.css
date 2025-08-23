@@ -1,0 +1,460 @@
+/* BranchManagement Component Styles */
+
+.branchManagement_page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+}
+
+.branchManagement_container {
+  margin: 0 auto;
+  padding: var(--spacing-md) 0;
+  width: 70vw;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.branchManagement_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.branchManagement_title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: #333;
+  margin-bottom: var(--spacing-xs);
+}
+
+.branchManagement_description {
+  color: #666;
+  font-size: var(--font-size-base);
+  margin-bottom: 0;
+  font-weight: var(--font-weight-regular);
+}
+
+.branchManagement_addButton {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.branchManagement_addButton:hover {
+  background: var(--primary-color-dark);
+}
+
+/* Form Section */
+.branchManagement_formSection,
+.branchManagement_section {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: var(--spacing-md);
+  overflow: hidden;
+}
+
+.branchManagement_formHeader,
+.branchManagement_sectionHeader {
+  padding: var(--spacing-lg) var(--spacing-lg) 0 var(--spacing-lg);
+}
+
+.branchManagement_formTitle,
+.branchManagement_sectionTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  color: #333;
+  margin-bottom: var(--spacing-sm);
+  margin-top: 0;
+}
+
+.branchManagement_formContent,
+.branchManagement_sectionContent {
+  padding: 0 var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
+}
+
+.branchManagement_formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.branchManagement_formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.branchManagement_label {
+  font-weight: var(--font-weight-medium);
+  color: #333;
+  font-size: var(--font-size-base);
+}
+
+.branchManagement_input,
+.branchManagement_select,
+.branchManagement_textarea {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid #e9ecef;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  transition: border-color 0.2s;
+}
+
+.branchManagement_textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.branchManagement_input:focus,
+.branchManagement_select:focus,
+.branchManagement_textarea:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.branchManagement_formActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.branchManagement_saveButton,
+.branchManagement_cancelButton {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  font-weight: var(--font-weight-medium);
+}
+
+.branchManagement_saveButton {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.branchManagement_saveButton:hover {
+  background: #218838;
+}
+
+.branchManagement_cancelButton {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.branchManagement_cancelButton:hover {
+  background: #5a6268;
+}
+
+/* Section */
+.branchManagement_section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.branchManagement_sectionHeader {
+  padding: 24px 24px 0 24px;
+}
+
+.branchManagement_sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+/* Table */
+.branchManagement_tableContainer {
+  overflow-x: auto;
+}
+
+.branchManagement_table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.branchManagement_tableHeader {
+  background: #f8fafc;
+}
+
+.branchManagement_tableHeaderCell {
+  padding: var(--spacing-md);
+  text-align: left;
+  font-weight: var(--font-weight-bold);
+  color: #333;
+  border-bottom: 2px solid #dee2e6;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.branchManagement_tableBody {
+  background: white;
+}
+
+.branchManagement_tableRow {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s;
+}
+
+.branchManagement_tableRow:hover {
+  background: #f8fafc;
+}
+
+.branchManagement_tableCell {
+  padding: var(--spacing-md);
+  color: #333;
+  vertical-align: top;
+  font-size: var(--font-size-base);
+}
+
+.branchManagement_branchInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.branchManagement_branchName {
+  font-weight: 600;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.branchManagement_branchEmail {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.branchManagement_locationInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.branchManagement_location {
+  font-weight: 500;
+  color: #333;
+}
+
+.branchManagement_address {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.branchManagement_manager {
+  color: #333;
+  font-weight: 500;
+}
+
+.branchManagement_contactInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.branchManagement_contact {
+  color: #333;
+  font-weight: 500;
+}
+
+.branchManagement_hours {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.branchManagement_statusBadge {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.branchManagement_statusActive {
+  background: #d4edda;
+  color: #155724;
+}
+
+.branchManagement_statusInactive {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.branchManagement_statusMaintenance {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.branchManagement_actionButtons {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.branchManagement_editButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.branchManagement_editButton:hover {
+  background: #0056b3;
+}
+
+.branchManagement_deleteButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.branchManagement_deleteButton:hover {
+  background: #c82333;
+}
+
+/* Loading and Error States */
+.branchManagement_loadingContainer,
+.branchManagement_errorContainer,
+.branchManagement_noDataContainer {
+  padding: var(--spacing-xl);
+  text-align: center;
+}
+
+.branchManagement_spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: branchManagement_spin 1s linear infinite;
+}
+
+.branchManagement_loadingText {
+  margin-top: var(--spacing-sm);
+  color: #666;
+  font-size: var(--font-size-base);
+}
+
+.branchManagement_errorMessage {
+  color: #dc3545;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-sm);
+}
+
+.branchManagement_retryButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.branchManagement_retryButton:hover {
+  background: #0056b3;
+}
+
+.branchManagement_noDataContainer {
+  padding: 40px;
+  text-align: center;
+}
+
+.branchManagement_noDataMessage {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+@keyframes branchManagement_spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 1300px) {
+  .branchManagement_container {
+    width: 90vw;
+  }
+}
+@media (max-width: 768px) {
+  .branchManagement_container {
+    padding: var(--spacing-sm);
+  }
+  .branchManagement_title {
+    font-size: var(--font-size-lg);
+  }
+  .branchManagement_header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .branchManagement_formGrid {
+    grid-template-columns: 1fr;
+  }
+  .branchManagement_formActions {
+    justify-content: stretch;
+    flex-direction: column;
+  }
+  .branchManagement_tableHeaderCell,
+  .branchManagement_tableCell {
+    padding: var(--spacing-xs) var(--spacing-xs);
+  }
+  .branchManagement_actionButtons {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  .branchManagement_title {
+    font-size: var(--font-size-base);
+  }
+  .branchManagement_formContent {
+    padding: var(--spacing-sm);
+  }
+  .branchManagement_table {
+    font-size: var(--font-size-sm);
+  }
+  .branchManagement_tableHeaderCell,
+  .branchManagement_tableCell {
+    padding: var(--spacing-xs) var(--spacing-xs);
+  }
+}
+  .branchManagement_tableHeaderCell,
+  .branchManagement_tableCell {
+    padding: 8px 6px;
+  }

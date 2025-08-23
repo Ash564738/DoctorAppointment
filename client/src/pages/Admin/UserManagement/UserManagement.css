@@ -1,0 +1,615 @@
+.userManagement_page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+}
+
+.userManagement_container {
+  margin: 0 auto;
+  padding: var(--spacing-md) 0;
+  width: 70vw;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.userManagement_header {
+}
+
+.userManagement_title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: #333;
+  margin-bottom: var(--spacing-xs);
+}
+
+.userManagement_description {
+  color: #666;
+  font-size: var(--font-size-base);
+  margin-bottom: var(--spacing-sm);
+  font-weight: var(--font-weight-regular);
+}
+
+/* Search Container */
+.userManagement_searchContainer {
+  margin-top: var(--spacing-sm);
+}
+
+.userManagement_searchInput {
+  width: 100%;
+  max-width: 400px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid #e2e8f0;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  transition: border-color 0.2s ease;
+}
+
+.userManagement_searchInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.userManagement_section {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.userManagement_sectionTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  color: #333;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Doctor Applications */
+.userManagement_applicationsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+}
+
+.userManagement_applicationCard {
+  background: #f8fafc;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  border: 1px solid #e9ecef;
+}
+
+.userManagement_applicationInfo {
+  margin-bottom: var(--spacing-sm);
+}
+
+.userManagement_applicationName {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.userManagement_applicationEmail {
+  color: #666;
+  margin-bottom: var(--spacing-xs);
+}
+
+.userManagement_applicationSpecialty {
+  color: #0066cc;
+  font-weight: var(--font-weight-medium);
+}
+
+.userManagement_applicationActions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.userManagement_approveButton {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.userManagement_approveButton:hover {
+  background: #218838;
+}
+
+.userManagement_rejectButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.userManagement_rejectButton:hover {
+  background: #c82333;
+}
+
+/* Filters */
+.userManagement_sectionHeader {
+  padding: var(--spacing-lg) var(--spacing-lg) 0 var(--spacing-lg);
+}
+
+.userManagement_filters {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.userManagement_filterButton {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+}
+
+.userManagement_filterActive {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* Table */
+.userManagement_tableContainer {
+  overflow-x: auto;
+}
+
+.userManagement_table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.userManagement_tableHeader {
+  background: #f8fafc;
+}
+
+.userManagement_tableHeaderCell {
+  padding: var(--spacing-md);
+  text-align: left;
+  font-weight: var(--font-weight-bold);
+  color: #333;
+  border-bottom: 2px solid #dee2e6;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.userManagement_tableBody {
+  background: white;
+}
+
+.userManagement_tableRow {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s;
+}
+
+.userManagement_tableRow:hover {
+  background: #f8fafc;
+}
+
+.userManagement_tableCell {
+  padding: var(--spacing-md);
+  color: #333;
+  font-size: var(--font-size-base);
+}
+
+.userManagement_userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.userManagement_userName {
+  font-weight: var(--font-weight-medium);
+  color: #333;
+}
+
+.userManagement_userAge {
+  color: #666;
+  font-size: var(--font-size-sm);
+}
+
+.userManagement_userEmail {
+  color: #666;
+}
+
+.userManagement_roleTag {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.userManagement_rolePatient {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.userManagement_roleDoctor {
+  background: #e8f5e8;
+  color: #2e7d32;
+}
+
+.userManagement_roleAdmin {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.userManagement_statusActive {
+  color: #28a745;
+  font-weight: var(--font-weight-medium);
+}
+
+.userManagement_statusPending {
+  color: #ffc107;
+  font-weight: var(--font-weight-medium);
+}
+
+.userManagement_statusInactive {
+  color: #dc3545;
+  font-weight: var(--font-weight-medium);
+}
+
+.userManagement_joinDate {
+  color: #666;
+}
+
+.userManagement_actionButtons {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.userManagement_editButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.userManagement_editButton:hover {
+  background: #0056b3;
+}
+
+.userManagement_deleteButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.userManagement_deleteButton:hover {
+  background: #c82333;
+}
+
+/* Loading and Error States */
+.userManagement_loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-xl);
+}
+
+.userManagement_spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: userManagement_spin 1s linear infinite;
+}
+
+.userManagement_loadingText {
+  margin-top: var(--spacing-sm);
+  color: #666;
+}
+
+.userManagement_errorContainer {
+  padding: var(--spacing-xl);
+  text-align: center;
+}
+
+.userManagement_errorMessage {
+  color: #dc3545;
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-sm);
+}
+
+.userManagement_retryButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+}
+
+.userManagement_noDataContainer {
+  padding: var(--spacing-xl);
+  text-align: center;
+}
+
+.userManagement_noDataMessage {
+  color: #666;
+  font-size: var(--font-size-base);
+}
+
+@keyframes userManagement_spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 1300px) {
+  .userManagement_container {
+    width: 90vw;
+  }
+}
+
+@media (max-width: 768px) {
+  .userManagement_container {
+    padding: var(--spacing-sm);
+  }
+  .userManagement_title {
+    font-size: var(--font-size-lg);
+  }
+  .userManagement_applicationsGrid {
+    grid-template-columns: 1fr;
+    padding: var(--spacing-md);
+  }
+  .userManagement_filters {
+    flex-wrap: wrap;
+  }
+  .userManagement_tableHeaderCell,
+  .userManagement_tableCell {
+    padding: var(--spacing-xs) var(--spacing-xs);
+  }
+  .userManagement_actionButtons {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  .userManagement_title {
+    font-size: var(--font-size-base);
+  }
+  .userManagement_table {
+    font-size: var(--font-size-sm);
+  }
+  .userManagement_filterButton {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* Modal Styles */
+.userManagement_modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.userManagement_modalContent {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.userManagement_modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg) 0;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.userManagement_modalTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  color: #333;
+  margin: 0;
+}
+
+.userManagement_modalCloseButton {
+  background: none;
+  border: none;
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  color: #666;
+  padding: var(--spacing-xs);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.userManagement_modalCloseButton:hover {
+  background-color: #f1f5f9;
+}
+
+.userManagement_modalBody {
+  padding: 0 var(--spacing-lg);
+}
+
+.userManagement_formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
+.userManagement_formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.userManagement_formGroupFull {
+  grid-column: 1 / -1;
+}
+
+.userManagement_formLabel {
+  font-weight: var(--font-weight-medium);
+  color: #374151;
+  margin-bottom: 6px;
+  font-size: var(--font-size-sm);
+}
+
+.userManagement_formInput,
+.userManagement_formSelect,
+.userManagement_formTextarea {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid #e2e8f0;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  transition: border-color 0.2s ease;
+}
+
+.userManagement_formInput:focus,
+.userManagement_formSelect:focus,
+.userManagement_formTextarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.userManagement_formTextarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.userManagement_modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid #e2e8f0;
+  margin-top: var(--spacing-md);
+}
+
+.userManagement_modalCancelButton {
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  transition: all 0.2s ease;
+}
+
+.userManagement_modalCancelButton:hover {
+  background: #e9ecef;
+}
+
+.userManagement_modalSaveButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  transition: background-color 0.2s ease;
+}
+
+.userManagement_modalSaveButton:hover {
+  background: #0056b3;
+}
+
+/* Modal Responsive Design */
+@media (max-width: 768px) {
+  .userManagement_modalContent {
+    width: 95%;
+    margin: var(--spacing-md);
+  }
+  .userManagement_formGrid {
+    grid-template-columns: 1fr;
+  }
+  .userManagement_modalHeader,
+  .userManagement_modalBody,
+  .userManagement_modalFooter {
+    padding-left: var(--spacing-sm);
+    padding-right: var(--spacing-sm);
+  }
+}
+  .userManagement_modalHeader,
+  .userManagement_modalBody,
+  .userManagement_modalFooter {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+.userManagement_pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin: 16px 0 16px 0;
+}
+
+.userManagement_pagination button {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #333;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.userManagement_pagination button.active,
+.userManagement_pagination button:focus {
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+.userManagement_pagination button:disabled {
+  background: #e9ecef;
+  color: #aaa;
+  cursor: not-allowed;
+}

@@ -46,7 +46,6 @@ const schema = mongoose.Schema(
     password: {
       type: String,
       required: [true, 'Password is required'],
-      minLength: [8, 'Password must be at least 8 characters'],
       select: false // Don't include password in queries by default
     },
     role: {
@@ -57,6 +56,12 @@ const schema = mongoose.Schema(
         message: 'Role must be Admin, Doctor, or Patient'
       },
       index: true // Add index for role-based queries
+    },
+    isAdmin: {
+      type: Boolean,
+      default: function() {
+        return this.role === "Admin";
+      }
     },
     age: {
       type: Number,
@@ -178,8 +183,15 @@ schema.pre('save', async function(next) {
   try {
     // Hash password if modified
     if (this.isModified('password')) {
+      console.log('Hashing password for user:', this.email);
       const salt = await bcrypt.genSalt(12);
       this.password = await bcrypt.hash(this.password, salt);
+      console.log('Password hashed successfully for:', this.email);
+    }
+
+    // Set isAdmin based on role
+    if (this.isModified('role')) {
+      this.isAdmin = this.role === 'Admin';
     }
 
     // Calculate age from date of birth if provided

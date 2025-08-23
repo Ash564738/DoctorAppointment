@@ -1,13 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
 :root {
-  --light-blue: #e9f1fa;
-  --dark-blue: #00abe4;
-  --darker-blue: #0077ff;
-  --white: #fff;
-  --bold-text-color: #1e375a;
-  --light-text-color: rgba(30, 55, 90, 0.7);
-  --font-family: "Poppins", sans-serif;
+  /* Only import variables from variables.css */
 }
 
 * {
@@ -18,11 +12,15 @@
 
 html {
   scroll-behavior: smooth;
+  font-size: 100%;
 }
 
 body {
   font-family: var(--font-family);
-  background-color: var(--light-blue);
+  background-color: var(--secondary-color);
+  color: var(--text-color);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
 }
 
 li {
@@ -31,6 +29,7 @@ li {
 
 a {
   text-decoration: none;
+  color: inherit;
 }
 
 h1,
@@ -39,19 +38,25 @@ h3,
 h4,
 h5,
 h6 {
-  color: var(--bold-text-color) !important;
+  color: var(--text-color);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-sm);
 }
 
 .page-heading {
-  font-size: 2rem;
+  font-size: var(--font-size-xl);
   text-align: center;
   margin: 0 auto;
+  font-weight: var(--font-weight-bold);
+  padding: var(--spacing-sm) 0;
 }
 
 p {
-  color: var(--light-text-color);
+  color: var(--text-color-light);
   padding: 0;
   margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
 }
 
 .flex-center {
@@ -65,40 +70,40 @@ p {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2vh;
-  padding: 2vh;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
 }
 
 .btn {
   width: 100%;
   color: var(--white);
-  background-color: var(--dark-blue);
-  font-size: 1rem;
-  padding: 0.6rem 0.8rem;
+  background-color: var(--primary-color);
+  font-size: var(--font-size-base);
+  padding: var(--spacing-sm) var(--spacing-md);
   border: none;
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   letter-spacing: 2px;
-  border-radius: 5px;
+  border-radius: var(--border-radius-md);
   cursor: pointer;
   font-family: var(--font-family);
+  transition: background 0.2s;
 }
 
 .btn:hover {
-  background-color: var(--darker-blue);
+  background-color: var(--primary-color-dark);
 }
 
-.disabled {
-  cursor: auto;
-}
-
-.disabled:hover {
-  background-color: var(--dark-blue);
+.disabled,
+.btn:disabled {
+  cursor: not-allowed;
+  background-color: var(--primary-color);
+  opacity: 0.7;
 }
 
 .layout-container {
   display: flex;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 
 .loader {
@@ -114,30 +119,27 @@ p {
   height: 100%;
 }
 
+/* Responsive font size */
 @media (max-width: 1024px) {
   html {
     font-size: 90%;
   }
 }
-
 @media (max-width: 896px) {
   html {
     font-size: 85%;
   }
 }
-
 @media (max-width: 768px) {
   html {
     font-size: 80%;
   }
 }
-
 @media (max-width: 596px) {
   html {
     font-size: 70%;
   }
 }
-
 @media (max-width: 425px) {
   html {
     font-size: 60%;

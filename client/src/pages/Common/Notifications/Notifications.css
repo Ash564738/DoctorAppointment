@@ -1,0 +1,218 @@
+/* Notifications Component Styles */
+.notifications_container {
+  min-height: 100vh;
+  background: var(--secondary-color);
+  font-family: var(--font-family);
+  padding: var(--spacing-lg) 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.notifications_content {
+}
+
+/* Header Styles */
+.notifications_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.notifications_title {
+  color: var(--text-color);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.notifications_clearButton {
+  background: var(--danger-color);
+  color: var(--white);
+  border: none;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 8px rgba(220,53,69,0.08);
+}
+
+.notifications_clearButton:hover {
+  background: #b52a37;
+  box-shadow: 0 4px 16px rgba(220,53,69,0.13);
+  transform: translateY(-2px);
+}
+
+/* Section Styles */
+.notifications_section {
+  overflow: hidden;
+}
+
+.notifications_tableContainer {
+  overflow-x: auto;
+}
+
+/* Table Styles */
+.notifications_table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--white);
+}
+
+.notifications_tableHeader {
+  background: var(--secondary-color);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.notifications_headerCell {
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  color: var(--text-color);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.notifications_tableBody {
+  background: var(--white);
+}
+
+.notifications_tableRow {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.2s;
+}
+
+.notifications_tableRow:hover {
+  background: var(--secondary-color);
+}
+
+.notifications_tableCell {
+  padding: var(--spacing-md) var(--spacing-lg);
+  color: var(--text-color);
+  font-size: var(--font-size-base);
+  vertical-align: top;
+}
+
+.notifications_tableCell.notifications_content {
+  max-width: 400px;
+  word-wrap: break-word;
+  line-height: 1.5;
+}
+
+/* Pagination Styles */
+.notifications_pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-lg) 0 0 0;
+  border-top: 1px solid #e2e8f0;
+  background: transparent;
+}
+
+.notifications_paginationButton {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--white);
+  border: 1px solid #d1d5db;
+  border-radius: var(--border-radius-md);
+  color: var(--text-color);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  min-width: 40px;
+}
+
+.notifications_paginationButton:hover {
+  background: var(--secondary-color);
+  border-color: var(--primary-color);
+}
+
+.notifications_paginationButton--active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--white);
+}
+
+.notifications_paginationButton--active:hover {
+  background: var(--primary-color-dark);
+  border-color: var(--primary-color-dark);
+}
+
+/* Empty State */
+.notifications_emptyState {
+  text-align: center;
+  padding: var(--spacing-lg) 0;
+}
+
+@media (max-width: 900px) {
+  .notifications_content {
+    max-width: 98vw;
+  }
+}
+
+@media (max-width: 600px) {
+  .notifications_content {
+  }
+  .notifications_header {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: flex-start;
+  }
+  .notifications_title {
+    font-size: var(--font-size-lg);
+  }
+  .notifications_tableCell.notifications_content {
+  }
+  .notifications_headerCell,
+  .notifications_tableCell {
+    padding: var(--spacing-sm) var(--spacing-xs);
+    font-size: var(--font-size-sm);
+  }
+  .notifications_paginationButton {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .notifications_content {
+  }
+  .notifications_header {
+    padding: var(--spacing-md);
+  }
+  .notifications_title {
+    font-size: var(--font-size-base);
+  }
+  .notifications_headerCell,
+  .notifications_tableCell {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-xs);
+  }
+  .notifications_tableCell.notifications_content {
+  }
+  .notifications_pagination {
+    gap: 4px;
+  }
+  .notifications_paginationButton {
+    padding: 4px 8px;
+    min-width: 32px;
+    font-size: var(--font-size-xs);
+  }
+}
+
+  .notifications_pagination {
+    gap: 4px;
+  }
+
+  .notifications_paginationButton {
+    padding: 4px 8px;
+    min-width: 32px;
+  }

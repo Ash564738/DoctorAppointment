@@ -1,0 +1,9 @@
+.about-us{
+  display: flex;
+  height: 90vh;
+  width: 80%;
+  margin: 0 auto;
+  align-items: center;
+  gap: 2rem;
+  flex-direction: column;
+}

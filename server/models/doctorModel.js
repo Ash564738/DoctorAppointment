@@ -19,10 +19,9 @@ const schema = mongoose.Schema(
       type: Number,
       required: true,
     },
-    timing: {
+    department: {
       type: String,
       required: true,
-      enum: ['morning', 'afternoon', 'evening', 'night']
     },
     isDoctor: {
       type: Boolean,

@@ -1,7 +1,12 @@
 const Shift = require("../models/shiftModel");
 const TimeSlot = require("../models/timeSlotModel");
 const User = require("../models/userModel");
+const Notification = require("../models/notificationModel");
+const Doctor = require("../models/doctorModel");
 const { validationResult } = require('express-validator');
+
+// Helper for role check
+const isAdmin = user => user && user.role && user.role.toLowerCase() === 'admin';
 
 // Generate time slots for a shift
 const generateTimeSlots = (shift, date) => {
@@ -77,7 +82,7 @@ const createShift = async (req, res) => {
     } = req.body;
 
     // Check if user is a doctor
-    const doctor = await User.findById(req.userId);
+    const doctor = await User.findById(req.user._id);
     if (!doctor || doctor.role !== 'Doctor') {
       return res.status(403).json({
         success: false,
@@ -86,7 +91,7 @@ const createShift = async (req, res) => {
     }
 
     const shift = new Shift({
-      doctorId: req.userId,
+      doctorId: req.user._id,
       title,
       startTime,
       endTime,
@@ -99,6 +104,12 @@ const createShift = async (req, res) => {
     });
 
     await shift.save();
+
+    // --- Notify doctor about new shift ---
+    await Notification.create({
+      userId: req.user._id,
+      content: `A new shift "${shift.title}" has been created for you.`
+    });
 
     res.status(201).json({
       success: true,
@@ -117,13 +128,13 @@ const createShift = async (req, res) => {
 // Get all shifts for a doctor
 const getDoctorShifts = async (req, res) => {
   try {
-    const doctorId = req.params.doctorId || req.userId;
-    
+    const doctorId = req.params.doctorId || req.user.userId || req.user._id;
     const shifts = await Shift.find({ 
       doctorId,
       isActive: true 
-    }).populate('doctorId', 'firstname lastname email');
-
+    })
+    .populate('doctorId', 'firstname lastname email')
+    .lean();
     res.json({
       success: true,
       shifts
@@ -154,7 +165,7 @@ const generateSlotsForDate = async (req, res) => {
     
     // Find active shifts for this doctor on this day
     const shifts = await Shift.find({
-      doctorId: doctorId || req.userId,
+      doctorId: doctorId || req.user._id,
       daysOfWeek: dayName,
       isActive: true
     });
@@ -169,7 +180,7 @@ const generateSlotsForDate = async (req, res) => {
 
     // Check if slots already exist for this date
     const existingSlots = await TimeSlot.find({
-      doctorId: doctorId || req.userId,
+      doctorId: doctorId || req.user._id,
       date: targetDate
     });
 
@@ -217,7 +228,10 @@ const getAvailableSlots = async (req, res) => {
       date: targetDate,
       isAvailable: true,
       isBlocked: false
-    }).populate('shiftId', 'title department').sort({ startTime: 1 });
+    })
+    .populate('shiftId', 'title department')
+    .sort({ startTime: 1 })
+    .lean();
 
     res.json({
       success: true,
@@ -239,7 +253,7 @@ const updateShift = async (req, res) => {
     const updates = req.body;
 
     // Ensure only the doctor who owns the shift can update it
-    const shift = await Shift.findOne({ _id: shiftId, doctorId: req.userId });
+    const shift = await Shift.findOne({ _id: shiftId, doctorId: req.user._id });
     
     if (!shift) {
       return res.status(404).json({
@@ -270,7 +284,7 @@ const deleteShift = async (req, res) => {
   try {
     const { shiftId } = req.params;
 
-    const shift = await Shift.findOne({ _id: shiftId, doctorId: req.userId });
+    const shift = await Shift.findOne({ _id: shiftId, doctorId: req.user._id });
     
     if (!shift) {
       return res.status(404).json({
@@ -296,6 +310,12 @@ const deleteShift = async (req, res) => {
       }
     );
 
+    // --- Notify doctor about shift deletion ---
+    await Notification.create({
+      userId: req.user._id,
+      content: `Your shift "${shift.title}" has been deleted.`
+    });
+
     res.json({
       success: true,
       message: 'Shift deleted successfully'
@@ -312,9 +332,12 @@ const deleteShift = async (req, res) => {
 // Get all shifts (admin only)
 const getAllShifts = async (req, res) => {
   try {
+    if (!isAdmin(req.user)) return res.status(403).json({ success: false, message: 'Admin only' });
+    
     const shifts = await Shift.find({ isActive: true })
       .populate('doctorId', 'firstname lastname email')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json({
       success: true,
@@ -337,7 +360,7 @@ const toggleSlotAvailability = async (req, res) => {
 
     const slot = await TimeSlot.findOne({ 
       _id: slotId, 
-      doctorId: req.userId 
+      doctorId: req.user._id 
     });
 
     if (!slot) {
@@ -367,6 +390,205 @@ const toggleSlotAvailability = async (req, res) => {
   }
 };
 
+const getSchedulesByWeek = async (req, res) => {
+  console.log('🔥 getSchedulesByWeek controller called');
+  console.log('📥 Query params:', req.query);
+  
+  try {
+    const { week, weekStart, doctorId } = req.query;
+    console.log('📅 Week params:', { week, weekStart, doctorId });
+    
+    const shifts = await Shift.find({ isActive: true })
+      .populate('doctorId', 'firstname lastname email')
+      .sort({ createdAt: -1 });
+      
+    console.log('📊 Found shifts:', shifts.length);
+
+    // Transform shifts to schedule format for frontend
+    const schedules = [];
+    const startOfWeek = week || weekStart ? new Date(week || weekStart) : new Date();
+    console.log('📅 Using week start:', startOfWeek);
+    
+    // Generate 7 days from the start of the week
+    for (let i = 0; i < 7; i++) {
+      const currentDate = new Date(startOfWeek);
+      currentDate.setDate(startOfWeek.getDate() + i);
+      const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
+      const dateStr = currentDate.toISOString().split('T')[0];
+
+      // Find shifts that apply to this day
+      shifts.forEach(shift => {
+        if (shift.daysOfWeek.includes(dayName)) {
+          // Filter by doctor if specified
+          if (!doctorId || shift.doctorId._id.toString() === doctorId) {
+            schedules.push({
+              _id: `${shift._id}_${dateStr}`, // Unique ID for this schedule instance
+              shiftId: shift._id,
+              doctorId: shift.doctorId._id.toString(),
+              doctorName: `${shift.doctorId.firstname} ${shift.doctorId.lastname}`,
+              date: dateStr,
+              dayName: dayName,
+              startTime: shift.startTime,
+              endTime: shift.endTime,
+              breakStart: shift.breakTime?.start || '',
+              breakEnd: shift.breakTime?.end || '',
+              maxPatients: shift.maxPatientsPerHour,
+              slotDuration: shift.slotDuration,
+              department: shift.department,
+              title: shift.title,
+              specialNotes: shift.specialNotes,
+              status: 'available'
+            });
+          }
+        }
+      });
+    }
+
+    console.log('✅ Generated schedules:', schedules.length);
+    console.log('📝 First schedule sample:', schedules[0]);
+    
+    res.json({
+      success: true,
+      schedules
+    });
+  } catch (error) {
+    console.error('Get schedules by week error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Unable to fetch schedules'
+    });
+  }
+};
+
+// Admin-specific functions
+const adminCreateShift = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    if (!req.user || req.user.role.toLowerCase() !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin privileges required."
+      });
+    }
+
+    const doctorModelId = req.params.doctorId;
+    const doctorDoc = await Doctor.findById(doctorModelId);
+    if (!doctorDoc) {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor not found'
+      });
+    }
+    const userId = doctorDoc.userId;
+
+    const {
+      title,
+      startTime,
+      endTime,
+      daysOfWeek,
+      maxPatientsPerHour,
+      slotDuration,
+      department,
+      specialNotes,
+      breakTime
+    } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user || user.role !== 'Doctor') {
+      return res.status(404).json({
+        success: false,
+        message: 'Doctor user not found'
+      });
+    }
+
+    const shift = new Shift({
+      doctorId: userId,
+      title,
+      startTime,
+      endTime,
+      daysOfWeek,
+      maxPatientsPerHour: maxPatientsPerHour || 4,
+      slotDuration: slotDuration || 30,
+      department: department || 'General',
+      specialNotes,
+      breakTime
+    });
+
+    await shift.save();
+
+    const populatedShift = await Shift.findById(shift._id)
+      .populate('doctorId', 'firstname lastname email');
+
+    res.status(201).json({
+      success: true,
+      message: 'Shift created successfully',
+      shift: populatedShift
+    });
+
+  } catch (error) {
+    console.error('Admin create shift error:', error);
+    res.status(500).json({
+      success: false,
+      message: `Unable to create shift: ${error.message}`
+    });
+  }
+};
+
+const adminDeleteShift = async (req, res) => {
+  try {
+    if (!req.user || req.user.role.toLowerCase() !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin privileges required."
+      });
+    }
+
+    const { shiftId } = req.params;
+
+    const shift = await Shift.findById(shiftId);
+    
+    if (!shift) {
+      return res.status(404).json({
+        success: false,
+        message: 'Shift not found'
+      });
+    }
+    shift.isActive = false;
+    await shift.save();
+    await TimeSlot.updateMany(
+      { 
+        shiftId: shiftId,
+        date: { $gte: new Date() }
+      },
+      { 
+        isAvailable: false,
+        isBlocked: true,
+        blockReason: 'Shift deleted by admin'
+      }
+    );
+
+    res.json({
+      success: true,
+      message: 'Shift deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Admin delete shift error:', error);
+    res.status(500).json({
+      success: false,
+      message: `Unable to delete shift: ${error.message}`
+    });
+  }
+};
+
 module.exports = {
   createShift,
   getDoctorShifts,
@@ -375,5 +597,8 @@ module.exports = {
   updateShift,
   deleteShift,
   getAllShifts,
-  toggleSlotAvailability
+  toggleSlotAvailability,
+  getSchedulesByWeek,
+  adminCreateShift,
+  adminDeleteShift
 };

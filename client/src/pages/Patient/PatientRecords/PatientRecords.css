@@ -1,0 +1,629 @@
+.patientRecords_page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+}
+
+.patientRecords_container {
+  margin: 0 auto;
+  padding: var(--spacing-md) 0;
+  width: 70vw;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.patientRecords_header {
+  text-align: center;
+}
+
+.patientRecords_title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: #1e293b;
+}
+
+.patientRecords_subtitle {
+  font-size: var(--font-size-base);
+  color: #64748b;
+  margin: 0;
+}
+
+.patientRecords_statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.patientRecords_statCard {
+  background-color: #ffffff;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.patientRecords_statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.patientRecords_statCard--total {
+  border-left: 4px solid #3b82f6;
+}
+
+.patientRecords_statCard--recent {
+  border-left: 4px solid #10b981;
+}
+
+.patientRecords_statCard--prescriptions {
+  border-left: 4px solid #f59e0b;
+}
+
+.patientRecords_statCard--diagnoses {
+  border-left: 4px solid #8b5cf6;
+}
+
+.patientRecords_statIcon {
+  font-size: var(--font-size-lg);
+  margin-right: var(--spacing-md);
+  color: #64748b;
+}
+
+.patientRecords_statContent {
+  flex: 1;
+}
+
+.patientRecords_statNumber {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--spacing-xs) 0;
+  color: #1e293b;
+}
+
+.patientRecords_statLabel {
+  font-size: var(--font-size-sm);
+  color: #64748b;
+  margin: 0;
+  font-weight: var(--font-weight-medium);
+}
+
+.patientRecords_controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.patientRecords_searchGroup {
+  display: flex;
+  gap: var(--spacing-md);
+  flex: 1;
+  max-width: 600px;
+}
+
+.patientRecords_searchContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.patientRecords_searchInput {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 2px solid #e1e5e9;
+  border-radius: var(--border-radius-lg);
+  font-size: var(--font-size-base);
+  background-color: #ffffff;
+  transition: all 0.3s ease;
+}
+
+.patientRecords_searchInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.patientRecords_filterSelect {
+  padding: var(--spacing-md);
+  border: 2px solid #e1e5e9;
+  border-radius: var(--border-radius-lg);
+  font-size: var(--font-size-base);
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.patientRecords_filterSelect:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.patientRecords_actionButtons {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.patientRecords_fileInput {
+  display: none;
+}
+
+.patientRecords_uploadBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--primary-color);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--border-radius-lg);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.patientRecords_uploadBtn:hover {
+  background-color: var(--primary-color-dark);
+  transform: translateY(-1px);
+  color: #ffffff;
+}
+
+.patientRecords_btnIcon {
+  font-size: var(--font-size-base);
+}
+
+.patientRecords_content {
+  margin-bottom: var(--spacing-lg);
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.patientRecords_grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.patientRecords_card {
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  gap: var(--spacing-md);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.patientRecords_card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.patientRecords_cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.patientRecords_cardTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex: 1;
+}
+
+.patientRecords_cardIcon {
+  font-size: var(--font-size-lg);
+  color: #3b82f6;
+}
+
+.patientRecords_cardHeading {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+  color: #1e293b;
+}
+
+.patientRecords_cardActions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.patientRecords_actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.patientRecords_actionBtn--view {
+  background-color: #f1f5f9;
+  color: #3b82f6;
+}
+
+.patientRecords_actionBtn--view:hover {
+  background-color: #e2e8f0;
+  transform: scale(1.05);
+}
+
+.patientRecords_actionBtn--download {
+  background-color: #f0fdf4;
+  color: #16a34a;
+}
+
+.patientRecords_actionBtn--download:hover {
+  background-color: #dcfce7;
+  transform: scale(1.05);
+}
+
+.patientRecords_cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm)
+}
+
+.patientRecords_cardInfo {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.patientRecords_cardDate,
+.patientRecords_cardDoctor {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: #64748b;
+  margin: 0;
+}
+
+.patientRecords_infoIcon {
+  font-size: var(--font-size-sm);
+}
+
+.patientRecords_cardDetails {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.patientRecords_cardSymptoms {
+  font-size: var(--font-size-sm);
+  color: #374151;
+  line-height: 1.5;
+}
+
+.patientRecords_prescriptions {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-sm);
+}
+
+.patientRecords_prescriptions strong {
+  font-size: var(--font-size-sm);
+  color: #374151;
+  display: block;
+}
+
+.patientRecords_prescriptionTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.patientRecords_prescriptionTag {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  border-radius: 20px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.patientRecords_prescriptionTag--more {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.patientRecords_empty {
+  background-color: #ffffff;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.patientRecords_modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.patientRecords_modal--visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.patientRecords_modalContent {
+  background-color: #ffffff;
+  border-radius: var(--border-radius-lg);
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.patientRecords_modalContent--small {
+  max-width: 500px;
+}
+
+.patientRecords_modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.patientRecords_modalTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+  color: #1e293b;
+}
+
+.patientRecords_closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background-color: #f8fafc;
+  color: #64748b;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.patientRecords_closeBtn:hover {
+  background-color: #e2e8f0;
+  color: #374151;
+}
+
+.patientRecords_modalBody {
+  padding: var(--spacing-lg);
+}
+
+.patientRecords_recordDetails {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md)
+}
+
+.patientRecords_detailSection {
+}
+
+.patientRecords_sectionTitle {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: #1e293b;
+  border-bottom: 2px solid var(--primary-color);
+  margin-bottom: var(--spacing-md);
+}
+
+.patientRecords_detailItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.patientRecords_detailItem label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: #64748b;
+}
+
+.patientRecords_detailItem span {
+  font-size: var(--font-size-base);
+  color: #1e293b;
+}
+
+.patientRecords_prescriptionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.patientRecords_prescriptionItem, .patientRecords_detailText, .patientRecords_detailGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background-color: #f8fafc;
+  border-radius: var(--border-radius-md);
+  border: 1px solid #e2e8f0;
+}
+
+.patientRecords_prescriptionDetails {
+  gap: var(--spacing-xs);
+}
+
+.patientRecords_medicationName {
+  font-weight: var(--font-weight-medium);
+  color: #1e293b;
+}
+
+.patientRecords_dosage,.patientRecords_frequency, .patientRecords_duration, .patientRecords_quantity {
+}
+
+.patientRecords_modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  border-top: 1px solid #e2e8f0;
+}
+
+.patientRecords_modalBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: none;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.patientRecords_modalBtn--secondary {
+  background-color: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.patientRecords_modalBtn--secondary:hover {
+  background-color: #f1f5f9;
+  color: #374151;
+}
+
+.patientRecords_modalBtn--primary {
+  background-color: var(--primary-color);
+  color: #ffffff;
+}
+
+.patientRecords_modalBtn--primary:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.patientRecords_uploadInfo {
+  padding: var(--spacing-md);
+  background-color: #f8fafc;
+  border-radius: var(--border-radius-md);
+  border: 1px solid #e2e8f0;
+}
+
+.patientRecords_uploadInfo p {
+  margin: var(--spacing-xs) 0;
+  font-size: var(--font-size-sm);
+  color: #374151;
+}
+
+/* Animation */
+.patientRecords_content {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1300px) {
+  .patientRecords_container {
+    width: 90vw;
+  }
+}
+@media (max-width: 1024px) {
+  .patientRecords_statsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+  .patientRecords_grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .patientRecords_title {
+    font-size: var(--font-size-lg);
+  }
+  .patientRecords_controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .patientRecords_searchGroup {
+    flex-direction: column;
+    max-width: none;
+  }
+  .patientRecords_statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-md);
+  }
+  .patientRecords_modalContent {
+    width: 95%;
+    margin: var(--spacing-md);
+  }
+}
+
+@media (max-width: 480px) {
+  .patientRecords_title {
+    font-size: var(--font-size-base);
+  }
+  .patientRecords_statsGrid {
+    grid-template-columns: 1fr;
+  }
+  .patientRecords_statCard {
+    padding: var(--spacing-md);
+  }
+  .patientRecords_statNumber {
+    font-size: var(--font-size-lg);
+  }
+  .patientRecords_cardHeader {
+    padding: var(--spacing-md);
+  }
+  .patientRecords_cardBody {
+    padding: var(--spacing-md);
+  }
+  .patientRecords_cardInfo {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+  .patientRecords_modalHeader,
+  .patientRecords_modalBody,
+  .patientRecords_modalFooter {
+  }
+}
+  
+  .patientRecords_modalHeader,
+  .patientRecords_modalBody,
+  .patientRecords_modalFooter {
+  }

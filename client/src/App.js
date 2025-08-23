@@ -1,196 +1,83 @@
 import React, { lazy, Suspense } from "react";
-// Main CSS entry point - includes all styles in proper order
-import "./styles/index.css";
-import "./styles/accessibility.css";
-// Component-specific styles
-import "./styles/navbar.css";
-import "./styles/sidebar.css";
-import "./styles/hero.css";
-import "./styles/Home.css";
-import "./styles/homecircles.css";
-import "./styles/footer.css";
-import "./styles/user.css";
-import "./styles/doctorcard.css";
-import "./styles/doctors.css";
-import "./styles/profile.css";
-import "./styles/register.css";
-import "./styles/bookappointment.css";
-import "./styles/contact.css";
-import "./styles/notification.css";
-import "./styles/payment.css";
-import "./styles/chat.css";
-import "./styles/error.css";
-import "./styles/reminder.css";
-import "./styles/floating-chat.css";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { Protected, Public, Admin } from "./middleware/route";
-import Loading from "./components/Loading";
-import ErrorBoundary from "./components/ErrorBoundary";
-import AccessibilityProvider from "./components/AccessibilityProvider";
-import FloatingChatButton from "./components/FloatingChatButton";
-import AppointmentReminder from "./components/AppointmentReminder";
+import { jwtDecode } from "jwt-decode";
 
-// Lazy load all components for better performance
-const Login = lazy(() => import("./pages/Login"));
-const Register = lazy(() => import("./pages/Register"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
+// Global / shared styles (retain existing naming until normalization step)
+import "./styles/index.css";
+import "./styles/app.css";
+import "./styles/variables.css";
 
-const Home = lazy(() => import("./pages/Home"));
-const Appointments = lazy(() => import("./pages/Appointments"));
-const PatientAppointments = lazy(() => import("./pages/PatientAppointments"));
-const Doctors = lazy(() => import("./pages/Doctors"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Change = lazy(() => import("./pages/ChangePassword"));
-const Notifications = lazy(() => import("./pages/Notifications"));
+// Role-based route components
+import PatientRoutes from "./routes/PatientRoutes";
+import DoctorRoutes from "./routes/DoctorRoutes";
+import AdminRoutes from "./routes/AdminRoutes";
+import AuthenticatedRoute from "./routes/AuthenticatedRoute";
 
-const Error = lazy(() => import("./pages/Error"));
+
+import ErrorBoundary from "./components/Common/ErrorBoundary/ErrorBoundary";
+import Loading from "./components/Common/Loading/Loading";
+import FloatingChatButton from "./components/Common/ChatButton/ChatButton";
+import AccessibilityProvider from "./components/Common/Accessibility/AccessibilityProvider";
+import { PatientProtected, DoctorProtected, AdminProtected, Public } from "./middleware/route";
+
+const Home = lazy(() => import("./pages/Common/Home/Home"));
+const Login = lazy(() => import("./pages/Common/Login/Login"));
+const Register = lazy(() => import("./pages/Common/Register/Register"));
+const ForgotPassword = lazy(() => import("./pages/Common/ForgotPassword/ForgotPassword"));
+const Doctors = lazy(() => import("./pages/Patient/FindDoctors/FindDoctors"));
+const Error = lazy(() => import("./pages/Common/Error/Error"));
+const Profile = lazy(() => import("./pages/Common/Profile/Profile"));
+const Notifications = lazy(() => import("./pages/Common/Notifications/Notifications"));
+const ChangePassword = lazy(() => import("./pages/Common/ChangePassword/ChangePassword"));
 
 function App() {
   return (
     <ErrorBoundary>
-      <AccessibilityProvider>
-        <Router>
-          <Toaster />
-          <div className="App" id="main-content">
+      <Router>
+        <Toaster />
+        <div className="app-container" id="main-content">
             <Suspense fallback={<Loading />}>
+              <Routes>
+                {/* Public routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Public><Login /></Public>} />
+                <Route path="/register" element={<Public><Register /></Public>} />
+                <Route path="/forgotpassword" element={<Public><ForgotPassword /></Public>} />
+                <Route path="/doctors" element={<Doctors />} />
 
-        <Routes>
-          <Route
-            path="/login"
-            element={
-              <Suspense fallback={<Loading />}>
-                <Login />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/forgotpassword"
-            element={
-              <Suspense fallback={<Loading />}>
-                <ForgotPassword />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/resetpassword/:id/:token"
-            element={
-              <Suspense fallback={<Loading />}>
-                <ResetPassword />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <Public>
-                <Suspense fallback={<Loading />}>
-                  <Register />
-                </Suspense>
-              </Public>
-            }
-          />
-          <Route path="/" element={<Home />} />
-          <Route path="/doctors" element={<Doctors />} />
-          <Route
-            path="/appointments"
-            element={
-              <Protected>
-                <Appointments />
-              </Protected>
-            }
-          />
-          <Route
-            path="/my-appointments"
-            element={
-              <Protected>
-                <PatientAppointments />
-              </Protected>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <Protected>
-                <Notifications />
-              </Protected>
-            }
-          />
+                {/* Global authenticated routes (available to all logged-in users) */}
+                <Route path="/profile" element={<AuthenticatedRoute><Profile /></AuthenticatedRoute>} />
+                <Route path="/notifications" element={<AuthenticatedRoute><Notifications /></AuthenticatedRoute>} />
+                <Route path="/changepassword" element={<AuthenticatedRoute><ChangePassword /></AuthenticatedRoute>} />                
 
-          <Route
-            path="/profile"
-            element={
-              <Protected>
-                <Profile />
-              </Protected>
-            }
-          />
-          <Route
-            path="/ChangePassword"
-            element={
-              <Protected>
-                <Change />
-              </Protected>
-            }
-          />
-          <Route
-            path="/dashboard/home"
-            element={
-              <Admin>
-                <Dashboard type ={"home"} />
-              </Admin>
-            }
-          />
-          <Route
-            path="/dashboard/users"
-            element={
-              <Admin>
-                <Dashboard type={"users"} />
-              </Admin>
-            }
-          />
-          <Route
-            path="/dashboard/doctors"
-            element={
-              <Admin>
-                <Dashboard type={"doctors"} />
-              </Admin>
-            }
-          />
-          <Route
-            path="/dashboard/appointments"
-            element={
-              <Admin>
-                <Dashboard type={"appointments"} />
-              </Admin>
-            }
-          />
-          <Route
-            path="/dashboard/applications"
-            element={
-              <Admin>
-                <Dashboard type={"applications"} />
-              </Admin>
-            }
-          />
-          <Route
-            path="/dashboard/aprofile"
-            element={
-              <Admin>
-                <Dashboard type={"aprofile"} />
-              </Admin>
-            }
-          />
-          <Route path="*" element={<Error />} />
-            </Routes>
+                {/* Role-based groups */}
+                <Route path="patient/*" element={
+                  <PatientProtected>
+                    <PatientRoutes />
+                  </PatientProtected>
+                } />
+                <Route path="doctor/*" element={
+                  <DoctorProtected>
+                    <DoctorRoutes />
+                  </DoctorProtected>
+                } />
+                <Route path="admin/*" element={
+                  <AdminProtected>
+                    <AdminRoutes />
+                  </AdminProtected>
+                } />
+
+                {/* Fallback */}
+                <Route path="*" element={<Error />} />
+              </Routes>
             </Suspense>
-            <AppointmentReminder />
+            
+            {/* Global Floating Chat Button */}
             <FloatingChatButton />
-          </div>
-        </Router>
-      </AccessibilityProvider>
+            <AccessibilityProvider />
+        </div>
+      </Router>
     </ErrorBoundary>
   );
 }

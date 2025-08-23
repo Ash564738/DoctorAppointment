@@ -1,42 +1,13 @@
-// Simple demo mode - bypass Stripe entirely
-const isDemoMode = !process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('demo');
-
-let stripe;
-if (isDemoMode) {
-  // Create a mock stripe object that returns demo data
-  stripe = {
-    paymentIntents: {
-      create: async ({ amount, currency = 'usd' }) => {
-        const paymentIntentId = `mock_pi_${Date.now()}`;
-        const clientSecret = `${paymentIntentId}_secret_mock`;
-        return {
-          id: paymentIntentId,
-          client_secret: clientSecret,
-          status: 'requires_payment_method',
-          amount,
-          currency
-        };
-      },
-      retrieve: async (id) => {
-        return {
-          id,
-          status: 'succeeded',
-          amount: 5000, // $50 default
-          currency: 'usd'
-        };
-      }
-    }
-  };
-} else {
-  stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-}
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Payment = require("../models/paymentModel");
 const Appointment = require("../models/appointmentModel");
 const User = require("../models/userModel");
 const Doctor = require("../models/doctorModel");
 const Notification = require("../models/notificationModel");
+const fs = require('fs');
+const path = require('path');
+const PDFDocument = require('pdfkit');
 
-// Create payment intent for appointment booking
 const createPaymentIntent = async (req, res) => {
   try {
     const { appointmentData, amount, currency = 'USD' } = req.body;
@@ -49,7 +20,6 @@ const createPaymentIntent = async (req, res) => {
       });
     }
 
-    // Validate appointmentData has required fields
     if (!appointmentData.doctorId || !appointmentData.date || !appointmentData.time || !appointmentData.symptoms) {
       return res.status(400).json({
         success: false,
@@ -57,8 +27,7 @@ const createPaymentIntent = async (req, res) => {
       });
     }
 
-    // Get doctor details for fees
-    const doctor = await Doctor.findOne({ userId: appointmentData.doctorId });
+    const doctor = await Doctor.findOne({ userId: appointmentData.doctorId }) || await Doctor.findById(appointmentData.doctorId);
     if (!doctor) {
       return res.status(404).json({
         success: false,
@@ -66,7 +35,6 @@ const createPaymentIntent = async (req, res) => {
       });
     }
 
-    // Get patient details
     const patient = await User.findById(userId);
     if (!patient) {
       return res.status(404).json({
@@ -75,15 +43,13 @@ const createPaymentIntent = async (req, res) => {
       });
     }
 
-    // Calculate amounts
-    const consultationFee = amount; // Use the amount from frontend
-    const platformFeePercent = 10; // 10% platform fee
+    const consultationFee = amount;
+    const platformFeePercent = 10;
     const platformFee = Math.round(consultationFee * platformFeePercent / 100);
     const doctorEarnings = consultationFee - platformFee;
 
-    // Create Stripe payment intent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: consultationFee * 100, // Stripe uses cents
+      amount: consultationFee * 100,
       currency: currency.toLowerCase(),
       metadata: {
         appointmentData: JSON.stringify(appointmentData),
@@ -94,7 +60,6 @@ const createPaymentIntent = async (req, res) => {
       }
     });
 
-    // Store payment intent ID temporarily (we'll create the payment record after confirmation)
     res.json({
       success: true,
       clientSecret: paymentIntent.client_secret,
@@ -113,31 +78,14 @@ const createPaymentIntent = async (req, res) => {
   }
 };
 
-// Confirm payment after successful charge
 const confirmPayment = async (req, res) => {
   try {
-    const { paymentIntentId, demoMode } = req.body;
+    const { paymentIntentId } = req.body;
     const userId = req.userId;
-
-    let appointmentData;
-    let paymentIntent;
-
-    // Handle demo mode
-    if (demoMode || isDemoMode) {
-      // For demo mode, we need to get the appointment data from the frontend
-      // Since this is demo mode, we'll return success and let frontend handle appointment creation
-      return res.json({
-        success: true,
-        message: 'Demo payment confirmed successfully',
-        status: 'succeeded',
-        demoMode: true
-      });
-    }
-
-    // Retrieve payment intent from Stripe with charges expanded
-    paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
-      expand: ['charges.data']
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+      expand: ['charges']
     });
+    console.log('Stripe PaymentIntent:', JSON.stringify(paymentIntent, null, 2));
 
     if (paymentIntent.status !== 'succeeded') {
       return res.status(400).json({
@@ -146,18 +94,30 @@ const confirmPayment = async (req, res) => {
       });
     }
 
-    // Extract appointment data from payment intent metadata
+    let firstCharge = paymentIntent.charges?.data?.[0];
+    let receiptUrl = firstCharge?.receipt_url || null;
+    let stripeChargeId = firstCharge?.id || null;
+
+    if (!firstCharge && paymentIntent.latest_charge) {
+      try {
+        const charge = await stripe.charges.retrieve(paymentIntent.latest_charge);
+        stripeChargeId = charge.id;
+        receiptUrl = charge.receipt_url || null;
+      } catch (err) {
+        console.error('Could not fetch latest_charge:', err);
+      }
+    }
+
+    let appointmentData;
     try {
       appointmentData = JSON.parse(paymentIntent.metadata.appointmentData);
     } catch (error) {
-      console.error('Error parsing appointment data from payment intent:', error);
       return res.status(400).json({
         success: false,
         message: "Invalid appointment data in payment"
       });
     }
-
-    // Create the appointment AFTER successful payment
+    const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : undefined;
     const newAppointment = new Appointment({
       userId: userId,
       doctorId: appointmentData.doctorId,
@@ -165,42 +125,53 @@ const confirmPayment = async (req, res) => {
       time: appointmentData.time,
       symptoms: appointmentData.symptoms,
       doctorname: appointmentData.doctorname,
-      status: 'Confirmed', // Confirmed since payment is successful
-      paymentStatus: 'Paid'
+      status: 'Confirmed',
+      paymentStatus: 'Paid',
+      appointmentType: capitalize(appointmentData.appointmentType) || 'Regular',
+      priority: capitalize(appointmentData.priority) || 'Normal',
+      recurringPattern: appointmentData.recurringPattern ? {
+        ...appointmentData.recurringPattern,
+        frequency: capitalize(appointmentData.recurringPattern.frequency)
+      } : undefined
     });
 
-    const savedAppointment = await newAppointment.save();
-
-    // Create payment record
-    const firstCharge = paymentIntent.charges?.data?.[0];
+    let savedAppointment;
+    try {
+      savedAppointment = await newAppointment.save();
+    } catch (err) {
+      console.error('Error saving appointment:', err);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to create appointment after payment"
+      });
+    }
     const payment = new Payment({
       appointmentId: savedAppointment._id,
       patientId: userId,
       doctorId: appointmentData.doctorId,
       amount: parseInt(paymentIntent.metadata.consultationFee),
       currency: paymentIntent.currency.toUpperCase(),
-      paymentMethod: 'card',
+      paymentMethod: appointmentData.paymentMethod || 'Card',
       stripePaymentIntentId: paymentIntentId,
-      status: 'succeeded',
-      stripeChargeId: firstCharge?.id || null,
+      status: 'Succeeded',
+      stripeChargeId,
       paymentDate: new Date(),
-      receiptUrl: firstCharge?.receipt_url || null,
+      receiptUrl,
       platformFee: parseInt(paymentIntent.metadata.platformFee),
       doctorEarnings: parseInt(paymentIntent.metadata.consultationFee) - parseInt(paymentIntent.metadata.platformFee)
     });
 
     await payment.save();
-
-    // Get populated appointment for notifications
+    savedAppointment.paymentId = payment._id;
+    savedAppointment.paymentStatus = 'Paid';
+    await savedAppointment.save();
     const appointment = await Appointment.findById(savedAppointment._id)
       .populate('doctorId')
       .populate('userId');
-
     const patientNotification = new Notification({
       userId: payment.patientId,
       content: `Payment successful! Your appointment with Dr. ${appointment.doctorId.firstname} ${appointment.doctorId.lastname} is confirmed for ${appointment.date} at ${appointment.time}`
     });
-
     const doctorNotification = new Notification({
       userId: payment.doctorId,
       content: `Payment received for appointment with ${appointment.userId.firstname} ${appointment.userId.lastname} on ${appointment.date} at ${appointment.time}. You will earn $${payment.doctorEarnings}`
@@ -221,7 +192,6 @@ const confirmPayment = async (req, res) => {
         receiptUrl: payment.receiptUrl
       }
     });
-
   } catch (error) {
     console.error('Error confirming payment:', error);
     res.status(500).json({
@@ -231,7 +201,6 @@ const confirmPayment = async (req, res) => {
   }
 };
 
-// Get payment history for user
 const getPaymentHistory = async (req, res) => {
   try {
     const userId = req.userId;
@@ -268,7 +237,6 @@ const getPaymentHistory = async (req, res) => {
   }
 };
 
-// Get payment details by ID
 const getPaymentDetails = async (req, res) => {
   try {
     const { paymentId } = req.params;
@@ -303,7 +271,6 @@ const getPaymentDetails = async (req, res) => {
   }
 };
 
-// Request refund
 const requestRefund = async (req, res) => {
   try {
     const { paymentId, refundAmount, reason } = req.body;
@@ -312,7 +279,7 @@ const requestRefund = async (req, res) => {
     const payment = await Payment.findOne({
       _id: paymentId,
       patientId: userId,
-      status: 'succeeded'
+      status: 'Succeeded'
     });
 
     if (!payment) {
@@ -331,23 +298,26 @@ const requestRefund = async (req, res) => {
 
     const actualRefundAmount = payment.calculateRefund(refundAmount);
 
-    // Process refund with Stripe
     const refund = await stripe.refunds.create({
       payment_intent: payment.stripePaymentIntentId,
-      amount: actualRefundAmount * 100 // Convert to cents
+      amount: actualRefundAmount * 100
     });
 
-    // Update payment record
     payment.refundAmount += actualRefundAmount;
     payment.refundReason = reason;
     payment.refundDate = new Date();
-    payment.status = payment.refundAmount >= payment.amount ? 'refunded' : 'partially_refunded';
+    payment.status = payment.refundAmount >= payment.amount ? 'Refunded' : 'Partially_Refunded';
 
     await payment.save();
 
-    // Update appointment status
     await Appointment.findByIdAndUpdate(payment.appointmentId, {
-      status: 'Cancelled'
+      status: 'Cancelled',
+      paymentStatus: payment.refundAmount >= payment.amount ? 'Refunded' : 'Paid'
+    });
+
+    await Notification.create({
+      userId: payment.patientId,
+      content: `Your refund request for appointment on ${payment.paymentDate.toLocaleDateString()} has been processed. Amount refunded: $${actualRefundAmount}.`
     });
 
     res.json({
@@ -366,7 +336,6 @@ const requestRefund = async (req, res) => {
   }
 };
 
-// Handle Stripe webhooks
 const handleStripeWebhook = async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
@@ -378,7 +347,6 @@ const handleStripeWebhook = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Handle the event
   switch (event.type) {
     case 'payment_intent.succeeded':
       const paymentIntent = event.data.object;
@@ -389,45 +357,47 @@ const handleStripeWebhook = async (req, res) => {
       await handlePaymentFailure(failedPayment);
       break;
     default:
-      // Log unhandled events for debugging
       logger.warn('Unhandled Stripe webhook event', { type: event.type });
   }
 
   res.json({ received: true });
 };
 
-// Helper function to handle payment success
 const handlePaymentSuccess = async (paymentIntent) => {
   try {
-    await Payment.findOneAndUpdate(
+    const payment = await Payment.findOneAndUpdate(
       { stripePaymentIntentId: paymentIntent.id },
       {
-        status: 'succeeded',
+        status: 'Succeeded',
         stripeChargeId: paymentIntent.charges.data[0]?.id,
         paymentDate: new Date()
       }
     );
+    if (payment && payment.appointmentId) {
+      await Appointment.findByIdAndUpdate(payment.appointmentId, { paymentStatus: 'Paid' });
+    }
   } catch (error) {
     console.error('Error handling payment success:', error);
   }
 };
 
-// Helper function to handle payment failure
 const handlePaymentFailure = async (paymentIntent) => {
   try {
-    await Payment.findOneAndUpdate(
+    const payment = await Payment.findOneAndUpdate(
       { stripePaymentIntentId: paymentIntent.id },
       {
-        status: 'failed',
+        status: 'Failed',
         failureReason: paymentIntent.last_payment_error?.message
       }
     );
+    if (payment && payment.appointmentId) {
+      await Appointment.findByIdAndUpdate(payment.appointmentId, { paymentStatus: 'Failed' });
+    }
   } catch (error) {
     console.error('Error handling payment failure:', error);
   }
 };
 
-// Get doctor earnings
 const getDoctorEarnings = async (req, res) => {
   try {
     const userId = req.userId;
@@ -447,7 +417,7 @@ const getDoctorEarnings = async (req, res) => {
       {
         $match: {
           doctorId: mongoose.Types.ObjectId(userId),
-          status: 'succeeded',
+          status: 'Succeeded',
           ...dateFilter
         }
       },
@@ -481,6 +451,58 @@ const getDoctorEarnings = async (req, res) => {
   }
 };
 
+const downloadInvoice = async (req, res) => {
+  try {
+    const { invoiceId } = req.params;
+    const payment = await Payment.findById(invoiceId)
+      .populate('patientId', 'firstname lastname email')
+      .populate('doctorId', 'firstname lastname email')
+      .populate('appointmentId');
+
+    if (!payment) {
+      res.status(404).send('Invoice not found');
+      return;
+    }
+
+    const doc = new PDFDocument({ margin: 50 });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-${invoiceId}.pdf`);
+    doc.pipe(res);
+
+    doc.fontSize(20).text('Medical Appointment Invoice', { align: 'center' });
+    doc.moveDown();
+
+    doc.fontSize(12).text(`Invoice ID: ${payment._id}`);
+    doc.text(`Date: ${payment.paymentDate ? new Date(payment.paymentDate).toLocaleDateString() : ''}`);
+    doc.moveDown();
+
+    doc.text(`Patient: ${payment.patientId?.firstname || ''} ${payment.patientId?.lastname || ''}`);
+    doc.text(`Email: ${payment.patientId?.email || ''}`);
+    doc.moveDown();
+
+    doc.text(`Doctor: Dr. ${payment.doctorId?.firstname || ''} ${payment.doctorId?.lastname || ''}`);
+    doc.text(`Email: ${payment.doctorId?.email || ''}`);
+    doc.moveDown();
+
+    if (payment.appointmentId) {
+      doc.text(`Appointment Date: ${payment.appointmentId.date ? new Date(payment.appointmentId.date).toLocaleDateString() : ''}`);
+      doc.text(`Appointment Time: ${payment.appointmentId.time || ''}`);
+      doc.moveDown();
+    }
+
+    doc.text(`Amount: $${payment.amount}`);
+    doc.text(`Status: ${payment.status}`);
+    doc.text(`Payment Method: ${payment.paymentMethod}`);
+    doc.moveDown();
+
+    doc.text('Thank you for your payment!', { align: 'center' });
+
+    doc.end();
+  } catch (error) {
+    res.status(500).send('Failed to generate invoice');
+  }
+};
+
 module.exports = {
   createPaymentIntent,
   confirmPayment,
@@ -488,5 +510,6 @@ module.exports = {
   getPaymentDetails,
   requestRefund,
   handleStripeWebhook,
-  getDoctorEarnings
+  getDoctorEarnings,
+  downloadInvoice,
 };

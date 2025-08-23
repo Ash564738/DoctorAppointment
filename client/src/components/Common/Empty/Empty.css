@@ -1,0 +1,156 @@
+/* Empty state component styles */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  min-height: 300px;
+}
+
+.empty-state__icon {
+  font-size: 4rem;
+  opacity: 0.7;
+}
+
+.empty-state__message {
+  color: var(--dark-color, #333);
+  font-size: 1.5rem;
+  font-weight: 600;
+  max-width: 400px;
+}
+
+.empty-state__description {
+  color: var(--text-color, #666);
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 500px;
+}
+
+.empty-state__action {
+}
+
+.empty-state__action button,
+.empty-state__action a {
+  background: var(--primary-color, #007bff);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.empty-state__action button:hover,
+.empty-state__action a:hover {
+  background: var(--primary-hover, #0056b3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+/* Variant styles */
+.empty-state--small {
+  padding: 2rem 1rem;
+  min-height: 200px;
+}
+
+.empty-state--small .empty-state__icon {
+  font-size: 2.5rem;
+}
+
+.empty-state--small .empty-state__message {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state--small .empty-state__description {
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.empty-state--inline {
+  flex-direction: row;
+  text-align: left;
+  padding: 1.5rem;
+  min-height: auto;
+}
+
+.empty-state--inline .empty-state__icon {
+  font-size: 2rem;
+}
+
+.empty-state--inline .empty-state__content {
+  flex: 1;
+}
+
+.empty-state--inline .empty-state__message {
+  font-size: 1.1rem;
+}
+
+.empty-state--inline .empty-state__description {
+  font-size: 0.9rem;
+}
+
+/* Error variant */
+.empty-state--error .empty-state__icon {
+  color: #dc3545;
+}
+
+.empty-state--error .empty-state__message {
+  color: #dc3545;
+}
+
+/* Success variant */
+.empty-state--success .empty-state__icon {
+  color: #28a745;
+}
+
+.empty-state--success .empty-state__message {
+  color: #28a745;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .empty-state {
+
+  }
+  
+  .empty-state__icon {
+    font-size: 3rem;
+  }
+  
+  .empty-state__message {
+    font-size: 1.25rem;
+  }
+  
+  .empty-state--inline {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .empty-state--inline .empty-state__icon {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .empty-state {
+  }
+  
+  .empty-state__message {
+    font-size: 1.1rem;
+  }
+  
+  .empty-state__description {
+    font-size: 0.9rem;
+  }
+}
+

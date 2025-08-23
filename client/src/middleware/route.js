@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import jwtDecode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 export const Protected = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -27,28 +27,55 @@ export const Public = ({ children }) => {
   );
 };
 
-// export const Admin = ({ children }) => {
-//   const user = jwtDecode(localStorage.getItem("token"));
-
-//   if (user.isAdmin) {
-//     return children;
-//   }
-//   return (
-//     <Navigate
-//       to={"/"}
-//       replace={true}
-//     ></Navigate>
-//   );
-// };
 export const Admin = ({ children }) => {
   const token = localStorage.getItem("token");
   if (!token) {
-    return (
-      <Navigate
-        to={"/"}
-        replace={true}
-      ></Navigate>
-    );
+    return <Navigate to="/login" replace />;
+  }
+  try {
+    const decoded = jwtDecode(token);
+    if (decoded.role !== 'Admin') {
+      return <Navigate to="/" replace />;
+    }
+  } catch (e) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
+// Role-specific wrappers
+export const PatientProtected = ({ children }) => {
+  const token = localStorage.getItem('token');
+  if (!token) return <Navigate to="/login" replace />;
+  try {
+    const decoded = jwtDecode(token);
+    if (decoded.role !== 'Patient') return <Navigate to="/" replace />;
+  } catch (e) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
+export const DoctorProtected = ({ children }) => {
+  const token = localStorage.getItem('token');
+  if (!token) return <Navigate to="/login" replace />;
+  try {
+    const decoded = jwtDecode(token);
+    if (decoded.role !== 'Doctor') return <Navigate to="/" replace />;
+  } catch (e) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
+export const AdminProtected = ({ children }) => {
+  const token = localStorage.getItem('token');
+  if (!token) return <Navigate to="/login" replace />;
+  try {
+    const decoded = jwtDecode(token);
+    if (decoded.role !== 'Admin') return <Navigate to="/" replace />;
+  } catch (e) {
+    return <Navigate to="/login" replace />;
   }
   return children;
 };

@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const leaveRequestSchema = mongoose.Schema(
   {
-    staffId: {
+    doctorId: {
       type: mongoose.SchemaTypes.ObjectId,
       ref: "User",
       required: true,

@@ -1,0 +1,409 @@
+/* ShiftManagement Component Styles */
+.shiftManagement_container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+}
+
+.shiftManagement_content {
+  margin: 0 auto;
+  padding: var(--spacing-md) 0;
+  width: 70vw;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+/* Header Styles */
+.shiftManagement_header {
+  background: #ffffff;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.shiftManagement_title {
+  color: #1a202c;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.shiftManagement_subtitle {
+  color: #64748b;
+  font-size: var(--font-size-base);
+  margin: 0;
+  font-weight: var(--font-weight-regular);
+}
+
+/* Stats Row */
+.shiftManagement_statsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.shiftManagement_statCard {
+  background: #ffffff;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.shiftManagement_statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.shiftManagement_statTitle {
+  color: #64748b;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin: 0 0 var(--spacing-xs) 0;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.shiftManagement_statValue {
+  color: #1a202c;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+}
+
+/* Main Grid */
+.shiftManagement_mainGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-lg);
+}
+
+/* Section Styles */
+.shiftManagement_section {
+  background: #ffffff;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.shiftManagement_sectionHeader {
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.shiftManagement_sectionTitle {
+  color: #1a202c;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+}
+
+.shiftManagement_actionButton {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.shiftManagement_actionButton:hover {
+  background: var(--primary-color-dark);
+  transform: translateY(-2px);
+}
+
+.shiftManagement_actionButton--secondary {
+  background: #64748b;
+  color: white;
+}
+
+.shiftManagement_actionButton--secondary:hover {
+  background: #475569;
+}
+
+.shiftManagement_actionButton--primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.shiftManagement_actionButton--primary:hover {
+  background: #2563eb;
+}
+
+/* Table Styles */
+.shiftManagement_tableContainer {
+  padding: 0;
+}
+
+.shiftManagement_table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.shiftManagement_tableHeader {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.shiftManagement_headerCell {
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  color: #374151;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.shiftManagement_tableBody {
+  background: #ffffff;
+}
+
+.shiftManagement_tableRow {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.2s ease;
+}
+
+.shiftManagement_tableRow:hover {
+  background: #f8fafc;
+}
+
+.shiftManagement_tableCell {
+  padding: var(--spacing-md) var(--spacing-lg);
+  color: #374151;
+  font-size: var(--font-size-sm);
+  vertical-align: middle;
+}
+
+/* Status Badges */
+.shiftManagement_statusBadge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: 20px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.shiftManagement_statusBadge--pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.shiftManagement_statusBadge--approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.shiftManagement_statusBadge--rejected {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.shiftManagement_statusBadge--scheduled {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Loading State */
+.shiftManagement_loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--spacing-xl) var(--spacing-md);
+  background: #ffffff;
+  border-radius: var(--border-radius-lg);
+  margin: var(--spacing-md) 0;
+}
+
+.shiftManagement_loadingText {
+  color: #64748b;
+  font-size: var(--font-size-base);
+  margin-left: var(--spacing-sm);
+}
+
+/* Modal Styles */
+.shiftManagement_modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: var(--spacing-md);
+}
+
+.shiftManagement_modal {
+  background: #ffffff;
+  border-radius: var(--border-radius-lg);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+}
+
+.shiftManagement_modalHeader {
+  padding: var(--spacing-lg) var(--spacing-xl) var(--spacing-md);
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.shiftManagement_modalTitle {
+  color: #1a202c;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+}
+
+.shiftManagement_closeButton {
+  background: none;
+  border: none;
+  font-size: var(--font-size-xl);
+  color: #64748b;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  line-height: 1;
+  border-radius: var(--border-radius-sm);
+  transition: all 0.2s ease;
+}
+
+.shiftManagement_closeButton:hover {
+  background: #f1f5f9;
+  color: #374151;
+}
+
+/* Form Styles */
+.shiftManagement_form {
+  padding: var(--spacing-lg) var(--spacing-xl) var(--spacing-xl);
+}
+
+.shiftManagement_formGroup {
+  margin-bottom: var(--spacing-md);
+}
+
+.shiftManagement_formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.shiftManagement_label {
+  display: block;
+  color: #374151;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-xs);
+}
+
+.shiftManagement_input,
+.shiftManagement_select,
+.shiftManagement_textarea {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid #d1d5db;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  color: #374151;
+  background: #ffffff;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.shiftManagement_input:focus,
+.shiftManagement_select:focus,
+.shiftManagement_textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.shiftManagement_textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.shiftManagement_formActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .shiftManagement_content {
+    padding: var(--spacing-sm);
+  }
+  .shiftManagement_mainGrid {
+    grid-template-columns: 1fr;
+  }
+  .shiftManagement_statsRow {
+    grid-template-columns: 1fr;
+  }
+  .shiftManagement_header {
+    padding: var(--spacing-lg);
+  }
+  .shiftManagement_title {
+    font-size: var(--font-size-lg);
+  }
+  .shiftManagement_sectionHeader {
+    padding: var(--spacing-lg);
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: flex-start;
+  }
+  .shiftManagement_headerCell,
+  .shiftManagement_tableCell {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+  .shiftManagement_formRow {
+    grid-template-columns: 1fr;
+  }
+  .shiftManagement_modalOverlay {
+    padding: var(--spacing-xs);
+  }
+  .shiftManagement_modal {
+    margin: var(--spacing-xs);
+  }
+  .shiftManagement_modalHeader,
+  .shiftManagement_form {
+    padding: var(--spacing-lg);
+  }
+  .shiftManagement_formActions {
+    flex-direction: column-reverse;
+  }
+  .shiftManagement_actionButton {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Additional styles for elements used in JSX */
+.shiftManagement_section:last-child {
+  margin-bottom: 0;
+}

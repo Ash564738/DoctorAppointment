@@ -6,18 +6,18 @@ const schema = mongoose.Schema(
       type: mongoose.SchemaTypes.ObjectId,
       ref: "User",
       required: true,
-      index: true, // Add index for faster queries
+      index: true,
     },
     doctorId: {
       type: mongoose.SchemaTypes.ObjectId,
       ref: "User",
       required: true,
-      index: true, // Add index for faster queries
+      index: true,
     },
     date: {
-      type: Date, // Changed from String to Date for better performance
+      type: Date,
       required: true,
-      index: true, // Add index for date-based queries
+      index: true,
     },
     time: {
       type: String,
@@ -35,11 +35,6 @@ const schema = mongoose.Schema(
       maxlength: [1000, 'Symptoms description too long'],
       minlength: [3, 'Please provide at least 3 characters for symptoms']
     },
-    prescription: {
-      type: String,
-      required: false,
-      maxlength: [1000, 'Prescription too long']
-    },
     status: {
       type: String,
       default: "Pending",
@@ -47,76 +42,71 @@ const schema = mongoose.Schema(
         values: ["Pending", "Confirmed", "Completed", "Cancelled"],
         message: 'Invalid status'
       },
-      index: true // Add index for status-based queries
+      index: true
     },
     notes: {
       type: String,
       maxlength: [500, 'Notes too long']
-    // },
-    // timeSlotId: {
-    //   type: mongoose.SchemaTypes.ObjectId,
-    //   ref: "TimeSlot",
-    //   index: true
-    // },
-    // appointmentType: {
-    //   type: String,
-    //   enum: ['regular', 'emergency', 'follow-up', 'consultation', 'telemedicine'],
-    //   default: 'regular'
-    // },
-    // priority: {
-    //   type: String,
-    //   enum: ['low', 'normal', 'high', 'urgent'],
-    //   default: 'normal'
-    // },
-    // medicalRecordId: {
-    //   type: mongoose.SchemaTypes.ObjectId,
-    //   ref: "MedicalRecord"
-    // },
-    // paymentStatus: {
-    //   type: String,
-    //   enum: ['pending', 'paid', 'failed', 'refunded'],
-    //   default: 'pending',
-    //   index: true
-    // },
-    // paymentId: {
-    //   type: mongoose.SchemaTypes.ObjectId,
-    //   ref: "Payment"
-    // },
-    // cancellationReason: {
-    //   type: String,
-    //   maxlength: [300, 'Cancellation reason too long']
-    // },
-    // cancellationDate: {
-    //   type: Date
-    // },
-    // reminderSent: {
-    //   type: Boolean,
-    //   default: false
-    // },
-    // isRecurring: {
-    //   type: Boolean,
-    //   default: false
-    // },
-    // recurringPattern: {
-    //   frequency: {
-    //     type: String,
-    //     enum: ['weekly', 'biweekly', 'monthly']
-    //   },
-    //   endDate: Date,
-    //   occurrences: Number
-    // },
-    // rating: {
-    //   score: {
-    //     type: Number,
-    //     min: 1,
-    //     max: 5
-    //   },
-    //   feedback: String,
-    //   ratedAt: Date
-    // },
-    // estimatedDuration: {
-    //   type: Number, // in minutes
-    //   default: 30
+    },
+    timeSlotId: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "TimeSlot",
+      index: true
+    },
+    appointmentType: {
+      type: String,
+      enum: ['Regular', 'Emergency', 'Follow-up', 'Consultation'],
+      default: 'Regular'
+    },
+    priority: {
+      type: String,
+      enum: ['Low', 'Normal', 'High', 'Urgent'],
+      default: 'Normal'
+    },
+    medicalRecordId: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "MedicalRecord"
+    },
+    paymentStatus: {
+      type: String,
+      enum: ['Pending', 'Paid', 'Failed', 'Refunded'],
+      default: 'Pending',
+      index: true
+    },
+    paymentId: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "Payment"
+    },
+    cancellationReason: {
+      type: String,
+      maxlength: [300, 'Cancellation reason too long']
+    },
+    cancellationDate: {
+      type: Date
+    },
+    reminderSent: {
+      type: Boolean,
+      default: false
+    },
+    isRecurring: {
+      type: Boolean,
+      default: false
+    },
+    recurringPattern: {
+      frequency: {
+        type: String,
+        enum: ['Weekly', 'Biweekly', 'Monthly']
+      },
+      endDate: Date,
+      occurrences: Number
+    },
+    estimatedDuration: {
+      type: Number,
+      default: 30
+    },
+    prescriptionId: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "Prescription"
     }
   },
   {
@@ -124,12 +114,10 @@ const schema = mongoose.Schema(
   }
 );
 
-// Compound indexes for common queries
-schema.index({ doctorId: 1, date: 1 }); // Doctor's appointments by date
-schema.index({ userId: 1, status: 1 }); // User's appointments by status
-schema.index({ date: 1, status: 1 }); // Appointments by date and status
+schema.index({ doctorId: 1, date: 1 });
+schema.index({ userId: 1, status: 1 });
+schema.index({ date: 1, status: 1 });
 
-// Virtual for appointment datetime
 schema.virtual('appointmentDateTime').get(function() {
   const [hours, minutes] = this.time.split(':');
   const datetime = new Date(this.date);
@@ -137,19 +125,23 @@ schema.virtual('appointmentDateTime').get(function() {
   return datetime;
 });
 
-// Pre-save middleware to validate appointment time
 schema.pre('save', function(next) {
-  const appointmentDate = new Date(this.date);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  if (appointmentDate < today) {
-    next(new Error('Appointment date cannot be in the past'));
-  } else {
-    next();
+  if (this.isNew) {
+    const appointmentDate = this.date instanceof Date ? this.date : new Date(this.date);
+    if (isNaN(appointmentDate.getTime())) {
+      return next();
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (appointmentDate < today) {
+      if (this.status && this.status === 'Completed') {
+        return next();
+      }
+      return next(new Error('Appointment date cannot be in the past'));
+    }
   }
+  next();
 });
 
 const Appointment = mongoose.model("Appointment", schema);
-
 module.exports = Appointment;

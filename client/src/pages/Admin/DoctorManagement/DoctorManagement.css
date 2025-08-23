@@ -1,0 +1,606 @@
+.doctorManagement_page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+}
+
+.doctorManagement_container {
+  margin: 0 auto;
+  padding: var(--spacing-md) 0;
+  width: 70vw;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.doctorManagement_header {
+}
+
+.doctorManagement_title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: #333;
+  margin-bottom: var(--spacing-xs);
+}
+
+.doctorManagement_description {
+  color: #666;
+  font-size: var(--font-size-base);
+  margin-bottom: var(--spacing-sm);
+  font-weight: var(--font-weight-regular);
+}
+
+/* Search Container */
+.doctorManagement_searchContainer {
+}
+
+.doctorManagement_searchInput {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.doctorManagement_searchInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.doctorManagement_section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.doctorManagement_sectionHeader {
+  padding: 24px 24px 0 24px;
+}
+
+.doctorManagement_sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+/* Filters */
+.doctorManagement_filters {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.doctorManagement_filterButton {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+}
+
+.doctorManagement_filterButton:hover {
+}
+
+.doctorManagement_filterActive {
+  background: var(--primary-color);
+  color: white !important;
+}
+
+/* Table */
+.doctorManagement_tableContainer {
+  overflow-x: auto;
+}
+
+.doctorManagement_table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.doctorManagement_tableHeader {
+  background: #f8fafc;
+}
+
+.doctorManagement_tableHeaderCell {
+  padding: var(--spacing-md);
+  text-align: left;
+  font-weight: var(--font-weight-bold);
+  color: #333;
+  border-bottom: 2px solid #dee2e6;
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.doctorManagement_tableBody {
+  background: white;
+}
+
+.doctorManagement_tableRow {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s;
+}
+
+.doctorManagement_tableRow:hover {
+  background: #f8fafc;
+}
+
+.doctorManagement_tableCell {
+  padding: var(--spacing-md);
+  color: #333;
+  font-size: var(--font-size-base);
+}
+
+.doctorManagement_doctorInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doctorManagement_doctorName {
+  font-weight: var(--font-weight-medium);
+  color: #333;
+  font-size: var(--font-size-base);
+}
+
+.doctorManagement_doctorEmail,
+.doctorManagement_address,
+.doctorManagement_branchEmail,
+.doctorManagement_hours {
+  color: #666;
+  font-size: var(--font-size-sm);
+}
+
+.doctorManagement_specialty {
+  color: var(--primary-color);
+  font-weight: var(--font-weight-medium);
+  background: var(--light-blue);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+}
+
+.doctorManagement_contactInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doctorManagement_phone {
+  color: #333;
+  font-weight: 500;
+}
+
+.doctorManagement_address {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.doctorManagement_experience {
+  color: #28a745;
+  font-weight: 500;
+}
+
+.doctorManagement_statusBadge {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.doctorManagement_statusApproved {
+  background: #d4edda;
+  color: #155724;
+}
+
+.doctorManagement_statusPending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.doctorManagement_actionButtons {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.doctorManagement_approveButton {
+  background: #28a745;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.doctorManagement_approveButton:hover {
+  background: #218838;
+}
+
+.doctorManagement_rejectButton {
+  background: #ffc107;
+  color: #212529;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.doctorManagement_rejectButton:hover {
+  background: #e0a800;
+}
+
+.doctorManagement_editButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.doctorManagement_editButton:hover {
+  background: #0056b3;
+}
+
+.doctorManagement_deleteButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.doctorManagement_deleteButton:hover {
+  background: #c82333;
+}
+
+
+.doctorManagement_approveButton,
+.doctorManagement_rejectButton,
+.doctorManagement_editButton,
+.doctorManagement_deleteButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Loading and Error States */
+.doctorManagement_loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px;
+}
+
+.doctorManagement_spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: doctorManagement_spin 1s linear infinite;
+}
+
+.doctorManagement_loadingText {
+  margin-top: var(--spacing-sm);
+  color: #666;
+  font-size: var(--font-size-base);
+}
+
+.doctorManagement_errorMessage {
+  color: #dc3545;
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--spacing-sm);
+}
+
+.doctorManagement_retryButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+}
+
+.doctorManagement_noDataContainer {
+  padding: 40px;
+  text-align: center;
+}
+
+.doctorManagement_noDataMessage {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+@keyframes doctorManagement_spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+/* Responsive Design */
+@media (max-width: 1300px) {
+  .doctorManagement_container {
+    width: 90vw;
+  }
+}
+/* Responsive Design */
+@media (max-width: 768px) {
+  .doctorManagement_container {
+    padding: var(--spacing-sm);
+  }
+  
+  .doctorManagement_title {
+    font-size: var(--font-size-lg);
+  }
+  
+  .doctorManagement_filters {
+    flex-wrap: wrap;
+  }
+  
+  .doctorManagement_tableHeaderCell,
+  .doctorManagement_tableCell {
+    padding: var(--spacing-xs) var(--spacing-xs);
+  }
+  
+  .doctorManagement_actionButtons {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  .doctorManagement_title {
+    font-size: var(--font-size-base);
+  }
+  
+  .doctorManagement_table {
+    font-size: var(--font-size-sm);
+  }
+  
+  .doctorManagement_filterButton {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* Modal Styles */
+.doctorManagement_modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.doctorManagement_modalContent {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.doctorManagement_modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 0;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.doctorManagement_modalTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.doctorManagement_modalCloseButton {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+  padding: 4px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.doctorManagement_modalCloseButton:hover {
+  background-color: #f1f5f9;
+}
+
+.doctorManagement_modalBody {
+  padding: 0 24px;
+}
+
+.doctorManagement_formSections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.doctorManagement_formSection {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.doctorManagement_sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16px;
+  margin-top: 0;
+}
+
+.doctorManagement_formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.doctorManagement_formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.doctorManagement_formGroupFull {
+  grid-column: 1 / -1;
+}
+
+.doctorManagement_formLabel {
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.doctorManagement_formInput,
+.doctorManagement_formSelect,
+.doctorManagement_formTextarea {
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.doctorManagement_formInput:focus,
+.doctorManagement_formSelect:focus,
+.doctorManagement_formTextarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.doctorManagement_formTextarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.doctorManagement_modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 20px;
+}
+
+.doctorManagement_modalCancelButton {
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.doctorManagement_modalCancelButton:hover {
+  background: #e9ecef;
+}
+
+.doctorManagement_modalSaveButton {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.doctorManagement_modalSaveButton:hover {
+  background: #0056b3;
+}
+
+/* Modal Responsive Design */
+@media (max-width: 768px) {
+  .doctorManagement_modalContent {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .doctorManagement_formGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .doctorManagement_modalHeader,
+  .doctorManagement_modalBody,
+  .doctorManagement_modalFooter {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  .doctorManagement_formSections {
+    gap: 16px;
+  }
+  
+  .doctorManagement_formSection {
+    padding: 16px;
+  }
+}
+
+/* Pagination Styles */
+.doctorManagement_pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin: 16px 0 16px 0;
+}
+
+.doctorManagement_pagination button {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #333;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.doctorManagement_pagination button.active,
+.doctorManagement_pagination button:focus {
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+.doctorManagement_pagination button:disabled {
+  background: #e9ecef;
+  color: #aaa;
+  cursor: not-allowed;
+}

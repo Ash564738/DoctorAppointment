@@ -7,6 +7,7 @@ const { validationResult } = require('express-validator');
 
 // Submit leave request
 const submitLeaveRequest = async (req, res) => {
+  console.log('[DEBUG] req.user in submitLeaveRequest:', req.user);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -26,7 +27,8 @@ const submitLeaveRequest = async (req, res) => {
     } = req.body;
 
     // Check if user is staff (Doctor or Admin)
-    const user = await User.findById(req.userId);
+    const userId = req.user.userId || req.user._id;
+    const user = await User.findById(userId);
     if (!user || (user.role !== 'Doctor' && user.role !== 'Admin')) {
       return res.status(403).json({
         success: false,
@@ -36,7 +38,7 @@ const submitLeaveRequest = async (req, res) => {
 
     // Check for overlapping leave requests
     const overlappingLeave = await LeaveRequest.findOne({
-      staffId: req.userId,
+      doctorId: userId,
       status: { $in: ['pending', 'approved'] },
       $or: [
         {
@@ -54,7 +56,7 @@ const submitLeaveRequest = async (req, res) => {
     }
 
     const leaveRequest = new LeaveRequest({
-      staffId: req.userId,
+      doctorId: userId,
       leaveType,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
@@ -64,17 +66,15 @@ const submitLeaveRequest = async (req, res) => {
 
     await leaveRequest.save();
 
-    // Notify admins about the leave request
     const admins = await User.find({ role: 'Admin' });
     const notifications = admins.map(admin => ({
       userId: admin._id,
       content: `${user.firstname} ${user.lastname} has submitted a ${leaveType} leave request from ${startDate} to ${endDate}`
     }));
-
     await Notification.insertMany(notifications);
 
     const populatedRequest = await LeaveRequest.findById(leaveRequest._id)
-      .populate('staffId', 'firstname lastname email role');
+      .populate('doctorId', 'firstname lastname email role');
 
     res.status(201).json({
       success: true,
@@ -93,37 +93,38 @@ const submitLeaveRequest = async (req, res) => {
 // Get leave requests (staff gets their own, admin gets all)
 const getLeaveRequests = async (req, res) => {
   try {
-    const { status, staffId, startDate, endDate, page = 1, limit = 10 } = req.query;
-    
+    // Debug: log user and role
+    console.log('[LEAVE DEBUG] req.user:', req.user);
+    console.log('[LEAVE DEBUG] req.userRole:', req.userRole);
+    const { status, doctorId, startDate, endDate, page = 1, limit = 10 } = req.query;
     let query = {};
-
-    if (req.userRole === 'Admin') {
-      if (staffId) {
-        query.staffId = staffId;
+    if (req.userRole === 'Admin' || (req.user && req.user.role === 'Admin')) {
+      if (doctorId) {
+        query.doctorId = doctorId;
       }
     } else {
-      query.staffId = req.userId;
+      const userId = req.user.userId || req.user._id;
+      query.doctorId = userId;
     }
-
     if (status && status !== 'all') {
       query.status = status;
     }
-
     if (startDate || endDate) {
       query.startDate = {};
       if (startDate) query.startDate.$gte = new Date(startDate);
       if (endDate) query.startDate.$lte = new Date(endDate);
     }
-
+    // Debug: log the query
+    console.log('[LEAVE DEBUG] Mongo query:', query);
     const leaveRequests = await LeaveRequest.find(query)
-      .populate('staffId', 'firstname lastname email role')
+      .populate('doctorId', 'firstname lastname email role')
       .populate('approvedBy', 'firstname lastname')
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit));
-
     const total = await LeaveRequest.countDocuments(query);
-
+    // Debug: log the result
+    console.log('[LEAVE DEBUG] leaveRequests:', leaveRequests);
     res.json({
       success: true,
       leaveRequests,
@@ -164,7 +165,7 @@ const processLeaveRequest = async (req, res) => {
     }
 
     const leaveRequest = await LeaveRequest.findById(requestId)
-      .populate('staffId', 'firstname lastname email');
+      .populate('doctorId', 'firstname lastname email');
 
     if (!leaveRequest) {
       return res.status(404).json({
@@ -197,10 +198,9 @@ const processLeaveRequest = async (req, res) => {
 
     // Notify the staff member
     const notification = new Notification({
-      userId: leaveRequest.staffId._id,
+      userId: leaveRequest.doctorId._id,
       content: `Your ${leaveRequest.leaveType} leave request has been ${status}${status === 'rejected' && rejectionReason ? '. Reason: ' + rejectionReason : ''}`
     });
-
     await notification.save();
 
     const admin = await User.findById(req.userId);
@@ -235,7 +235,7 @@ const blockSlotsForLeave = async (leaveRequest) => {
     for (const date of dates) {
       await TimeSlot.updateMany(
         {
-          doctorId: leaveRequest.staffId,
+          doctorId: leaveRequest.doctorId,
           date: date
         },
         {
@@ -267,7 +267,8 @@ const cancelLeaveRequest = async (req, res) => {
     }
 
     // Only the requester or admin can cancel
-    if (leaveRequest.staffId.toString() !== req.userId && req.userRole !== 'Admin') {
+    const userId = req.user.userId || req.user._id;
+    if (leaveRequest.doctorId.toString() !== userId && req.userRole !== 'Admin') {
       return res.status(403).json({
         success: false,
         message: 'Unauthorized to cancel this leave request'
@@ -290,16 +291,16 @@ const cancelLeaveRequest = async (req, res) => {
     await leaveRequest.save();
 
     // Notify relevant parties
-    const user = await User.findById(req.userId);
-    if (leaveRequest.staffId.toString() !== req.userId) {
-      // Admin cancelled, notify staff
+    const user = await User.findById(userId);
+    if (leaveRequest.doctorId.toString() !== userId) {
+      // Admin cancelled, notify doctor
       const notification = new Notification({
-        userId: leaveRequest.staffId,
+        userId: leaveRequest.doctorId,
         content: `Your leave request has been cancelled by ${user.firstname} ${user.lastname}${reason ? '. Reason: ' + reason : ''}`
       });
       await notification.save();
     } else {
-      // Staff cancelled, notify admins
+      // Doctor cancelled, notify admins
       const admins = await User.find({ role: 'Admin' });
       const notifications = admins.map(admin => ({
         userId: admin._id,
@@ -336,11 +337,10 @@ const unblockSlotsForLeave = async (leaveRequest) => {
     // Unblock time slots that were blocked for this leave
     for (const date of dates) {
       const slots = await TimeSlot.find({
-        doctorId: leaveRequest.staffId,
+        doctorId: leaveRequest.doctorId,
         date: date,
         blockReason: `${leaveRequest.leaveType} leave`
       });
-
       for (const slot of slots) {
         slot.isBlocked = false;
         slot.blockReason = '';
@@ -357,8 +357,8 @@ const unblockSlotsForLeave = async (leaveRequest) => {
 // Get leave statistics
 const getLeaveStatistics = async (req, res) => {
   try {
-    const { year = new Date().getFullYear(), staffId } = req.query;
 
+    const { year = new Date().getFullYear(), doctorId } = req.query;
     let matchQuery = {
       status: 'approved',
       startDate: {
@@ -366,11 +366,11 @@ const getLeaveStatistics = async (req, res) => {
         $lte: new Date(`${year}-12-31`)
       }
     };
-
     if (req.userRole !== 'Admin') {
-      matchQuery.staffId = mongoose.Types.ObjectId(req.userId);
-    } else if (staffId) {
-      matchQuery.staffId = mongoose.Types.ObjectId(staffId);
+      const userId = req.user.userId || req.user._id;
+      matchQuery.doctorId = mongoose.Types.ObjectId(userId);
+    } else if (doctorId) {
+      matchQuery.doctorId = mongoose.Types.ObjectId(doctorId);
     }
 
     const statistics = await LeaveRequest.aggregate([

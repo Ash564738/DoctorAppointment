@@ -1,0 +1,45 @@
+.home-page {
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+scroll-behavior: smooth;
+}
+
+.home-page__content {
+flex: 1;
+animation: fadeIn 0.8s ease-out;
+}
+
+/* Add any home page specific styles here */
+.home-page__content > * {
+width: 100%;
+}
+
+@keyframes fadeIn {
+from {
+opacity: 0;
+}
+to {
+opacity: 1;
+}
+}
+
+/* Section spacing */
+.home-page__content > section {
+padding: 2rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+.home-page__content > section {
+padding: 1.5rem 0;
+}
+}
+
+@media (max-width: 480px) {
+.home-page__content > section {
+padding: 1rem 0;
+}
+
+}
+

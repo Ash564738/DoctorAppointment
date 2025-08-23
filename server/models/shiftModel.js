@@ -53,7 +53,6 @@ const shiftSchema = mongoose.Schema(
     },
     department: {
       type: String,
-      enum: ['General', 'Cardiology', 'Dermatology', 'Neurology', 'Orthopedics', 'Pediatrics', 'Psychiatry', 'Radiology', 'Emergency'],
       default: 'General'
     },
     isActive: {
@@ -112,4 +111,5 @@ shiftSchema.pre('save', function(next) {
 
 const Shift = mongoose.model("Shift", shiftSchema);
 
+module.exports = Shift;
 module.exports = Shift;

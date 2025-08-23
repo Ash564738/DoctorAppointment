@@ -1,0 +1,225 @@
+@import url('../../../styles/app.css');
+
+/* Professional, clean medical look */
+.footer_root {
+  background: #fff;
+  border-top: 1px solid #e3e8ee;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  box-shadow: 0 -2px 16px 0 rgba(25, 118, 210, 0.04);
+}
+
+.footer_container {
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2rem;
+  width: 80vw;
+  position: relative;
+  z-index: 1;
+  backdrop-filter: none;
+  padding: 2rem;
+}
+
+.footer_sectionTitle {
+  font-size: 1.18rem;
+  font-weight: 700;
+  margin-bottom: 1.1rem;
+  color: black;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
+.footer_aboutSection {
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.footer_aboutText {
+  font-size: 1.04rem;
+  color: #444;
+  margin-bottom: 1.2rem;
+  margin-top: 0.2rem;
+  line-height: 1.6;
+  font-weight: 400;
+  text-shadow: none;
+}
+
+.footer_backToTopBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 0.4em 1.1em;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  box-shadow: 0 2px 8px 0 rgba(25, 118, 210, 0.08);
+  transition: background 0.2s, transform 0.2s;
+  outline: none;
+}
+.footer_backToTopBtn:hover {
+  background: var(--primary-color-dark);
+  transform: translateY(-2px) scale(1.04);
+}
+
+.footer_linksSection,
+.footer_socialSection,
+.footer_contactSection {
+  flex: 1 1 180px;
+  min-width: 160px;
+}
+
+.footer_linksList,
+.footer_socialList,
+.footer_contactList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer_linkItem,
+.footer_socialItem,
+.footer_contactItem {
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+}
+
+.footer_link {
+  color: black;
+}
+.footer_link:hover {
+}
+
+.footer_socialList {
+  display: flex;
+  gap: 1.1rem;
+  align-items: center;
+}
+
+.footer_socialLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  color: #fff;
+  font-size: 1.25rem;
+  transition: box-shadow 0.2s, transform 0.2s, background 0.2s;
+  box-shadow: 0 2px 8px 0 rgba(25, 118, 210, 0.08);
+  background: #1976d2;
+  border: none;
+}
+.footer_socialItem:nth-child(1) .footer_socialLink {
+  background: #3b5998;
+}
+.footer_socialItem:nth-child(2) .footer_socialLink {
+  background: #ff0000;
+}
+.footer_socialItem:nth-child(3) .footer_socialLink {
+  background: #e1306c;
+}
+
+.footer_socialLink:hover {
+  box-shadow: 0 4px 16px 0 rgba(25, 118, 210, 0.12);
+  transform: translateY(-2px) scale(1.07);
+  opacity: 0.92;
+  background: #125ea2;
+}
+
+.footer_contactLink {
+  color: black;
+}
+.footer_contactLink:hover {
+
+}
+
+.footer_contactItem {
+  font-size: 1.01rem;
+  gap: 0.5em;
+}
+
+.footer_contactIcon {
+  color: black;
+  margin-right: 0.4em;
+  font-size: 1.1em;
+  vertical-align: middle;
+  filter: none;
+}
+
+.footer_bottom {
+  text-align: center;
+  font-size: 1rem;
+  letter-spacing: 0.2px;
+  background: var(--light-green);
+  padding: 1rem 0;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  box-shadow: none;
+  position: relative;
+  z-index: 1;
+}
+
+.footer_copyrightIcon {
+  font-size: 1.1em;
+  margin-right: 0.2em;
+  vertical-align: middle;
+  color: black;
+}
+
+@media screen and (max-width: 1100px) {
+  .footer_container {
+    width: 96vw;
+    gap: 1.2rem;
+    padding: 2rem 1.2rem 1.2rem 1.2rem;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .footer_container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+    width: 98vw;
+    padding: 1.5rem 0.7rem 1.2rem 0.7rem;
+  }
+  .footer_aboutSection,
+  .footer_linksSection,
+  .footer_socialSection,
+  .footer_contactSection {
+    min-width: 0;
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 1.2rem;
+  }
+}
+
+@media screen and (max-width: 550px) {
+  .footer_container {
+    width: 99vw;
+    padding-bottom: 1rem;
+    padding-top: 1rem;
+  }
+  .footer_socialList {
+    gap: 0.7rem;
+  }
+  .footer_sectionTitle {
+    font-size: 1.05rem;
+  }
+  .footer_aboutSection,
+  .footer_linksSection,
+  .footer_socialSection,
+  .footer_contactSection {
+    padding: 1rem 0.7rem 1.1rem 0.7rem;
+  }
+}

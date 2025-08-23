@@ -2,18 +2,15 @@ const express = require("express");
 const auth = require("../middleware/auth");
 const notificationController = require("../controllers/notificationController");
 
-const notificationRouter = express.Router();
+const router = express.Router();
 
-notificationRouter.get(
-  "/getallnotifs",
-  auth,
-  notificationController.getallnotifs
-);
+// Get all notifications
+router.get("/getallnotifs", auth, notificationController.getallnotifs);
 
-notificationRouter.delete(
-  "/clearallnotifs",
-  auth,
-  notificationController.clearallnotifs
-);
+// Get all patient notifications
+router.get("/patient", auth, notificationController.getallnotifs);
 
-module.exports = notificationRouter;
+// Clear all notifications
+router.delete("/clearallnotifs", auth, notificationController.clearallnotifs);
+
+module.exports = router;

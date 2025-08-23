@@ -2,45 +2,29 @@
 class ClientLogger {
   constructor() {
     this.isDevelopment = process.env.NODE_ENV === 'development';
-    // Set default log level to 'warn' to reduce noise, only show warnings and errors
     this.logLevel = process.env.REACT_APP_LOG_LEVEL || 'warn';
     this.sessionId = this.generateSessionId();
-
-    // Log levels hierarchy
-    this.levels = {
-      error: 0,
-      warn: 1,
-      info: 2,
-      debug: 3,
-      trace: 4
-    };
-
-    // Initialize performance tracking
-    this.performanceMarks = new Map();
+    this.levels = { error: 0, warn: 1, info: 2, debug: 3, trace: 4 };
   }
 
   generateSessionId() {
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
+  generateLogId() {
+    return `log_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+  }
+
   shouldLog(level) {
     return this.levels[level] <= this.levels[this.logLevel];
   }
 
-  formatMessage(level, message, context = {}) {
-    const timestamp = new Date().toISOString();
-    const user = this.getCurrentUser();
-    
+  getEnvironmentInfo() {
     return {
-      timestamp,
-      level: level.toUpperCase(),
-      message,
-      sessionId: this.sessionId,
-      url: window.location.href,
       userAgent: navigator.userAgent,
-      userId: user?.id || 'anonymous',
-      userRole: user?.role || 'unknown',
-      ...context
+      platform: navigator.platform,
+      language: navigator.language,
+      url: window.location.href,
     };
   }
 
@@ -51,100 +35,119 @@ class ClientLogger {
         const payload = JSON.parse(atob(token.split('.')[1]));
         return { id: payload.userId, role: payload.role };
       }
-    } catch (error) {
-      // Ignore token parsing errors
-    }
+    } catch (error) {}
     return null;
   }
 
-  // Core logging methods
-  error(message, error = null, context = {}) {
-    if (!this.shouldLog('error')) return;
-    
-    const logData = this.formatMessage('error', message, {
-      ...context,
-      error: error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        fileName: error.fileName,
-        lineNumber: error.lineNumber,
-        columnNumber: error.columnNumber
-      } : null
-    });
+  formatMessage(level, message, context = {}) {
+    const timestamp = new Date().toISOString();
+    const user = this.getCurrentUser();
+    const env = this.getEnvironmentInfo();
 
-    console.error('🔴 ERROR:', message, logData);
-    
-    // Send critical errors to server in production
-    if (!this.isDevelopment && error) {
-      this.sendErrorToServer(logData);
+    return {
+      logId: this.generateLogId(),
+      timestamp,
+      level: level.toUpperCase(),
+      message,
+      sessionId: this.sessionId,
+      userId: user?.id || 'anonymous',
+      userRole: user?.role || 'unknown',
+      ...env,
+      ...context,
+    };
+  }
+
+  log(level, message, context = {}) {
+    if (!this.shouldLog(level)) return;
+    const logData = this.formatMessage(level, message, context);
+
+    // Enhanced error printing
+    if (level === 'error' && context.error) {
+      // Print error details clearly
+      console.error('ERROR:', message);
+      if (typeof context.error === 'object') {
+        // Print error properties
+        if (context.error.message) {
+          console.error('Message:', context.error.message);
+        }
+        if (context.error.stack) {
+          console.error('Stack:', context.error.stack);
+        }
+        // Print all properties for debugging
+        console.error('Error object:', context.error);
+      } else {
+        // Print error as string
+        console.error('Error:', context.error);
+      }
+      // Print the rest of the logData for context
+      console.error('Context:', logData);
+      if (!this.isDevelopment && context.error) this.sendErrorToServer(logData);
+      return;
     }
+
+    // For other levels, print as before
+    switch (level) {
+      case 'warn':
+        console.warn('WARN:', message, logData);
+        break;
+      case 'info':
+        console.info('INFO:', message, logData);
+        break;
+      case 'debug':
+        console.log('DEBUG:', message, logData);
+        break;
+      case 'trace':
+        console.trace('TRACE:', message, logData);
+        break;
+      default:
+        console.log('LOG:', message, logData);
+    }
+  }
+
+  error(message, error = null, context = {}) {
+    this.log('error', message, { ...context, error: error ? this.sanitizeError(error) : null, source: context.source || 'client' });
   }
 
   warn(message, context = {}) {
-    if (!this.shouldLog('warn')) return;
-    
-    const logData = this.formatMessage('warn', message, context);
-    console.warn('🟡 WARN:', message, logData);
+    this.log('warn', message, { ...context, source: context.source || 'client' });
   }
 
   info(message, context = {}) {
-    if (!this.shouldLog('info')) return;
-    
-    const logData = this.formatMessage('info', message, context);
-    console.info('🔵 INFO:', message, logData);
+    this.log('info', message, { ...context, source: context.source || 'client' });
   }
 
   debug(message, context = {}) {
-    if (!this.shouldLog('debug')) return;
-    
-    const logData = this.formatMessage('debug', message, context);
-    console.log('🟢 DEBUG:', message, logData);
+    this.log('debug', message, { ...context, source: context.source || 'client' });
   }
 
   trace(message, context = {}) {
-    if (!this.shouldLog('trace')) return;
-    
-    const logData = this.formatMessage('trace', message, context);
-    console.trace('⚪ TRACE:', message, logData);
+    this.log('trace', message, { ...context, source: context.source || 'client' });
   }
 
-  // Specialized logging methods (simplified)
-  api(method, url, status, responseTime, data = {}, context = {}) {
-    // Only log errors and warnings
-    if (status >= 400) {
-      const level = status >= 500 ? 'error' : 'warn';
-      this[level](`API ${method} ${url} - ${status}`, {
-        method,
-        url,
-        status,
-        responseTime: `${responseTime}ms`,
-        ...context
-      });
-    }
-  }
-
-  // No-op methods for backward compatibility (removed functionality)
-  component() { /* no-op */ }
-  startPerformanceTimer() { /* no-op */ }
-  endPerformanceTimer() { /* no-op */ }
-  socket() { /* no-op */ }
-  chat() { /* no-op */ }
-  user() { /* no-op */ }
-  navigation() { /* no-op */ }
-  performance() { /* no-op */ }
-  form() { /* no-op */ }
-
-
-
-  // Form interaction logging
-  form(formName, action, fieldData = {}, context = {}) {
-    this.debug(`Form ${formName}: ${action}`, {
-      form: formName,
-      action,
-      fields: Object.keys(fieldData),
-      ...context
+  // API logging with more detail
+  api({ method, url, status, responseTime, requestData, responseData, tags = [], ...context }) {
+    const level = status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info';
+    this.log(level, `API ${method} ${url} - ${status}`, {
+      method,
+      url,
+      status,
+      responseTime: `${responseTime}ms`,
+      requestData: this.sanitizeData(requestData),
+      responseData: this.sanitizeData(responseData),
+      tags,
+      source: 'api',
+      ...context,
     });
+  }
+
+  // Add component/feature context
+  component(message, component, context = {}) {
+    this.debug(message, { ...context, component, source: 'component' });
+  }
+
+  // Add tags for grouping
+  tag(message, tags = [], context = {}) {
+    this.info(message, { ...context, tags, source: 'tagged' });
   }
 
   // Error boundary logging
@@ -152,32 +155,28 @@ class ClientLogger {
     this.error('React Error Boundary caught error', error, {
       errorInfo,
       componentStack,
-      type: 'error-boundary'
+      type: 'error-boundary',
+      source: 'react',
     });
   }
 
-  // Utility methods
-  sanitizeProps(props) {
-    if (!props || typeof props !== 'object') return props;
-    
-    const sanitized = { ...props };
-    // Remove sensitive data
-    delete sanitized.password;
-    delete sanitized.token;
-    delete sanitized.creditCard;
-    
-    return sanitized;
+  sanitizeError(error) {
+    if (!error) return null;
+    return {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      fileName: error.fileName,
+      lineNumber: error.lineNumber,
+      columnNumber: error.columnNumber,
+    };
   }
 
   sanitizeData(data) {
     if (!data || typeof data !== 'object') return data;
-    
     const sanitized = JSON.parse(JSON.stringify(data));
-    
-    // Remove sensitive fields recursively
     const removeSensitiveFields = (obj) => {
       if (typeof obj !== 'object' || obj === null) return obj;
-      
       for (const key in obj) {
         if (typeof obj[key] === 'object') {
           removeSensitiveFields(obj[key]);
@@ -187,7 +186,6 @@ class ClientLogger {
       }
       return obj;
     };
-    
     return removeSensitiveFields(sanitized);
   }
 
@@ -195,19 +193,16 @@ class ClientLogger {
     try {
       await fetch('/api/logs/client-error', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(errorData)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(errorData),
       });
     } catch (error) {
       console.error('Failed to send error to server:', error);
     }
   }
 
-  // Group related logs
   group(label, callback) {
-    console.group(`📁 ${label}`);
+    console.group(`${label}`);
     try {
       callback();
     } finally {
@@ -215,16 +210,19 @@ class ClientLogger {
     }
   }
 
-  // Table logging for structured data
   table(data, label = '') {
     if (this.shouldLog('debug')) {
-      if (label) console.log(`📊 ${label}:`);
+      if (label) console.log(`[DATA] ${label}:`);
       console.table(data);
     }
   }
+
+  // Add this method for compatibility
+  user() {
+    return this.getCurrentUser();
+  }
 }
 
-// Create singleton instance
 const logger = new ClientLogger();
 
 export default logger;

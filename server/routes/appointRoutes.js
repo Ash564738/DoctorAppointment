@@ -1,21 +1,27 @@
 const express = require("express");
+const router = express.Router();
+
 const auth = require("../middleware/auth");
 const appointmentController = require("../controllers/appointmentController");
+const doctorStatsController = require("../controllers/doctorStatsController");
 
-const appointRouter = express.Router();
+// Walk-in queue routes
+router.get("/walkin-queue", appointmentController.getWalkInQueue);
+router.post("/walkin-queue", appointmentController.addToWalkInQueue);
 
-appointRouter.get(
-  "/getallappointments",
-  auth,
-  appointmentController.getallappointments
-);
+// Appointment routes
+router.get("/getallappointments", auth, appointmentController.getallappointments);
+router.post("/bookappointment", auth, appointmentController.bookappointment);
+router.put("/completed", auth, appointmentController.completed);
+router.put("/update/:appointmentId", auth, appointmentController.updateAppointment);
+router.get("/upcoming", auth, appointmentController.getUpcomingAppointments);
 
-appointRouter.post(
-  "/bookappointment",
-  auth,
-  appointmentController.bookappointment
-);
+// Doctor and patient appointment routes
+router.get("/doctor", auth, appointmentController.getDoctorAppointments);
+router.get("/doctor-stats", auth, doctorStatsController.getDoctorStats);
+router.get("/doctor-patients", auth, doctorStatsController.getDoctorPatients);
+router.get("/doctor-performance", auth, doctorStatsController.getDoctorPerformance);
+router.get("/patient", auth, appointmentController.getPatientAppointments);
+router.get("/patient-stats", auth, appointmentController.getPatientStats);
 
-appointRouter.put("/completed", auth, appointmentController.completed);
-
-module.exports = appointRouter;
+module.exports = router;

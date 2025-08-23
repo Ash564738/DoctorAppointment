@@ -1,0 +1,194 @@
+/* Profile Component Styles */
+.profile_container {
+  min-height: 100vh;
+  background: var(--secondary-color);
+  font-family: var(--font-family);
+  padding: 32px 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.profile_content {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  padding: 32px 28px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Header Styles */
+.profile_header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile_title {
+  color: var(--text-color);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.profile_profilePic {
+  border-radius: 50%;
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Form Styles */
+.profile_form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile_formRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.profile_input,
+.profile_select,
+.profile_textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: var(--border-radius-md);
+  font-size: 1rem;
+  color: var(--text-color);
+  background: var(--white);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.profile_input:focus,
+.profile_select:focus,
+.profile_textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(45, 171, 196, 0.15);
+}
+
+.profile_textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.profile_select {
+  cursor: pointer;
+}
+
+/* Doctor Section */
+.profile_doctorSection {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 24px;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.profile_doctorTitle {
+  color: var(--text-color);
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+/* Submit Button */
+.profile_submitButton {
+  background: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: var(--border-radius-md);
+  padding: 14px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 10px;
+  box-shadow: 0 2px 8px rgba(45, 171, 196, 0.08);
+}
+
+.profile_submitButton:hover {
+  background: var(--primary-color-dark);
+  box-shadow: 0 4px 16px rgba(45, 171, 196, 0.13);
+  transform: translateY(-2px);
+}
+
+.profile_submitButton:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 900px) {
+  .profile_content {
+    max-width: 98vw;
+    padding: 18px 6vw;
+  }
+}
+
+@media (max-width: 600px) {
+  .profile_content {
+    padding: 10px 2vw;
+  }
+
+  .profile_formRow {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .profile_profilePic {
+    width: 70px;
+    height: 70px;
+  }
+
+  .profile_title {
+    font-size: 1.3rem;
+  }
+}
+  .profile_doctorSection {
+    padding-top: 20px;
+    margin-top: 20px;
+  }
+
+@media (max-width: 480px) {
+  .profile_container {
+    padding: 10px;
+  }
+
+  .profile_header {
+    padding: 15px;
+  }
+
+  .profile_form {
+    padding: 15px;
+    gap: 15px;
+  }
+
+  .profile_input,
+  .profile_select,
+  .profile_textarea {
+    padding: 10px 12px;
+  }
+
+  .profile_submitButton {
+    padding: 12px 20px;
+  }
+}
+
