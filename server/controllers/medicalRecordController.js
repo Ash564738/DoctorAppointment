@@ -14,29 +14,32 @@ const createMedicalRecord = async (req, res) => {
         errors: errors.array()
       });
     }
-    const {
-      patientId,
-      appointmentId,
-      chiefComplaint,
-      historyOfPresentIllness,
-      pastMedicalHistory,
-      familyHistory,
-      socialHistory,
-      allergies,
-      currentMedications,
-      vitalSigns,
-      physicalExamination,
-      assessment,
-      diagnosis,
-      treatment,
-      prescriptions,
-      labOrders,
-      imagingOrders,
-      followUp,
-      referrals,
-      isConfidential
-    } = req.body;
-    const appointment = await Appointment.findById(appointmentId)
+    const allowedFields = [
+      'patientId',
+      'appointmentId',
+      'chiefComplaint',
+      'symptoms',
+      'historyOfPresentIllness',
+      'pastMedicalHistory',
+      'familyHistory',
+      'socialHistory',
+      'allergies',
+      'healthMetricsIds',
+      'prescriptionIds',
+      'physicalExamination',
+      'assessment',
+      'diagnosis',
+      'treatment',
+      'followUp',
+      'attachments'
+    ];
+    const data = {};
+    for (const key of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+        data[key] = req.body[key];
+      }
+    }
+    const appointment = await Appointment.findById(data.appointmentId)
       .populate('userId')
       .populate('doctorId');
     if (!appointment) {
@@ -51,42 +54,17 @@ const createMedicalRecord = async (req, res) => {
         message: "Only the assigned doctor can create medical records"
       });
     }
-    const existingRecord = await MedicalRecord.findOne({ appointmentId });
+    const existingRecord = await MedicalRecord.findOne({ appointmentId: data.appointmentId });
     if (existingRecord) {
       return res.status(400).json({
         success: false,
         message: "Medical record already exists for this appointment"
       });
     }
-    if (vitalSigns && vitalSigns.height && vitalSigns.weight) {
-      const heightInMeters = vitalSigns.height / 100;
-      vitalSigns.bmi = parseFloat((vitalSigns.weight / (heightInMeters * heightInMeters)).toFixed(1));
-    }
-    const medicalRecord = new MedicalRecord({
-      patientId: patientId || appointment.userId._id,
-      doctorId: req.userId,
-      appointmentId,
-      visitDate: appointment.date,
-      chiefComplaint,
-      historyOfPresentIllness,
-      pastMedicalHistory,
-      familyHistory,
-      socialHistory,
-      allergies,
-      currentMedications,
-      vitalSigns,
-      physicalExamination,
-      assessment,
-      diagnosis,
-      treatment,
-      prescriptions,
-      labOrders,
-      imagingOrders,
-      followUp,
-      referrals,
-      isConfidential: isConfidential || false
-    });
-
+    data.patientId = data.patientId || appointment.userId._id;
+    data.doctorId = req.userId;
+    data.visitDate = appointment.date;
+    const medicalRecord = new MedicalRecord(data);
     await medicalRecord.save();
     appointment.medicalRecordId = medicalRecord._id;
     await appointment.save();
@@ -97,7 +75,20 @@ const createMedicalRecord = async (req, res) => {
     const populatedRecord = await MedicalRecord.findById(medicalRecord._id)
       .populate('patientId', 'firstname lastname email dateOfBirth gender')
       .populate('doctorId', 'firstname lastname')
-      .populate('appointmentId');
+      .populate('appointmentId')
+      .populate({
+        path: 'prescriptionIds',
+        populate: [
+          { path: 'doctorId', select: 'firstname lastname specialization' },
+          { path: 'patientId', select: 'firstname lastname email' }
+        ]
+      })
+      .populate({
+        path: 'healthMetricsIds',
+        populate: [
+          { path: 'userId', select: 'firstname lastname email' }
+        ]
+      });
     res.status(201).json({
       success: true,
       message: 'Medical record created successfully',
@@ -118,7 +109,20 @@ const getMedicalRecord = async (req, res) => {
     const medicalRecord = await MedicalRecord.findById(recordId)
       .populate('patientId', 'firstname lastname email dateOfBirth gender bloodGroup')
       .populate('doctorId', 'firstname lastname')
-      .populate('appointmentId');
+      .populate('appointmentId')
+      .populate({
+        path: 'prescriptionIds',
+        populate: [
+          { path: 'doctorId', select: 'firstname lastname specialization' },
+          { path: 'patientId', select: 'firstname lastname email' }
+        ]
+      })
+      .populate({
+        path: 'healthMetricsIds',
+        populate: [
+          { path: 'userId', select: 'firstname lastname email' }
+        ]
+      });
     if (!medicalRecord) {
       return res.status(404).json({
         success: false,
@@ -128,7 +132,6 @@ const getMedicalRecord = async (req, res) => {
     const isPatient = medicalRecord.patientId._id.toString() === req.userId;
     const isDoctor = medicalRecord.doctorId._id.toString() === req.userId;
     const isAdmin = req.userRole === 'Admin';
-
     if (!isPatient && !isDoctor && !isAdmin) {
       return res.status(403).json({
         success: false,
@@ -154,17 +157,13 @@ const getPatientMedicalRecords = async (req, res) => {
     const { page = 1, limit = 10, doctorId, startDate, endDate } = req.query;
     const isOwnRecords = patientId === req.userId;
     const isAdmin = req.userRole === 'Admin';
-    if (!isOwnRecords && !isAdmin) {
-      const hasAppointment = await Appointment.findOne({
-        userId: patientId,
-        doctorId: req.userId
-      });
-      if (!hasAppointment) {
-        return res.status(403).json({
-          success: false,
-          message: 'Unauthorized to view these medical records'
-        });
-      }
+    let isDoctorOfPatient = false;
+    if (req.userRole === 'Doctor') {
+      const assignedAppointments = await Appointment.find({ userId: patientId, doctorId: req.userId });
+      if (assignedAppointments && assignedAppointments.length > 0) isDoctorOfPatient = true;
+    }
+    if (!isOwnRecords && !isAdmin && !isDoctorOfPatient) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
     }
     let query = { patientId };
     if (doctorId) {
@@ -178,20 +177,33 @@ const getPatientMedicalRecords = async (req, res) => {
     const limitNum = parseInt(limit);
     const skipNum = (parseInt(page) - 1) * limitNum;
     const total = await MedicalRecord.countDocuments(query);
-        const medicalRecords = await MedicalRecord.find(query)
+    const medicalRecords = await MedicalRecord.find(query)
       .sort({ visitDate: -1 })
       .skip(skipNum)
       .limit(limitNum)
       .populate('doctorId', 'firstname lastname')
-      .populate('appointmentId', 'date time status');
+      .populate('appointmentId', 'date time status')
+      .populate({
+        path: 'prescriptionIds',
+        populate: [
+          { path: 'doctorId', select: 'firstname lastname specialization' },
+          { path: 'patientId', select: 'firstname lastname email' }
+        ]
+      })
+      .populate({
+        path: 'healthMetricsIds',
+        populate: [
+          { path: 'userId', select: 'firstname lastname email' }
+        ]
+      });
     const pages = Math.ceil(total / limitNum);
     res.json({
       success: true,
-      medicalRecords: medicalRecords,
+      medicalRecords,
       pagination: {
         page: parseInt(page),
-        pages: pages,
-        total: total,
+        pages,
+        total,
         limit: limitNum
       }
     });
@@ -207,30 +219,56 @@ const getPatientMedicalRecords = async (req, res) => {
 const updateMedicalRecord = async (req, res) => {
   try {
     const { recordId } = req.params;
-    const updates = req.body;
-    const medicalRecord = await MedicalRecord.findById(recordId);
-    if (!medicalRecord) {
+    const allowedFields = [
+      'chiefComplaint',
+      'symptoms',
+      'historyOfPresentIllness',
+      'pastMedicalHistory',
+      'familyHistory',
+      'socialHistory',
+      'allergies',
+      'healthMetricsIds',
+      'prescriptionIds',
+      'physicalExamination',
+      'assessment',
+      'diagnosis',
+      'treatment',
+      'followUp',
+      'attachments'
+    ];
+    const updates = {};
+    for (const key of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+        updates[key] = req.body[key];
+      }
+    }
+    const updatedRecord = await MedicalRecord.findByIdAndUpdate(
+      recordId,
+      { $set: updates },
+      { new: true, runValidators: true }
+    )
+      .populate('patientId', 'firstname lastname email')
+      .populate('doctorId', 'firstname lastname')
+      .populate('appointmentId')
+      .populate({
+        path: 'prescriptionIds',
+        populate: [
+          { path: 'doctorId', select: 'firstname lastname specialization' },
+          { path: 'patientId', select: 'firstname lastname email' }
+        ]
+      })
+      .populate({
+        path: 'healthMetricsIds',
+        populate: [
+          { path: 'userId', select: 'firstname lastname email' }
+        ]
+      });
+    if (!updatedRecord) {
       return res.status(404).json({
         success: false,
         message: 'Medical record not found'
       });
     }
-    if (medicalRecord.doctorId.toString() !== req.userId && req.userRole !== 'Admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Unauthorized to update this medical record'
-      });
-    }
-    if (updates.vitalSigns && updates.vitalSigns.height && updates.vitalSigns.weight) {
-      const heightInMeters = updates.vitalSigns.height / 100;
-      updates.vitalSigns.bmi = parseFloat((updates.vitalSigns.weight / (heightInMeters * heightInMeters)).toFixed(1));
-    }
-    Object.assign(medicalRecord, updates);
-    await medicalRecord.save();
-    const updatedRecord = await MedicalRecord.findById(recordId)
-      .populate('patientId', 'firstname lastname email')
-      .populate('doctorId', 'firstname lastname')
-      .populate('appointmentId');
     res.json({
       success: true,
       message: 'Medical record updated successfully',
@@ -269,6 +307,7 @@ const addAttachment = async (req, res) => {
       type,
       uploadDate: new Date()
     };
+    if (!Array.isArray(medicalRecord.attachments)) medicalRecord.attachments = [];
     medicalRecord.attachments.push(attachment);
     await medicalRecord.save();
     res.json({
@@ -287,61 +326,42 @@ const addAttachment = async (req, res) => {
 
 const getPatientSummary = async (req, res) => {
   try {
-    const { patientId } = req.params;
-    const hasAppointment = await Appointment.findOne({
-      userId: patientId,
-      doctorId: req.userId
-    });
-
-    if (!hasAppointment && req.userRole !== 'Admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Unauthorized to view patient summary'
-      });
-    }
-    const patient = await User.findById(patientId)
-      .select('firstname lastname email dateOfBirth gender bloodGroup mobile familyDiseases');
-    const recentRecords = await MedicalRecord.find({ patientId })
-      .sort({ visitDate: -1 })
-      .limit(5)
+    const { recordId } = req.params;
+    const medicalRecord = await MedicalRecord.findById(recordId)
+      .populate('patientId', 'firstname lastname email dateOfBirth gender bloodGroup')
       .populate('doctorId', 'firstname lastname')
-      .select('visitDate chiefComplaint diagnosis prescriptions assessment');
-    const allergies = await MedicalRecord.aggregate([
-      { $match: { patientId: mongoose.Types.ObjectId(patientId) } },
-      { $unwind: '$allergies' },
-      { $group: { 
-        _id: '$allergies.allergen', 
-        reaction: { $first: '$allergies.reaction' },
-        severity: { $first: '$allergies.severity' }
-      }},
-      { $sort: { severity: -1 } }
-    ]);
-    const currentMedications = await MedicalRecord.aggregate([
-      { $match: { patientId: mongoose.Types.ObjectId(patientId) } },
-      { $unwind: '$currentMedications' },
-      { $sort: { visitDate: -1 } },
-      { $group: {
-        _id: '$currentMedications.name',
-        dosage: { $first: '$currentMedications.dosage' },
-        frequency: { $first: '$currentMedications.frequency' },
-        startDate: { $first: '$currentMedications.startDate' }
-      }}
-    ]);
+      .populate('appointmentId')
+      .populate({
+        path: 'prescriptionIds',
+        populate: [
+          { path: 'doctorId', select: 'firstname lastname specialization' },
+          { path: 'patientId', select: 'firstname lastname email' }
+        ]
+      })
+      .populate({
+        path: 'healthMetricsIds',
+        populate: [
+          { path: 'userId', select: 'firstname lastname email' }
+        ]
+      });
+    if (!medicalRecord) {
+      return res.status(404).json({ success: false, message: 'Medical record not found' });
+    }
+    const isPatient = medicalRecord.patientId._id.toString() === req.userId;
+    const isDoctor = medicalRecord.doctorId._id.toString() === req.userId;
+    const isAdmin = req.userRole === 'Admin';
+    if (!isPatient && !isDoctor && !isAdmin) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
     res.json({
       success: true,
-      patientSummary: {
-        patient,
-        recentRecords,
-        allergies,
-        currentMedications,
-        totalRecords: await MedicalRecord.countDocuments({ patientId })
-      }
+      medicalRecord
     });
   } catch (error) {
-    console.error('Get patient summary error:', error);
+    console.error('Get medical record error:', error);
     res.status(500).json({
       success: false,
-      message: 'Unable to fetch patient summary'
+      message: 'Unable to fetch medical record'
     });
   }
 };

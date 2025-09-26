@@ -19,12 +19,6 @@ const medicalRecordSchema = mongoose.Schema(
       ref: "Appointment",
       required: true,
     },
-    visitDate: {
-      type: Date,
-      required: true,
-      default: Date.now,
-      index: true
-    },
     chiefComplaint: {
       type: String,
       required: true,
@@ -63,8 +57,13 @@ const medicalRecordSchema = mongoose.Schema(
           enum: ['never', 'former', 'current']
         },
         details: String
-      }
+      },
     },
+      symptoms: {
+        type: String,
+        required: false,
+        maxlength: [1000, 'Symptoms description too long']
+      },
     allergies: [{
       allergen: String,
       reaction: String,
@@ -73,26 +72,10 @@ const medicalRecordSchema = mongoose.Schema(
         enum: ['mild', 'moderate', 'severe']
       }
     }],
-    currentMedications: [{
-      name: String,
-      dosage: String,
-      frequency: String,
-      startDate: Date,
-      prescribedBy: String
+    healthMetricsIds: [{
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "HealthMetrics"
     }],
-    vitalSigns: {
-      bloodPressure: {
-        systolic: Number,
-        diastolic: Number
-      },
-      heartRate: Number,
-      temperature: Number, // in Celsius
-      respiratoryRate: Number,
-      oxygenSaturation: Number,
-      weight: Number, // in kg
-      height: Number, // in cm
-      bmi: Number
-    },
     physicalExamination: {
       general: String,
       head: String,
@@ -109,7 +92,7 @@ const medicalRecordSchema = mongoose.Schema(
       maxlength: [2000, 'Assessment too long']
     },
     diagnosis: [{
-      code: String, // ICD-10 code
+      code: String,
       description: String,
       type: {
         type: String,
@@ -120,50 +103,15 @@ const medicalRecordSchema = mongoose.Schema(
       type: String,
       maxlength: [2000, 'Treatment plan too long']
     },
-    prescriptions: [{
-      medication: String,
-      dosage: String,
-      frequency: String,
-      duration: String,
-      instructions: String,
-      quantity: Number
-    }],
-    labOrders: [{
-      test: String,
-      urgency: {
-        type: String,
-        enum: ['routine', 'urgent', 'stat'],
-        default: 'routine'
-      },
-      notes: String
-    }],
-    imagingOrders: [{
-      type: String, // X-ray, CT, MRI, etc.
-      bodyPart: String,
-      indication: String,
-      urgency: {
-        type: String,
-        enum: ['routine', 'urgent', 'stat'],
-        default: 'routine'
-      }
+    prescriptionIds: [{
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "Prescription"
     }],
     followUp: {
-      required: {
-        type: Boolean,
-        default: false
-      },
+      required: Boolean,
       timeframe: String,
       instructions: String
     },
-    referrals: [{
-      specialist: String,
-      reason: String,
-      urgency: {
-        type: String,
-        enum: ['routine', 'urgent'],
-        default: 'routine'
-      }
-    }],
     attachments: [{
       filename: String,
       url: String,
@@ -176,47 +124,26 @@ const medicalRecordSchema = mongoose.Schema(
         default: Date.now
       }
     }],
-    isConfidential: {
-      type: Boolean,
-      default: false
-    },
-    voiceNotes: [{
-      filename: String,
-      url: String,
-      duration: Number, // in seconds
-      transcription: String,
-      recordedAt: {
-        type: Date,
-        default: Date.now
-      }
-    }]
   },
   {
     timestamps: true,
   }
 );
 
-// Indexes for efficient queries
 medicalRecordSchema.index({ patientId: 1, visitDate: -1 });
 medicalRecordSchema.index({ doctorId: 1, visitDate: -1 });
 medicalRecordSchema.index({ appointmentId: 1 });
-
-// Virtual for patient age at time of visit
 medicalRecordSchema.virtual('patientAgeAtVisit').get(function() {
   if (!this.populated('patientId') || !this.patientId.dateOfBirth) return null;
-  
   const visitDate = this.visitDate;
   const birthDate = new Date(this.patientId.dateOfBirth);
   let age = visitDate.getFullYear() - birthDate.getFullYear();
   const monthDiff = visitDate.getMonth() - birthDate.getMonth();
-  
   if (monthDiff < 0 || (monthDiff === 0 && visitDate.getDate() < birthDate.getDate())) {
     age--;
   }
-  
   return age;
 });
-
 const MedicalRecord = mongoose.model("MedicalRecord", medicalRecordSchema);
 
 module.exports = MedicalRecord;

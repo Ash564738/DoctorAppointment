@@ -35,7 +35,7 @@ const schema = mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      index: true, // Add index for faster email lookups
+      index: true,
       validate: {
         validator: function(v) {
           return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -46,7 +46,7 @@ const schema = mongoose.Schema(
     password: {
       type: String,
       required: [true, 'Password is required'],
-      select: false // Don't include password in queries by default
+      select: false
     },
     role: {
       type: String,
@@ -55,7 +55,7 @@ const schema = mongoose.Schema(
         values: ["Admin", "Doctor", "Patient"],
         message: 'Role must be Admin, Doctor, or Patient'
       },
-      index: true // Add index for role-based queries
+      index: true
     },
     isAdmin: {
       type: Boolean,
@@ -153,78 +153,56 @@ const schema = mongoose.Schema(
   }
 );
 
-// Compound indexes for common queries
 schema.index({ role: 1, status: 1 });
 schema.index({ email: 1, role: 1 });
-
-// Virtual for full name
 schema.virtual('fullName').get(function() {
   return `${this.firstname} ${this.lastname}`;
 });
-
-// Virtual for calculated age from date of birth
 schema.virtual('calculatedAge').get(function() {
   if (!this.dateOfBirth) return this.age || null;
-
   const today = new Date();
   const birthDate = new Date(this.dateOfBirth);
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
-
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
     age--;
   }
-
   return age;
 });
 
-// Pre-save middleware to hash password and calculate age
 schema.pre('save', async function(next) {
   try {
-    // Hash password if modified
     if (this.isModified('password')) {
       console.log('Hashing password for user:', this.email);
       const salt = await bcrypt.genSalt(12);
       this.password = await bcrypt.hash(this.password, salt);
       console.log('Password hashed successfully for:', this.email);
     }
-
-    // Set isAdmin based on role
     if (this.isModified('role')) {
       this.isAdmin = this.role === 'Admin';
     }
-
-    // Calculate age from date of birth if provided
     if (this.dateOfBirth) {
       const today = new Date();
       const birthDate = new Date(this.dateOfBirth);
       let age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
-
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
         age--;
       }
-
       this.age = age;
     }
-
     next();
   } catch (error) {
     next(error);
   }
 });
-
-// Instance method to compare password
 schema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
-
-// Instance method to update last login
 schema.methods.updateLastLogin = function() {
   this.lastLogin = new Date();
   return this.save({ validateBeforeSave: false });
 };
 
 const User = mongoose.model("User", schema);
-
 module.exports = User;

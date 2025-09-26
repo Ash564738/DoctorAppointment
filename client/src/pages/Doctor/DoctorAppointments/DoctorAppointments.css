@@ -24,103 +24,6 @@
   margin-bottom: var(--spacing-md);
 }
 
-.doctorAppointments_quickActions {
-  display: flex;
-  gap: var(--spacing-sm);
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.doctorAppointments_actionButton {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: none;
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: white;
-  min-width: 140px;
-  text-align: center;
-}
-
-.doctorAppointments_actionButton:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.doctorAppointments_actionButton--recurring {
-  background: #52c41a;
-}
-
-.doctorAppointments_actionButton--recurring:hover {
-  background: #389e0d;
-}
-
-.doctorAppointments_actionButton--waitlist {
-  background: #b37feb;
-}
-
-.doctorAppointments_actionButton--waitlist:hover {
-  background: #9254de;
-}
-
-.doctorAppointments_actionButton--ratings {
-  background: #faad14;
-}
-
-.doctorAppointments_actionButton--ratings:hover {
-  background: #d48806;
-}
-
-.doctorAppointments_actionButton--messaging {
-  background: #13c2c2;
-}
-
-.doctorAppointments_actionButton--messaging:hover {
-  background: #08979c;
-}
-
-.doctorAppointments_actionButton--reminders {
-  background: #fa541c;
-}
-
-.doctorAppointments_actionButton--reminders:hover {
-  background: #d4380d;
-}
-
-.doctorAppointments_actionButton--payment {
-  background: #1890ff;
-}
-
-.doctorAppointments_actionButton--payment:hover {
-  background: #096dd9;
-}
-
-.doctorAppointments_actionButton--invoice {
-  background: #a0d911;
-}
-
-.doctorAppointments_actionButton--invoice:hover {
-  background: #7cb305;
-}
-
-.doctorAppointments_actionButton--insurance {
-  background: #764ba2;
-}
-
-.doctorAppointments_actionButton--insurance:hover {
-  background: #5a3471;
-}
-
-.doctorAppointments_actionButton--reports {
-  background: #d4380d;
-}
-
-.doctorAppointments_actionButton--reports:hover {
-  background: #ad2102;
-}
-
 /* Filter Section */
 .doctorAppointments_filterContainer {
   display: flex;
@@ -165,11 +68,23 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   border: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  animation: fadeInUp 0.5s ease-out;
 }
 
 .doctorAppointments_card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.doctorAppointments_card:nth-child(odd) {
+  animation-delay: 0.1s;
+}
+
+.doctorAppointments_card:nth-child(even) {
+  animation-delay: 0.2s;
 }
 
 .doctorAppointments_cardHeader {
@@ -185,6 +100,7 @@
   margin: 0;
 }
 
+/* Status Badges */
 .doctorAppointments_statusBadge {
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: 16px;
@@ -192,30 +108,25 @@
   font-weight: var(--font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  border: 1px solid transparent;
 }
 
-.doctorAppointments_statusBadge--pending {
-  background: #fff7e6;
-  color: #d48806;
-  border: 1px solid #ffd591;
-}
-
-.doctorAppointments_statusBadge--approved {
-  background: #f6ffed;
-  color: #52c41a;
-  border: 1px solid #b7eb8f;
+.doctorAppointments_statusBadge--confirmed {
+  background: #e6f7ff;
+  color: #1890ff;
+  border-color: #1890ff;
 }
 
 .doctorAppointments_statusBadge--completed {
-  background: #e6f7ff;
-  color: #1890ff;
-  border: 1px solid #91d5ff;
+  background: #f6ffed;
+  color: #52c41a;
+  border-color: #52c41a;
 }
 
-.doctorAppointments_statusBadge--rejected {
-  background: #fff2f0;
+.doctorAppointments_statusBadge--cancelled {
+  background: #fff1f0;
   color: #ff4d4f;
-  border: 1px solid #ffb3b3;
+  border-color: #ff4d4f;
 }
 
 /* Card Details */
@@ -251,6 +162,25 @@
   word-wrap: break-word;
 }
 
+/* Editable Inputs */
+.doctorAppointments_select {
+  min-width: 120px;
+  font-size: var(--font-size-sm);
+}
+
+.doctorAppointments_input {
+  min-width: 60px;
+  padding: 4px 8px;
+  font-size: var(--font-size-sm);
+  border: 1px solid #d9d9d9;
+  border-radius: var(--border-radius-sm);
+}
+
+.doctorAppointments_input--duration {
+  width: 80px;
+}
+
+/* Card Actions */
 .doctorAppointments_cardActions {
   display: flex;
   gap: var(--spacing-sm);
@@ -258,38 +188,50 @@
 }
 
 .doctorAppointments_actionBtn {
-  padding: var(--spacing-sm) var(--spacing-lg);
+  padding: var(--spacing-sm);
   border: none;
   border-radius: var(--border-radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all 0.3s ease;
   flex: 1;
   max-width: 150px;
 }
 
-.doctorAppointments_actionBtn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+.doctorAppointments_actionBtn--edit {
+  background: #faad14;
+  color: white;
 }
 
-.doctorAppointments_actionBtn--approve {
+.doctorAppointments_actionBtn--edit:hover {
+  background: #d48806;
+}
+
+.doctorAppointments_actionBtn--save {
   background: #52c41a;
   color: white;
 }
 
-.doctorAppointments_actionBtn--approve:hover {
+.doctorAppointments_actionBtn--save:hover {
   background: #389e0d;
 }
 
-.doctorAppointments_actionBtn--reject {
-  background: #ff4d4f;
+.doctorAppointments_actionBtn--cancel {
+  background: #bfbfbf;
+  color: #333;
+}
+
+.doctorAppointments_actionBtn--cancel:hover {
+  background: #8c8c8c;
   color: white;
 }
 
-.doctorAppointments_actionBtn--reject:hover {
-  background: #cf1322;
+.doctorAppointments_actionBtn--records {
+  background: #13c2c2;
+  color: white;
+}
+
+.doctorAppointments_actionBtn--records:hover {
+  background: #08979c;
 }
 
 .doctorAppointments_actionBtn--complete {
@@ -317,14 +259,6 @@
 @media (max-width: 768px) {
   .doctorAppointments_title {
     font-size: var(--font-size-lg);
-  }
-  .doctorAppointments_quickActions {
-    flex-direction: column;
-    align-items: center;
-  }
-  .doctorAppointments_actionButton {
-    width: 100%;
-    max-width: 300px;
   }
   .doctorAppointments_grid {
     grid-template-columns: 1fr;
@@ -365,14 +299,6 @@
   .doctorAppointments_card {
     padding: var(--spacing-sm);
   }
-  .doctorAppointments_quickActions {
-    gap: var(--spacing-xs);
-  }
-  .doctorAppointments_actionButton {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    font-size: var(--font-size-xs);
-    min-width: 120px;
-  }
   .doctorAppointments_statusFilter {
     min-width: auto;
     width: 100%;
@@ -391,23 +317,7 @@
   }
 }
 
-.doctorAppointments_card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-  animation: fadeInUp 0.5s ease-out;
-}
-
-.doctorAppointments_card:nth-child(odd) {
-  animation-delay: 0.1s;
-}
-
-.doctorAppointments_card:nth-child(even) {
-  animation-delay: 0.2s;
-}
-
 /* Focus states for accessibility */
-.doctorAppointments_actionButton:focus,
 .doctorAppointments_actionBtn:focus,
 .doctorAppointments_statusFilter:focus {
   outline: 2px solid #1890ff;

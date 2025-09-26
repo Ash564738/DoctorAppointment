@@ -3,7 +3,6 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 
 const { getFamilyMembers } = require("../controllers/familyMemberController");
-const { getPatientHealthMetrics } = require("../controllers/healthMetricsController");
 
 // Get current patient's family members
 router.get("/family-members", auth, (req, res) => {

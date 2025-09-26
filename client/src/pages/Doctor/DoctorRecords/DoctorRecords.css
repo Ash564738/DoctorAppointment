@@ -151,12 +151,12 @@
 }
 
 .doctorRecords_actionButton--primary {
-  background: #28a745;
+  background: var(--primary-color);
   color: white;
 }
 
 .doctorRecords_actionButton--primary:hover:not(:disabled) {
-  background: #218838;
+  background: var(--primary-color-dark);
 }
 
 .doctorRecords_actionButton--secondary {
@@ -185,9 +185,7 @@
 }
 
 .doctorRecords_formHeader {
-  background: #f8fafc;
   padding: var(--spacing-lg);
-  border-bottom: 1px solid #e9ecef;
   position: relative;
 }
 
@@ -208,7 +206,7 @@
   position: absolute;
   top: 20px;
   right: 20px;
-  background: #dc3545;
+  background: var(--danger-color);
   color: white;
   border: none;
   border-radius: 50%;
@@ -325,10 +323,9 @@
 
 .doctorRecords_formActions {
   display: flex;
-  gap: var(--spacing-md);
+  /* gap: var(--spacing-md); */
   justify-content: flex-end;
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-md);
+  padding: var(--spacing-lg);
   border-top: 2px solid #e9ecef;
 }
 
@@ -382,8 +379,8 @@
   min-width: 100px;
 }
 
-.doctorRecords_addPrescriptionBtn {
-  background: #22c55e;
+.doctorRecords_addPrescriptionBtn, .doctorRecords_addAllergyBtn {
+  background: var(--primary-color);
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -393,8 +390,8 @@
   font-size: var(--font-size-base);
   transition: background 0.2s;
 }
-.doctorRecords_addPrescriptionBtn:hover {
-  background: #15803d;
+.doctorRecords_addPrescriptionBtn:hover, .doctorRecords_addAllergyBtn:hover {
+  background: var(--primary-color-dark);
 }
 
 .doctorRecords_patientHistory {
@@ -632,10 +629,4 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.doctorRecords_actionButton:focus,
-.doctorRecords_closeButton:focus {
-  outline: 2px solid #007bff;
-  outline-offset: 2px;
 }

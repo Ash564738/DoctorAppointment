@@ -3,7 +3,7 @@ const router = express.Router();
 
 const auth = require("../middleware/auth");
 const appointmentController = require("../controllers/appointmentController");
-const doctorStatsController = require("../controllers/doctorStatsController");
+
 
 // Walk-in queue routes
 router.get("/walkin-queue", appointmentController.getWalkInQueue);
@@ -18,9 +18,7 @@ router.get("/upcoming", auth, appointmentController.getUpcomingAppointments);
 
 // Doctor and patient appointment routes
 router.get("/doctor", auth, appointmentController.getDoctorAppointments);
-router.get("/doctor-stats", auth, doctorStatsController.getDoctorStats);
-router.get("/doctor-patients", auth, doctorStatsController.getDoctorPatients);
-router.get("/doctor-performance", auth, doctorStatsController.getDoctorPerformance);
+
 router.get("/patient", auth, appointmentController.getPatientAppointments);
 router.get("/patient-stats", auth, appointmentController.getPatientStats);
 

@@ -93,7 +93,6 @@
   background: white;
   border-radius: var(--border-radius-lg);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: var(--spacing-md);
   overflow: hidden;
 }
 
@@ -243,7 +242,6 @@
   border-radius: 8px;
   padding: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  border-left: 4px solid #007bff;
 }
 
 .doctorScheduling_scheduleHeader {
@@ -339,8 +337,8 @@
 .doctorScheduling_tabs {
   display: flex;
   gap: 12px;
-  margin-bottom: 20px;
 }
+
 .doctorScheduling_tabButton {
   background: #f1f5f9;
   color: #333;
@@ -352,7 +350,7 @@
   transition: background 0.2s;
 }
 .doctorScheduling_tabButton.active {
-  background: #007bff;
+  background: var(--primary-color);
   color: #fff;
 }
 
@@ -596,7 +594,7 @@
 /* Enhanced Schedule Card Styles */
 .doctorScheduling_scheduleTitle {
   font-size: 0.9rem;
-  color: #3b82f6;
+  color: var(--primary-color);
   font-weight: 600;
 }
 
@@ -621,12 +619,6 @@
   .doctorScheduling_title {
     font-size: var(--font-size-base);
   }
-  .doctorScheduling_formContent {
-    padding: var(--spacing-sm);
-  }
-  .doctorScheduling_scheduleCard {
-    padding: var(--spacing-xs);
-  }
   .doctorScheduling_scheduleHeader {
     flex-direction: column;
     align-items: flex-start;
@@ -636,7 +628,6 @@
     gap: var(--spacing-xs);
   }
   .doctorScheduling_dayOption {
-    padding: var(--spacing-xs) var(--spacing-sm);
     font-size: var(--font-size-sm);
   }
 }

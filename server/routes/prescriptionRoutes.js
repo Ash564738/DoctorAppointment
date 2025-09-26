@@ -18,6 +18,7 @@ const {
 } = require("../controllers/prescriptionController");
 
 router.get("/refill-requests", auth, getRefillRequests);
+router.post("/create", auth, validatePrescription, createPrescription);
 router.post("/request-refill", auth, createRefillRequest);
 router.get("/medication/common", auth, getCommonMedications);
 router.get("/stats", auth, getPrescriptionStats);

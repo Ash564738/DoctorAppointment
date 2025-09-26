@@ -95,7 +95,6 @@ const UserManagement = () => {
     try {
       await apiCall.put('/doctor/acceptdoctor', { id: userId });
       setDoctorApplications(doctorApplications.filter(app => app._id !== userId));
-      // Refresh users data
       const usersData = await apiCall.get('/user/getallusers');
       setUsers(usersData || []);
     } catch (err) {
@@ -132,11 +131,8 @@ const UserManagement = () => {
 
   const handleSaveEdit = async () => {
     try {
-      // Create a new user update endpoint specifically for admin
       await apiCall.put(`/user/admin-update/${editingUser._id}`, editFormData);
-      
-      // Update local state
-      setUsers(users.map(user => 
+            setUsers(users.map(user => 
         user._id === editingUser._id 
           ? { ...user, ...editFormData }
           : user
@@ -149,9 +145,7 @@ const UserManagement = () => {
     } catch (err) {
       console.error('Edit user error:', err);
       alert('Failed to update user. Using profile update endpoint...');
-      
-      // Fallback to existing updateprofile endpoint (limited functionality)
-      try {
+        try {
         const limitedData = {
           firstname: editFormData.firstname,
           lastname: editFormData.lastname,
@@ -160,12 +154,8 @@ const UserManagement = () => {
           address: editFormData.address,
           gender: editFormData.gender
         };
-        
-        // Note: This won't update email or role due to security restrictions
         await apiCall.put('/user/updateprofile', limitedData);
         alert('User updated successfully (limited fields due to security)');
-        
-        // Refresh users data
         const usersData = await apiCall.get('/user/getallusers');
         setUsers(usersData || []);
         
@@ -179,28 +169,24 @@ const UserManagement = () => {
   };
 
   const getUserStatus = (user) => {
-    // Priority: user.status from User model, then check doctor-specific status
     if (user.status) {
       return user.status;
     }
-    
-    // For doctors, check if they're approved through isDoctor flag
     if (user.role?.toLowerCase() === 'doctor') {
       return user.isDoctor ? 'Active' : 'Pending';
     }
     
-    // Default status for other users
     return 'Active';
   };
 
   const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case 'active':
+    switch (status) {
+      case 'Active':
         return 'userManagement_statusActive';
-      case 'pending':
+      case 'Pending':
         return 'userManagement_statusPending';
-      case 'suspended':
-      case 'inactive':
+      case 'Suspended':
+      case 'Inactive':
         return 'userManagement_statusInactive';
       default:
         return 'userManagement_statusActive';
@@ -277,7 +263,6 @@ const UserManagement = () => {
         {/* Users Management Section */}
         <div className="userManagement_section">
           <div className="userManagement_sectionHeader">
-            <h2 className="userManagement_sectionTitle">All Users</h2>
             <div className="userManagement_filters">
               <button 
                 className={`userManagement_filterButton ${filter === 'all' ? 'userManagement_filterActive' : ''}`}

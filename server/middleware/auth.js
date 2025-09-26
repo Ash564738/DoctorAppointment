@@ -37,7 +37,6 @@ const auth = (req, res, next) => {
     }
 
     // Debug: log the decoded token
-    console.log('[AUTH DEBUG] Decoded JWT:', verifyToken);
 
     req.locals = verifyToken.userId;
     req.user = verifyToken;
@@ -46,9 +45,9 @@ const auth = (req, res, next) => {
       req.user._id = verifyToken.userId;
     }
     req.userId = verifyToken.userId;
+    req.userRole = verifyToken.role || verifyToken.userRole; // Ensure req.userRole is always set
 
     // Debug: log the req.user after assignment
-    console.log('[AUTH DEBUG] req.user after assignment:', req.user);
 
     next();
   } catch (error) {

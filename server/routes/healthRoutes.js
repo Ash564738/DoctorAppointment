@@ -2,7 +2,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
 
-// Health check endpoint
 router.get('/health', async (req, res) => {
   try {
     const healthCheck = {
@@ -21,8 +20,6 @@ router.get('/health', async (req, res) => {
         external: Math.round(process.memoryUsage().external / 1024 / 1024 * 100) / 100
       }
     };
-
-    // Check database connection
     try {
       if (mongoose.connection.readyState === 1) {
         healthCheck.services.database = 'connected';
@@ -35,9 +32,7 @@ router.get('/health', async (req, res) => {
       healthCheck.status = 'DEGRADED';
     }
 
-    // Check cache (if implemented)
     try {
-      // Add cache health check here if using Redis
       healthCheck.services.cache = 'not_implemented';
     } catch (error) {
       healthCheck.services.cache = 'error';
@@ -54,10 +49,8 @@ router.get('/health', async (req, res) => {
   }
 });
 
-// Readiness check endpoint
 router.get('/ready', async (req, res) => {
   try {
-    // Check if all critical services are ready
     const isDbReady = mongoose.connection.readyState === 1;
     
     if (isDbReady) {
@@ -86,7 +79,6 @@ router.get('/ready', async (req, res) => {
   }
 });
 
-// Liveness check endpoint
 router.get('/live', (req, res) => {
   res.status(200).json({
     status: 'ALIVE',

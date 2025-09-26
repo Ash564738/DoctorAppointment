@@ -1,13 +1,12 @@
 const mongoose = require("mongoose");
 
-// Chat Room Schema
 const chatRoomSchema = mongoose.Schema(
   {
     appointmentId: {
       type: mongoose.SchemaTypes.ObjectId,
       ref: "Appointment",
-      required: false, // Not required for direct chats
-      default: undefined // Use undefined instead of null for direct chats
+      required: false,
+      default: undefined
     },
     isDirectChat: {
       type: Boolean,
@@ -96,7 +95,7 @@ const messageSchema = mongoose.Schema(
       fileUrl: String,
       fileSize: Number,
       fileType: String,
-      thumbnailUrl: String // For images
+      thumbnailUrl: String
     },
     isRead: {
       type: Boolean,

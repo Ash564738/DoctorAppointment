@@ -1,16 +1,11 @@
 const { v4: uuidv4 } = require('uuid');
 const { logger, http, error: logError, api } = require('../utils/logger');
 
-// Request logging middleware
 const requestLogger = (req, res, next) => {
-  // Generate unique request ID
   req.requestId = uuidv4();
   req.startTime = Date.now();
-
-  // Extract user info from token if available
   let userId = 'anonymous';
   let userRole = 'unknown';
-  
   try {
     if (req.headers.authorization) {
       const token = req.headers.authorization.replace('Bearer ', '');
@@ -22,10 +17,8 @@ const requestLogger = (req, res, next) => {
       }
     }
   } catch (err) {
-    // Ignore token parsing errors for logging
   }
 
-  // Log incoming request
   http(`Incoming ${req.method} ${req.originalUrl}`, {
     requestId: req.requestId,
     method: req.method,
@@ -40,7 +33,6 @@ const requestLogger = (req, res, next) => {
     timestamp: new Date().toISOString()
   });
 
-  // Capture original res.json and res.send methods
   const originalJson = res.json;
   const originalSend = res.send;
   let responseBody = null;

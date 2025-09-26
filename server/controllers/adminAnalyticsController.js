@@ -3,7 +3,6 @@ const Appointment = require("../models/appointmentModel");
 const Prescription = require("../models/prescriptionModel");
 const HealthMetrics = require("../models/healthMetricsModel");
 const FamilyMember = require("../models/familyMemberModel");
-const Analytics = require("../models/analyticsModel");
 const logger = require("../utils/logger");
 
 const getDashboardAnalytics = async (req, res) => {

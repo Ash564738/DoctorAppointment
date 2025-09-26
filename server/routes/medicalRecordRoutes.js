@@ -33,7 +33,7 @@ const medicalRecordValidation = [
     .optional()
     .isInt({ min: 30, max: 200 })
     .withMessage("Invalid heart rate"),
-  body("vitalSigns.temperature")
+  body("vitalSigns.temperature.value")
     .optional()
     .isFloat({ min: 30, max: 45 })
     .withMessage("Invalid temperature"),

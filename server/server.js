@@ -1,4 +1,3 @@
-// Global error handlers for diagnostics
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
   process.exit(1);
@@ -7,10 +6,8 @@ process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
   process.exit(1);
 });
-
 require("dotenv").config();
 require("./db/conn");
-
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -21,19 +18,14 @@ const xss = require('xss-clean');
 const rateLimit = require('express-rate-limit');
 const { logger, info, error: logError } = require('./utils/logger');
 const { requestLogger, errorLogger } = require('./middleware/requestLogger');
-
 const app = express();
 const port = process.env.PORT || 5016;
-
-// Ensure MongoDB connection before starting server
 require("./db/conn")
-  .then(() => console.log("✅ MongoDB connection established"))
+  .then(() => console.log("MongoDB connection established"))
   .catch(err => {
-    console.error("❌ MongoDB connection failed:", err);
+    console.error("MongoDB connection failed:", err);
     process.exit(1);
   });
-
-// Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -84,7 +76,6 @@ app.use(helmet({
   },
 }));
 
-// Rate limiting
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: process.env.NODE_ENV === 'production' ? 100 : 1000,
@@ -94,15 +85,10 @@ const apiLimiter = rateLimit({
   skip: req => process.env.NODE_ENV === 'development'
 });
 app.use('/api/', apiLimiter);
-
-// Data sanitization
 app.use(mongoSanitize());
 app.use(xss());
-
-// Compression
 app.use(compression());
 
-// CORS configuration
 const corsOptions = {
   origin: [
     "http://localhost:3000",
@@ -112,22 +98,17 @@ const corsOptions = {
   ],
   credentials: true,
   optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
   preflightContinue: false
 };
 info('CORS configuration initialized', { corsOptions });
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
-
-// Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Logging middleware
 app.use(requestLogger);
 
-// Routers
 app.use("/api/user", require("./routes/userRoutes"));
 app.use("/api/doctor", require("./routes/doctorRoutes"));
 app.use("/api/patient", require("./routes/patientRoutes"));
@@ -138,6 +119,7 @@ app.use("/api/family-members", require("./routes/familyMemberRoutes"));
 app.use("/api/video-consultation", require("./routes/videoConsultationRoutes"));
 app.use("/api/waitlist", require("./routes/waitlistRoutes"));
 app.use("/api/medical-record", require("./routes/medicalRecordRoutes"));
+app.use("/api/health-metrics", require("./routes/healthMetricsRoutes"));
 app.use("/api/recurring-appointments", require("./routes/recurringAppointmentRoutes"));
 app.use("/api/walk-in-queue", require("./routes/walkInQueueRoutes"));
 app.use("/api/ratings", require("./routes/ratingRoutes"));
@@ -147,26 +129,17 @@ app.use("/api/admin/analytics", require("./routes/adminAnalyticsRoutes"));
 app.use("/api/payment", require("./routes/paymentRoutes"));
 app.use("/api/notification", require("./routes/notificationRouter"));
 app.use("/api/insurance", require('./routes/insuranceRoutes'));
-app.use("/api/reminder", require("./routes/reminderRoutes"));
-app.use("/api/calendar-sync", require('./routes/calendarSyncRoutes'));
 app.use("/api/logs", require("./routes/logRoutes"));
 app.use("/api/shift", require("./routes/shiftRoutes"));
 app.use("/api/shift-swap", require("./routes/shiftSwapRoutes"));
 app.use("/api/overtime", require("./routes/overtimeRoutes"));
 app.use("/api/leave", require("./routes/leaveRoutes"));
-app.use("/api/health-metrics", require("./routes/healthMetricsRoutes"));
 app.use("/api/branches", require("./routes/branchRoutes"));
-app.use("/api", require("./routes/healthRoutes"));
 
-// Serve static files
 app.use(express.static(path.join(__dirname, "../client/build")));
-
-// Catch-all handler for React app
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/build/index.html"));
 });
-
-// Error handling middleware (must be last)
 app.use(errorLogger);
 
 const server = app.listen(port, () => {
@@ -178,11 +151,8 @@ const server = app.listen(port, () => {
   });
   console.log(`Server is running on port ${port}`);
 });
-
-// Socket.io setup
 const { Server } = require("socket.io");
 const { authenticateSocket, handleConnection } = require("./socket/socketHandler");
-
 const io = new Server(server, {
   cors: {
     origin: [
@@ -195,10 +165,8 @@ const io = new Server(server, {
     credentials: true
   }
 });
-
 io.use(authenticateSocket);
 io.on('connection', handleConnection(io));
-
 info('Socket.io server initialized successfully', {
   cors: {
     origin: [

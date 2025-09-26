@@ -126,7 +126,6 @@ const createChatRoom = async (req, res) => {
   }
 };
 
-// Create direct chat room (no appointment required)
 const createDirectChatRoom = async (req, res) => {
   try {
     const { targetUserId } = req.body;
@@ -146,7 +145,6 @@ const createDirectChatRoom = async (req, res) => {
       });
     }
 
-    // Get user details
     const currentUser = await User.findById(currentUserId);
     const targetUser = await User.findById(targetUserId);
 
@@ -157,7 +155,6 @@ const createDirectChatRoom = async (req, res) => {
       });
     }
 
-    // Check if direct chat room already exists between these users
     let chatRoom = await ChatRoom.findOne({
       $or: [
         { patientId: currentUserId, doctorId: targetUserId, isDirectChat: true },
@@ -166,7 +163,6 @@ const createDirectChatRoom = async (req, res) => {
     });
 
     if (!chatRoom) {
-      // Determine roles for the chat room
       let patientId, doctorId;
       if (currentUser.role === 'Patient' && targetUser.role === 'Doctor') {
         patientId = currentUserId;
@@ -175,19 +171,15 @@ const createDirectChatRoom = async (req, res) => {
         patientId = targetUserId;
         doctorId = currentUserId;
       } else {
-        // For same role or admin, use a generic approach
         patientId = currentUserId;
         doctorId = targetUserId;
       }
-
-      // Create new direct chat room
-      // Use a unique identifier for direct chats to avoid appointmentId conflicts
       const directChatId = new mongoose.Types.ObjectId();
 
       chatRoom = new ChatRoom({
         patientId,
         doctorId,
-        appointmentId: directChatId, // Use a unique ObjectId for direct chats
+        appointmentId: directChatId,
         isDirectChat: true
       });
 
@@ -195,7 +187,6 @@ const createDirectChatRoom = async (req, res) => {
         await chatRoom.save();
       } catch (saveError) {
         if (saveError.code === 11000) {
-          // If duplicate key error, try to find existing chat room
           chatRoom = await ChatRoom.findOne({
             $or: [
               { patientId: currentUserId, doctorId: targetUserId, isDirectChat: true },
@@ -204,18 +195,14 @@ const createDirectChatRoom = async (req, res) => {
           });
 
           if (!chatRoom) {
-            throw saveError; // Re-throw if we still can't find the room
+            throw saveError;
           }
         } else {
-          throw saveError; // Re-throw non-duplicate errors
+          throw saveError;
         }
       }
-
-      // Chat room created successfully - no automatic welcome message needed
-      // Users can start chatting immediately without system messages
     }
 
-    // Populate the chat room with user details
     await chatRoom.populate('patientId', 'firstname lastname email pic role');
     await chatRoom.populate('doctorId', 'firstname lastname email pic role');
 
@@ -233,8 +220,6 @@ const createDirectChatRoom = async (req, res) => {
 
   } catch (error) {
     console.error('Error creating direct chat room:', error);
-
-    // Handle duplicate key error
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
@@ -250,24 +235,54 @@ const createDirectChatRoom = async (req, res) => {
   }
 };
 
-// Get available users for chatting
 const getAvailableUsers = async (req, res) => {
   try {
     const currentUserId = req.locals;
     const currentUser = await User.findById(currentUserId);
-
     if (!currentUser) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Get all users except the current user
-    const users = await User.find({
-      _id: { $ne: currentUserId },
-      isAdmin: false // Exclude admin users from chat
-    }).select('firstname lastname email pic role specialization');
+    let users = [];
+    if (currentUser.role === 'Patient') {
+      // Patient: only doctors they have appointments with (confirmed/active/completed)
+      const doctorIds = await Appointment.distinct("doctorId", {
+        userId: currentUserId,
+        status: { $in: ["Confirmed", "Active", "Completed"] }
+      });
+      users = await User.find({
+        _id: { $in: doctorIds },
+        role: 'Doctor',
+        status: 'Active'
+      }).select('firstname lastname email pic role specialization');
+    } else if (currentUser.role === 'Doctor') {
+      // Doctor: patients they have appointments with, all doctors (except self), and all admins
+      const patientIds = await Appointment.distinct("userId", {
+        doctorId: currentUserId,
+        status: { $in: ["Confirmed", "Active", "Completed"] }
+      });
+      const patients = await User.find({
+        _id: { $in: patientIds },
+        role: 'Patient',
+        status: 'Active'
+      }).select('firstname lastname email pic role specialization');
+      const doctors = await User.find({
+        _id: { $ne: currentUserId },
+        role: 'Doctor',
+        status: 'Active'
+      }).select('firstname lastname email pic role specialization');
+      const admins = await User.find({
+        role: 'Admin',
+        status: 'Active'
+      }).select('firstname lastname email pic role specialization');
+      users = [...patients, ...doctors, ...admins];
+    } else if (currentUser.role === 'Admin') {
+      // Admin: all doctors
+      users = await User.find({
+        role: 'Doctor',
+        status: 'Active'
+      }).select('firstname lastname email pic role specialization');
+    }
 
     res.json({
       success: true,
@@ -314,7 +329,6 @@ const getUserChatRooms = async (req, res) => {
           status: chatRoom.status,
           isDirectChat: chatRoom.isDirectChat,
           lastMessageAt: chatRoom.lastMessageAt,
-          // Send both individual counts and calculated unread count for backwards compatibility
           unreadCountDoctor: chatRoom.unreadCountDoctor || 0,
           unreadCountPatient: chatRoom.unreadCountPatient || 0,
           unreadCount: userId === chatRoom.patientId.toString() 
@@ -343,9 +357,9 @@ const getUserChatRooms = async (req, res) => {
       message: "Failed to fetch chat rooms"
     });
   }
+  
 };
 
-// Get messages for chat room
 const getChatMessages = async (req, res) => {
   const startTime = Date.now();
   const requestId = req.requestId || 'unknown';
@@ -365,7 +379,6 @@ const getChatMessages = async (req, res) => {
       ip: req.ip
     });
 
-    // Validate chat room access and populate user details
     const chatRoom = await ChatRoom.findById(chatRoomId)
       .populate('patientId', 'firstname lastname pic role')
       .populate('doctorId', 'firstname lastname pic role');
@@ -397,10 +410,9 @@ const getChatMessages = async (req, res) => {
 
     database('find', 'Message', { chatRoomId, page, limit }, { count: messages.length, total }, { requestId });
 
-    // Transform messages to ensure client compatibility
     const transformedMessages = messages.reverse().map(message => ({
       ...message.toObject(),
-      sender: message.senderId // Map senderId to sender for client compatibility
+      sender: message.senderId
     }));
 
     const responseData = {
@@ -658,13 +670,10 @@ const closeChatRoom = async (req, res) => {
   }
 };
 
-// Simple message sending endpoint for fallback
 const sendMessage = async (req, res) => {
   try {
     const { chatRoomId, content, messageType = 'text' } = req.body;
     const userId = req.userId;
-
-    // Get user info
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
@@ -672,8 +681,6 @@ const sendMessage = async (req, res) => {
         message: "User not found"
       });
     }
-
-    // Create message
     const message = new Message({
       chatRoomId,
       senderId: userId,
@@ -683,8 +690,6 @@ const sendMessage = async (req, res) => {
     });
 
     await message.save();
-
-    // Populate sender info
     await message.populate('senderId', 'firstname lastname role pic');
 
     res.status(200).json({

@@ -47,7 +47,6 @@ const NavbarWrapper = () => {
           { name: 'Appointments', path: '/doctor/appointments', icon: <FaCalendarAlt /> },
           { name: 'Medical Records', path: '/doctor/medical-records', icon: <FaFileAlt /> },
           { name: 'Schedule', path: '/doctor/schedule', icon: <FaCalendarCheck /> },
-          { name: 'Analytics', path: '/doctor/analytics', icon: <FaChartBar /> },
           { name: 'Earnings', path: '/doctor/earnings', icon: <FaDollarSign /> },
           { name: 'Ratings', path: '/doctor/ratings', icon: <FaStar /> }
         ];

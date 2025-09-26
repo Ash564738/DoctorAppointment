@@ -190,7 +190,6 @@ const DoctorManagement = () => {
 
         <div className="doctorManagement_section">
           <div className="doctorManagement_sectionHeader">
-            <h2 className="doctorManagement_sectionTitle">All Doctors</h2>
             <div className="doctorManagement_filters">
               <button 
                 className={`doctorManagement_filterButton ${filter === 'all' ? 'doctorManagement_filterActive' : ''}`}

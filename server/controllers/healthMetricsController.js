@@ -2,64 +2,99 @@ const HealthMetrics = require("../models/healthMetricsModel");
 const User = require("../models/userModel");
 const logger = require("../utils/logger");
 
-// Create new health metrics entry
 const createHealthMetrics = async (req, res) => {
   try {
-    const {
-      patientId,
-      vitalSigns,
-      measurements,
-      deviceData,
-      recordedBy,
-      notes
-    } = req.body;
-
-    // If patientId is not provided, use the logged-in user
-    const targetPatientId = patientId || req.user._id;
-
-    // Check if user can create metrics for this patient
-    if (targetPatientId !== req.user._id.toString() && !req.user.isDoctor && !req.user.isAdmin) {
+    // Only use fields present in the HealthMetrics model
+    const allowedFields = [
+      'userId',
+      'weight',
+      'height',
+      'bloodPressure',
+      'heartRate',
+      'temperature',
+      'bloodSugar',
+      'oxygenSaturation',
+      'respiratoryRate',
+      'notes'
+    ];
+    const data = {};
+    for (const key of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+        data[key] = req.body[key];
+      }
+    }
+    // Support both userId and patientId for compatibility
+    const targetUserId = data.userId || req.body.patientId || req.user._id;
+    if (targetUserId.toString() !== req.user._id.toString() && !['Doctor', 'Admin'].includes(req.user.role)) {
       return res.status(403).json({
         success: false,
         message: "Access denied"
       });
     }
-
-    // Verify patient exists
-    const patient = await User.findById(targetPatientId);
+    const patient = await User.findById(targetUserId);
     if (!patient) {
       return res.status(404).json({
         success: false,
         message: "Patient not found"
       });
     }
-
-    // Create health metrics entry
-    const healthMetrics = new HealthMetrics({
-      patientId: targetPatientId,
-      vitalSigns,
-      measurements,
-      deviceData,
-      recordedBy: recordedBy || req.user._id,
-      notes
-    });
-
+    // Convert numeric fields
+    const toNum = v => (v === '' || v === undefined || v === null ? undefined : Number(v));
+    if ('weight' in data) data.weight = toNum(data.weight);
+    if ('height' in data) data.height = toNum(data.height);
+    if ('bloodPressure' in data && data.bloodPressure) {
+      data.bloodPressure = {
+        systolic: toNum(data.bloodPressure.systolic),
+        diastolic: toNum(data.bloodPressure.diastolic),
+        formatted: data.bloodPressure.formatted
+      };
+    }
+    if ('heartRate' in data) data.heartRate = toNum(data.heartRate);
+    if ('temperature' in data && data.temperature) {
+      data.temperature = {
+        value: toNum(data.temperature.value),
+        unit: data.temperature.unit || 'celsius'
+      };
+    }
+    if ('bloodSugar' in data && data.bloodSugar) {
+      data.bloodSugar = {
+        value: toNum(data.bloodSugar.value),
+        testType: data.bloodSugar.testType,
+        unit: data.bloodSugar.unit || 'mg/dl'
+      };
+    }
+    if ('oxygenSaturation' in data) data.oxygenSaturation = toNum(data.oxygenSaturation);
+    if ('respiratoryRate' in data) data.respiratoryRate = toNum(data.respiratoryRate);
+    data.userId = targetUserId;
+  // recordedBy removed: not in schema
+    const healthMetrics = new HealthMetrics(data);
     await healthMetrics.save();
-
-    // Populate the entry with patient and recorded by details
+    // Link to medical record if provided
+    const { appointmentId, medicalRecordId } = req.body;
+    if (appointmentId || medicalRecordId) {
+      const MedicalRecord = require('../models/medicalRecordModel');
+      let medicalRecord = null;
+      if (medicalRecordId) {
+        medicalRecord = await MedicalRecord.findById(medicalRecordId);
+      } else if (appointmentId) {
+        medicalRecord = await MedicalRecord.findOne({ appointmentId });
+      }
+      if (medicalRecord) {
+        if (!medicalRecord.healthMetricsIds) medicalRecord.healthMetricsIds = [];
+        medicalRecord.healthMetricsIds.push(healthMetrics._id);
+        await medicalRecord.save();
+      }
+    }
     await healthMetrics.populate([
-      { path: 'patientId', select: 'firstname lastname email' },
-      { path: 'recordedBy', select: 'firstname lastname isDoctor' }
+      { path: 'userId', select: 'firstname lastname email' },
+  // recordedBy removed: not in schema
     ]);
-
-    logger.info(`Health metrics created for patient ${targetPatientId} by ${req.user.firstname} ${req.user.lastname}`);
-
+    logger.info(`Health metrics created for patient ${targetUserId} by ${req.user.firstname} ${req.user.lastname}`);
     res.status(201).json({
       success: true,
       message: "Health metrics recorded successfully",
       data: healthMetrics
     });
-
   } catch (error) {
     logger.error("Error creating health metrics:", error);
     res.status(500).json({
@@ -70,7 +105,6 @@ const createHealthMetrics = async (req, res) => {
   }
 };
 
-// Get health metrics for a patient
 const getPatientHealthMetrics = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -83,40 +117,26 @@ const getPatientHealthMetrics = async (req, res) => {
       sortBy = 'recordedAt',
       sortOrder = 'desc'
     } = req.query;
-
-    // Check if user can access these metrics
     if (patientId !== req.user._id.toString() && !req.user.isDoctor && !req.user.isAdmin) {
       return res.status(403).json({
         success: false,
         message: "Access denied"
       });
     }
-
-    // Build query
     const query = { patientId };
-
-    // Date range filter
     if (startDate || endDate) {
       query.recordedAt = {};
       if (startDate) query.recordedAt.$gte = new Date(startDate);
       if (endDate) query.recordedAt.$lte = new Date(endDate);
     }
-
-    // Get total count
     const total = await HealthMetrics.countDocuments(query);
-
-    // Build sort object
     const sort = {};
     sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
-
-    // Get health metrics with pagination
     const healthMetrics = await HealthMetrics.find(query)
-      .populate('recordedBy', 'firstname lastname isDoctor')
+  // .populate('recordedBy', 'firstname lastname isDoctor')
       .sort(sort)
       .limit(limit * 1)
       .skip((page - 1) * limit);
-
-    // Filter by metric type if specified
     let filteredMetrics = healthMetrics;
     if (metricType) {
       filteredMetrics = healthMetrics.filter(metric => {
@@ -159,28 +179,23 @@ const getHealthMetricsById = async (req, res) => {
 
     const healthMetrics = await HealthMetrics.findById(id)
       .populate('patientId', 'firstname lastname email dateOfBirth')
-      .populate('recordedBy', 'firstname lastname isDoctor');
-
+  // .populate('recordedBy', 'firstname lastname isDoctor');
     if (!healthMetrics) {
       return res.status(404).json({
         success: false,
         message: "Health metrics not found"
       });
     }
-
-    // Check access permissions
     const canAccess = 
       req.user._id.toString() === healthMetrics.patientId._id.toString() ||
       req.user.isDoctor ||
       req.user.isAdmin;
-
     if (!canAccess) {
       return res.status(403).json({
         success: false,
         message: "Access denied"
       });
     }
-
     res.status(200).json({
       success: true,
       data: healthMetrics
@@ -196,52 +211,75 @@ const getHealthMetricsById = async (req, res) => {
   }
 };
 
-// Update health metrics entry
 const updateHealthMetrics = async (req, res) => {
   try {
     const { id } = req.params;
+    // Only update fields that exist in the HealthMetrics model
+    const allowedFields = [
+      'weight',
+      'height',
+      'bloodPressure',
+      'heartRate',
+      'temperature',
+      'bloodSugar',
+      'oxygenSaturation',
+      'respiratoryRate',
+      'notes'
+    ];
     const updateData = req.body;
-
     const healthMetrics = await HealthMetrics.findById(id);
-    
     if (!healthMetrics) {
       return res.status(404).json({
         success: false,
         message: "Health metrics not found"
       });
     }
-
-    // Check permissions - only patient, recording person, doctors, or admins can update
     const canUpdate = 
-      req.user._id.toString() === healthMetrics.patientId.toString() ||
-      req.user._id.toString() === healthMetrics.recordedBy.toString() ||
+      req.user._id.toString() === healthMetrics.patientId?.toString() ||
+  // recordedBy removed: not in schema
       req.user.isDoctor ||
       req.user.isAdmin;
-
     if (!canUpdate) {
       return res.status(403).json({
         success: false,
         message: "Access denied"
       });
     }
-
-    // Update health metrics
-    Object.keys(updateData).forEach(key => {
-      if (key !== '_id' && key !== 'createdAt' && key !== 'updatedAt' && key !== 'patientId') {
-        healthMetrics[key] = updateData[key];
+    // Convert numeric fields
+    const toNum = v => (v === '' || v === undefined || v === null ? undefined : Number(v));
+    for (const key of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(updateData, key)) {
+        if (['weight', 'height', 'heartRate', 'oxygenSaturation', 'respiratoryRate'].includes(key)) {
+          healthMetrics[key] = toNum(updateData[key]);
+        } else if (key === 'bloodPressure' && updateData.bloodPressure) {
+          healthMetrics.bloodPressure = {
+            systolic: toNum(updateData.bloodPressure.systolic),
+            diastolic: toNum(updateData.bloodPressure.diastolic),
+            formatted: updateData.bloodPressure.formatted
+          };
+        } else if (key === 'temperature' && updateData.temperature) {
+          healthMetrics.temperature = {
+            value: toNum(updateData.temperature.value),
+            unit: updateData.temperature.unit || 'celsius'
+          };
+        } else if (key === 'bloodSugar' && updateData.bloodSugar) {
+          healthMetrics.bloodSugar = {
+            value: toNum(updateData.bloodSugar.value),
+            testType: updateData.bloodSugar.testType,
+            unit: updateData.bloodSugar.unit || 'mg/dl'
+          };
+        } else {
+          healthMetrics[key] = updateData[key];
+        }
       }
-    });
-
+    }
     await healthMetrics.save();
-
     logger.info(`Health metrics ${id} updated by ${req.user.firstname} ${req.user.lastname}`);
-
     res.status(200).json({
       success: true,
       message: "Health metrics updated successfully",
       data: healthMetrics
     });
-
   } catch (error) {
     logger.error("Error updating health metrics:", error);
     res.status(500).json({
@@ -269,7 +307,7 @@ const deleteHealthMetrics = async (req, res) => {
     // Check permissions - only patient, recording person, or admins can delete
     const canDelete = 
       req.user._id.toString() === healthMetrics.patientId.toString() ||
-      req.user._id.toString() === healthMetrics.recordedBy.toString() ||
+  // recordedBy removed: not in schema
       req.user.isAdmin;
 
     if (!canDelete) {
@@ -479,7 +517,7 @@ const getHealthMetricsSummary = async (req, res) => {
     // Get latest health metrics
     const latestMetrics = await HealthMetrics.findOne({ patientId })
       .sort({ recordedAt: -1 })
-      .populate('recordedBy', 'firstname lastname');
+  // .populate('recordedBy', 'firstname lastname');
 
     // Get metrics count for different periods
     const today = new Date();

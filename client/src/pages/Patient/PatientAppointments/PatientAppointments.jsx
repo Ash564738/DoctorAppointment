@@ -11,6 +11,82 @@ import "./PatientAppointments.css";
 import toast from "react-hot-toast";
 
 const PatientAppointments = () => {
+	const [refillLoading, setRefillLoading] = useState(null);
+	const [waitlistLoading, setWaitlistLoading] = useState(null);
+	const [queueLoading, setQueueLoading] = useState(null);
+	const [recurringLoading, setRecurringLoading] = useState(null);
+	const [walkInStatus, setWalkInStatus] = useState({});
+	const [waitlistStatus, setWaitlistStatus] = useState({});
+	const handleRefillRequest = async (appointmentId) => {
+		if (!window.confirm("Request a prescription refill for this appointment?")) return;
+		setRefillLoading(appointmentId);
+		try {
+			const res = await apiCall.post(`/prescription/refill`, { appointmentId });
+			if (res.success) toast.success("Refill request sent");
+			else toast.error(res.message || "Failed to request refill");
+		} catch (e) {
+			toast.error("Failed to request refill");
+		} finally {
+			setRefillLoading(null);
+		}
+	};
+	const handleJoinWaitlist = async (doctorId, date, time) => {
+		setWaitlistLoading(`${doctorId}_${date}_${time}`);
+		try {
+			const res = await apiCall.post(`/waitlist/join`, { doctorId, date, time });
+			if (res.success) {
+				toast.success("Added to waitlist");
+				setWaitlistStatus((prev) => ({ ...prev, [`${doctorId}_${date}_${time}`]: true }));
+			} else toast.error(res.message || "Failed to join waitlist");
+		} catch (e) {
+			toast.error("Failed to join waitlist");
+		} finally {
+			setWaitlistLoading(null);
+		}
+	};
+	const handleCancelWaitlist = async (waitlistId) => {
+		setWaitlistLoading(waitlistId);
+		try {
+			const res = await apiCall.delete(`/waitlist/cancel/${waitlistId}`);
+			if (res.success) {
+				toast.success("Removed from waitlist");
+				setWaitlistStatus((prev) => ({ ...prev, [waitlistId]: false }));
+			} else toast.error(res.message || "Failed to cancel waitlist");
+		} catch (e) {
+			toast.error("Failed to cancel waitlist");
+		} finally {
+			setWaitlistLoading(null);
+		}
+	};
+	const handleWalkInCheckIn = async (doctorId, date) => {
+		setQueueLoading(`${doctorId}_${date}`);
+		try {
+			const res = await apiCall.post(`/walk-in/check-in`, { doctorId, date });
+			if (res.success) {
+				toast.success("Checked in to walk-in queue");
+				setWalkInStatus((prev) => ({ ...prev, [`${doctorId}_${date}`]: res.data }));
+			} else toast.error(res.message || "Failed to check in");
+		} catch (e) {
+			toast.error("Failed to check in");
+		} finally {
+			setQueueLoading(null);
+		}
+	};
+	const handleCancelRecurring = async (appointmentId) => {
+		if (!window.confirm("Cancel the entire recurring series for this appointment?")) return;
+		setRecurringLoading(appointmentId);
+		try {
+			const res = await apiCall.post(`/appointment/recurring/cancel`, { appointmentId });
+			if (res.success) {
+				toast.success("Recurring series cancelled");
+				getAllAppointments();
+			} else toast.error(res.message || "Failed to cancel series");
+		} catch (e) {
+			toast.error("Failed to cancel series");
+		} finally {
+			setRecurringLoading(null);
+		}
+	};
 	const navigate = useNavigate();
 	const [appointments, setAppointments] = useState([]);
 	const [filteredAppointments, setFilteredAppointments] = useState([]);
@@ -18,10 +94,8 @@ const PatientAppointments = () => {
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [currentPage, setCurrentPage] = useState(1);
 	const appointmentsPerPage = 8;
-
 	const dispatch = useDispatch();
 	const { loading } = useSelector((state) => state.root);
-
 	const getAllAppointments = async () => {
 		try {
 			dispatch(setLoading(true));
@@ -41,9 +115,7 @@ const PatientAppointments = () => {
 			dispatch(setLoading(false));
 		}
 	};
-
 	useEffect(() => { getAllAppointments(); }, []);
-
 	useEffect(() => {
 		let filtered = appointments;
 		if (searchTerm) {
@@ -59,14 +131,11 @@ const PatientAppointments = () => {
 		setFilteredAppointments(filtered);
 		setCurrentPage(1);
 	}, [searchTerm, statusFilter, appointments]);
-
 	const indexOfLastAppointment = currentPage * appointmentsPerPage;
 	const indexOfFirstAppointment = indexOfLastAppointment - appointmentsPerPage;
 	const paginatedAppointments = filteredAppointments.slice(indexOfFirstAppointment, indexOfLastAppointment);
 	const totalPages = Math.ceil(filteredAppointments.length / appointmentsPerPage);
-
 	const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
-
 	const getStatusBadgeClass = (status) => {
 		switch (status.toLowerCase()) {
 			case "pending": return "status-pending";
@@ -75,7 +144,6 @@ const PatientAppointments = () => {
 			default: return "status-default";
 		}
 	};
-
 	const handleCancelAppointment = async (appointmentId) => {
 		if (!window.confirm("Are you sure you want to cancel this appointment?")) return;
 		try {
@@ -87,7 +155,6 @@ const PatientAppointments = () => {
 			toast.error("Failed to cancel appointment");
 		}
 	};
-
 	return (
 		<div className="patientAppointments_page">
 			<NavbarWrapper />
@@ -187,17 +254,46 @@ const PatientAppointments = () => {
 														"—"
 													)}
 												</td>
-												<td className="patientAppointments_tableCell">
-													{["pending", "confirmed"].includes(appointment.status.toLowerCase()) && (
-														<button className="patientAppointments_actionBtn patientAppointments_actionBtn--cancel" onClick={() => handleCancelAppointment(appointment._id)}>Cancel</button>
-													)}
-													{appointment.status.toLowerCase() === "completed" && (
-														<span className="patientAppointments_statusText patientAppointments_statusText--success">Completed</span>
-													)}
-													{appointment.status.toLowerCase() === "cancelled" && (
-														<span className="patientAppointments_statusText patientAppointments_statusText--danger">Cancelled</span>
-													)}
-												</td>
+																								<td className="patientAppointments_tableCell">
+																									{/* Cancel appointment */}
+																									{["pending", "confirmed"].includes(appointment.status.toLowerCase()) && (
+																										<button className="patientAppointments_actionBtn patientAppointments_actionBtn--cancel" onClick={() => handleCancelAppointment(appointment._id)}>Cancel</button>
+																									)}
+																									{/* Recurring management */}
+																									{(appointment.isRecurring || (appointment.recurringPattern && appointment.recurringPattern.frequency)) && appointment.status.toLowerCase() === "pending" && (
+																										<button className="patientAppointments_actionBtn patientAppointments_actionBtn--recurring" onClick={() => handleCancelRecurring(appointment._id)} disabled={recurringLoading === appointment._id}>
+																											{recurringLoading === appointment._id ? "Cancelling..." : "Cancel Series"}
+																										</button>
+																									)}
+																									{/* Prescription refill */}
+																									{appointment.status.toLowerCase() === "completed" && appointment.prescriptionId && (
+																										<button className="patientAppointments_actionBtn patientAppointments_actionBtn--refill" onClick={() => handleRefillRequest(appointment._id)} disabled={refillLoading === appointment._id}>
+																											{refillLoading === appointment._id ? "Requesting..." : "Refill"}
+																										</button>
+																									)}
+																									{/* Waitlist join/cancel (example logic, adjust as needed) */}
+																									{appointment.status.toLowerCase() === "pending" && appointment.isFull && !waitlistStatus[`${appointment.doctorId?._id}_${appointment.date}_${appointment.time}`] && (
+																										<button className="patientAppointments_actionBtn patientAppointments_actionBtn--waitlist" onClick={() => handleJoinWaitlist(appointment.doctorId?._id, appointment.date, appointment.time)} disabled={waitlistLoading === `${appointment.doctorId?._id}_${appointment.date}_${appointment.time}`}>Join Waitlist</button>
+																									)}
+																									{waitlistStatus[`${appointment.doctorId?._id}_${appointment.date}_${appointment.time}`] && (
+																										<button className="patientAppointments_actionBtn patientAppointments_actionBtn--waitlist" onClick={() => handleCancelWaitlist(`${appointment.doctorId?._id}_${appointment.date}_${appointment.time}`)} disabled={waitlistLoading === `${appointment.doctorId?._id}_${appointment.date}_${appointment.time}`}>Cancel Waitlist</button>
+																									)}
+																									{/* Walk-in queue check-in */}
+																									{appointment.status.toLowerCase() === "pending" && (
+																										<button className="patientAppointments_actionBtn patientAppointments_actionBtn--walkin" onClick={() => handleWalkInCheckIn(appointment.doctorId?._id, appointment.date)} disabled={queueLoading === `${appointment.doctorId?._id}_${appointment.date}`}>Walk-in Check-in</button>
+																									)}
+																									{/* Walk-in queue status */}
+																									{walkInStatus[`${appointment.doctorId?._id}_${appointment.date}`] && (
+																										<span className="patientAppointments_statusText patientAppointments_statusText--queue">In queue: #{walkInStatus[`${appointment.doctorId?._id}_${appointment.date}`].queueNumber}</span>
+																									)}
+																									{/* Completed/cancelled status */}
+																									{appointment.status.toLowerCase() === "completed" && (
+																										<span className="patientAppointments_statusText patientAppointments_statusText--success">Completed</span>
+																									)}
+																									{appointment.status.toLowerCase() === "cancelled" && (
+																										<span className="patientAppointments_statusText patientAppointments_statusText--danger">Cancelled</span>
+																									)}
+																								</td>
 											</tr>
 										))}
 									</tbody>

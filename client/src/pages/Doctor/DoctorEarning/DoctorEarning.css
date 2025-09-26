@@ -1,0 +1,180 @@
+/* Section styles for breakdown and payouts */
+.doctorEarning_section {
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 2px 8px -2px rgba(0,0,0,0.06);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+.doctorEarning_sectionTitle {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-md);
+  color: var(--primary-color);
+}
+
+/* Table styles */
+.doctorEarning_tableWrapper {
+  overflow-x: auto;
+}
+.doctorEarning_table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-base);
+}
+.doctorEarning_table th, .doctorEarning_table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+.doctorEarning_table th {
+  background: #f1f5f9;
+  color: var(--primary-color);
+  font-weight: var(--font-weight-bold);
+}
+.doctorEarning_table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Recent payouts list */
+.doctorEarning_payoutsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.doctorEarning_payoutCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  box-shadow: 0 1px 4px -2px rgba(0,0,0,0.04);
+}
+.doctorEarning_payoutInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--font-size-base);
+}
+.doctorEarning_downloadBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: var(--border-radius-md);
+  padding: 0.5rem 1rem;
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.doctorEarning_downloadBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.doctorEarning_downloadBtn:hover:not(:disabled) {
+  background: #2563eb;
+}
+/* Stat grid for earnings cards */
+.doctorEarning_stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: var(--spacing-lg);
+}
+/* Stat Cards (Dashboard Style) */
+.doctorEarning_statCard {
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  transition: all 0.3s ease;
+}
+.doctorEarning_statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
+}
+.doctorEarning_statIcon {
+  font-size: var(--font-size-lg);
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius-lg);
+  color: var(--white);
+  background: var(--primary-color);
+  flex-shrink: 0;
+}
+.doctorEarning_statContent {
+  flex: 1;
+}
+
+/* Redesigned DoctorEarning Page Styles */
+.doctorEarning_page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+}
+.doctorEarning_container {
+  margin: 0 auto;
+  padding: var(--spacing-md) 0;
+  width: 70vw;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.doctorEarning_title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-color);
+  margin-bottom: var(--spacing-lg);
+  text-align: left;
+}
+
+.doctorEarning_loading, .doctorEarning_empty {
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+  color: #64748b;
+  margin: 0 auto var(--spacing-lg) auto;
+  width: 100%;
+}
+/* Stat content (already styled above, but ensure vertical layout) */
+.doctorEarning_statContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.doctorEarning_statNumber {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--text-color);
+}
+.doctorEarning_statLabel {
+  font-size: var(--font-size-sm);
+  color: #64748b;
+  margin: 0;
+  font-weight: var(--font-weight-medium);
+}
+
+@media (max-width: 1300px) {
+  .doctorEarning_container {
+    width: 90vw;
+  }
+}

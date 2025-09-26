@@ -3,6 +3,7 @@ import { apiCall } from '../../../helper/apiCall';
 import toast from 'react-hot-toast';
 import NavbarWrapper from '../../../components/Common/NavbarWrapper/NavbarWrapper';
 import Footer from '../../../components/Common/Footer/Footer';
+import MedicalRecordForm from './MedicalRecordForm';
 import './DoctorRecords.css';
 
 const DoctorRecords = () => {
@@ -17,25 +18,19 @@ const DoctorRecords = () => {
 
   const [recordData, setRecordData] = useState({
     chiefComplaint: '',
+    symptoms: '',
     historyOfPresentIllness: '',
     pastMedicalHistory: '',
+    skipFamilyHistory: false,
     familyHistory: '',
     socialHistory: {
       smoking: { status: 'never', details: '' },
       alcohol: { status: 'never', details: '' },
       drugs: { status: 'never', details: '' }
     },
-    allergies: [],
-    currentMedications: [],
-    vitalSigns: {
-      bloodPressure: { systolic: '', diastolic: '' },
-      heartRate: '',
-      temperature: '',
-      respiratoryRate: '',
-      oxygenSaturation: '',
-      weight: '',
-      height: ''
-    },
+    skipAllergies: false,
+    allergies: [{ allergen: '', reaction: '', severity: '' }],
+    skipPhysicalExamination: false,
     physicalExamination: {
       general: '',
       head: '',
@@ -47,22 +42,29 @@ const DoctorRecords = () => {
       other: ''
     },
     assessment: '',
-    diagnosis: [],
+    diagnosis: [{ code: '', description: '', type: '' }],
     treatment: '',
+    skipVitalSigns: false,
+    vitalSigns: {
+      bloodPressure: { systolic: '', diastolic: '', formatted: '' },
+      heartRate: '',
+      temperature: { value: '', unit: 'celsius' },
+      respiratoryRate: '',
+      oxygenSaturation: '',
+      weight: '',
+      height: '',
+      bloodSugar: { value: '', testType: '', unit: 'mg/dl' }
+    },
     prescriptions: [
-      { medication: '', dosage: '', frequency: '', duration: '', instructions: '', quantity: '' }
+      { medication: '', dosage: '', frequency: '', duration: '', instructions: '', quantity: '', symptoms: '' }
     ],
-    labOrders: [],
-    imagingOrders: [],
     followUp: {
       required: false,
       timeframe: '',
       instructions: ''
     },
-    referrals: [],
-    isConfidential: false
+    attachments: []
   });
-
   useEffect(() => {
     fetchCompletedAppointments();
   }, []);
@@ -119,8 +121,13 @@ const DoctorRecords = () => {
           [parent]: {
             ...prev[parent],
             [child]: {
-              ...prev[parent][child],
-              [grandchild]: type === 'checkbox' ? checked : value
+              ...(prev[parent] && prev[parent][child] ? prev[parent][child] : {}),
+              [grandchild]:
+                (parent === 'vitalSigns' && ['weight', 'height', 'heartRate', 'respiratoryRate', 'oxygenSaturation'].includes(child)) || 
+                (parent === 'vitalSigns' && child === 'temperature' && grandchild === 'value') || 
+                (parent === 'vitalSigns' && child === 'bloodPressure' && (grandchild === 'systolic' || grandchild === 'diastolic')) 
+                  ? value === '' ? '' : isNaN(Number(value)) ? value : Number(value)
+                  : (type === 'checkbox' ? checked : value)
             }
           }
         }));
@@ -128,8 +135,11 @@ const DoctorRecords = () => {
         setRecordData(prev => ({
           ...prev,
           [parent]: {
-            ...prev[parent],
-            [child]: type === 'checkbox' ? checked : value
+            ...(prev[parent] ? prev[parent] : {}),
+            [child]:
+              (parent === 'vitalSigns' && ['weight', 'height', 'heartRate', 'respiratoryRate', 'oxygenSaturation'].includes(child)) 
+                ? value === '' ? '' : isNaN(Number(value)) ? value : Number(value)
+                : (type === 'checkbox' ? checked : value)
           }
         }));
       }
@@ -180,59 +190,207 @@ const DoctorRecords = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!recordData.chiefComplaint || recordData.chiefComplaint.trim().length < 10) {
       toast.error('Chief complaint must be at least 10 characters.');
+      return;
+    }
+    if (!recordData.symptoms || recordData.symptoms.trim().length < 3) {
+      toast.error('Symptoms are required and must be at least 3 characters.');
       return;
     }
     if (!recordData.assessment || recordData.assessment.trim().length < 10) {
       toast.error('Assessment must be at least 10 characters.');
       return;
     }
-
-    const appointmentId =
-      selectedAppointment?._id ||
-      viewingRecordData?.appointmentId?._id ||
-      viewingRecordData?.appointmentId;
-
-    const patientId =
-      selectedAppointment?.userId?._id ||
-      viewingRecordData?.patientId?._id ||
-      viewingRecordData?.patientId;
-
+    const appointmentId = selectedAppointment?._id || viewingRecordData?.appointmentId?._id || viewingRecordData?.appointmentId;
+    const patientId = selectedAppointment?.userId?._id || viewingRecordData?.patientId?._id || viewingRecordData?.patientId;
     if (!appointmentId) {
       toast.error('Appointment is missing or invalid.');
       return;
     }
-
+    setLoading(true);
+    let createdPrescriptionIds = [];
+    let createdHealthMetricsIds = [];
+    let createdPrescriptionApiIds = [];
+    let createdHealthMetricsApiIds = [];
     try {
-      setLoading(true);
+      if (!recordData.prescriptions || recordData.prescriptions.length === 0 || !recordData.prescriptions[0].medication) {
+        toast.error('Please add at least one prescription with medication name.');
+        setLoading(false);
+        return;
+      }
+      for (const presc of recordData.prescriptions) {
+        if (!presc.medication || !presc.dosage || !presc.frequency) {
+          toast.error('Please fill in all prescription fields (medication, dosage, frequency).');
+          setLoading(false);
+          return;
+        }
+        let symptoms = (recordData.symptoms || '').trim();
+        if (!symptoms) symptoms = (recordData.chiefComplaint || '').trim();
+        if (!symptoms) symptoms = 'N/A';
+        let diagnosis = '';
+        if (Array.isArray(recordData.diagnosis) && recordData.diagnosis.length > 0 && recordData.diagnosis[0].description) {
+          diagnosis = recordData.diagnosis[0].description.trim();
+        } else if (typeof recordData.diagnosis === 'string') {
+          diagnosis = recordData.diagnosis.trim();
+        }
+        if (!diagnosis || diagnosis.length === 0) {
+          toast.error('Diagnosis is required and must be under 500 characters.');
+          setLoading(false);
+          return;
+        }
+        if (diagnosis.length > 500) {
+          toast.error('Diagnosis must be under 500 characters.');
+          setLoading(false);
+          return;
+        }
+        const prescPayload = {
+          patientId,
+          appointmentId,
+          medications: [{
+            name: presc.medication,
+            dosage: presc.dosage,
+            frequency: presc.frequency,
+            duration: presc.duration,
+            instructions: presc.instructions,
+            quantity: presc.quantity
+          }],
+          symptoms,
+          diagnosis
+        };
+        let prescRes;
+        try {
+          if (presc._id) {
+            prescRes = await apiCall.put(`/prescription/${presc._id}`, prescPayload);
+          } else {
+            prescRes = await apiCall.post('/prescription/create', prescPayload);
+          }
+          if (prescRes.success && prescRes.data && prescRes.data._id) {
+            createdPrescriptionIds.push(prescRes.data._id);
+            createdPrescriptionApiIds.push(prescRes.data._id);
+          } else {
+            throw new Error('Prescription creation failed');
+          }
+        } catch (err) {
+          for (const id of createdPrescriptionApiIds) {
+            try { await apiCall.post(`/prescription/${id}/delete`); } catch {}
+          }
+          setLoading(false);
+          toast.error('Failed to create prescription. All created prescriptions have been rolled back.');
+          return;
+        }
+      }
+      const vitals = recordData.vitalSigns || {};
+      const isEmpty = val => val === undefined || val === null || (typeof val === 'string' && val.trim() === '');
+      if (!recordData.skipVitalSigns) {
+        if (
+          isEmpty(vitals.weight) ||
+          isEmpty(vitals.height) ||
+          isEmpty(vitals.temperature?.value) ||
+          isEmpty(vitals.bloodPressure?.systolic) ||
+          isEmpty(vitals.bloodPressure?.diastolic)
+        ) {
+          for (const id of createdPrescriptionApiIds) {
+            try { await apiCall.post(`/prescription/${id}/delete`); } catch {}
+          }
+          toast.error('Please fill in all required health metric fields (weight, height, temperature, blood pressure).');
+          setLoading(false);
+          return;
+        }
+      }
+      const validTestTypes = ['fasting', 'random', 'postprandial'];
+      const validUnits = ['mg/dl', 'mmol/l'];
+      const cleanBloodSugar = {};
+      if (vitals.bloodSugar) {
+        if (vitals.bloodSugar.value !== undefined && vitals.bloodSugar.value !== '') cleanBloodSugar.value = vitals.bloodSugar.value;
+        if (validTestTypes.includes(vitals.bloodSugar.testType)) cleanBloodSugar.testType = vitals.bloodSugar.testType;
+        if (validUnits.includes(vitals.bloodSugar.unit)) cleanBloodSugar.unit = vitals.bloodSugar.unit;
+      }
+      let healthMetricsRes;
+      try {
+        let metricsPayload = {
+          userId: patientId,
+          weight: vitals.weight,
+          height: vitals.height,
+          bloodPressure: {
+            systolic: vitals.bloodPressure?.systolic,
+            diastolic: vitals.bloodPressure?.diastolic,
+            formatted: vitals.bloodPressure?.formatted || (vitals.bloodPressure?.systolic && vitals.bloodPressure?.diastolic ? `${vitals.bloodPressure.systolic}/${vitals.bloodPressure.diastolic}` : undefined)
+          },
+          heartRate: vitals.heartRate,
+          temperature: {
+            value: vitals.temperature?.value || vitals.temperature,
+            unit: vitals.temperature?.unit || 'celsius'
+          },
+          bloodSugar: Object.keys(cleanBloodSugar).length > 0 ? cleanBloodSugar : undefined,
+          oxygenSaturation: vitals.oxygenSaturation,
+          respiratoryRate: vitals.respiratoryRate,
+          notes: recordData.treatment || ''
+        };
+        healthMetricsRes = await apiCall.post('/health-metrics/create', metricsPayload);
+        if (healthMetricsRes.success && healthMetricsRes.data && healthMetricsRes.data._id) {
+          createdHealthMetricsIds.push(healthMetricsRes.data._id);
+          createdHealthMetricsApiIds.push(healthMetricsRes.data._id);
+        } else {
+          throw new Error('Health metrics creation failed');
+        }
+      } catch (err) {
+        for (const id of createdPrescriptionApiIds) {
+          try { await apiCall.post(`/prescription/${id}/delete`); } catch {}
+        }
+        setLoading(false);
+        toast.error('Failed to create health metrics. All created prescriptions have been rolled back.');
+        return;
+      }
+      let fixedDiagnosis = [];
+      if (Array.isArray(recordData.diagnosis)) {
+        fixedDiagnosis = recordData.diagnosis.filter(d => d && (d.description || d.text)).map(d => ({
+          ...(d.code ? { code: d.code } : {}),
+          ...(d.type ? { type: d.type } : {}),
+          description: d.description || d.text || ''
+        }));
+      } else if (typeof recordData.diagnosis === 'string' && recordData.diagnosis.trim()) {
+        fixedDiagnosis = [{ description: recordData.diagnosis.trim() }];
+      }
+      const validSeverities = ['mild', 'moderate', 'severe'];
+      let fixedAllergies = Array.isArray(recordData.allergies)
+        ? recordData.allergies.filter(a => a && a.allergen && a.reaction && validSeverities.includes(a.severity))
+        : [];
       const recordPayload = {
         ...recordData,
+        diagnosis: fixedDiagnosis,
+        allergies: fixedAllergies,
+        symptoms: recordData.symptoms || recordData.chiefComplaint || '',
         appointmentId,
-        patientId
+        patientId,
+        prescriptionIds: createdPrescriptionIds,
+        healthMetricsIds: createdHealthMetricsIds
       };
       let data;
-      if (isEditing && viewingRecord) {
-        data = await apiCall.put(`/medical-record/${viewingRecord}`, recordPayload);
-      } else {
-        data = await apiCall.post(`/medical-record/create`, recordPayload);
+      try {
+        if (isEditing && viewingRecord) {
+          data = await apiCall.put(`/medical-record/${viewingRecord}`, recordPayload);
+        } else {
+          data = await apiCall.post(`/medical-record/create`, recordPayload);
+        }
+        if (!data.success) throw new Error('Medical record creation failed');
+      } catch (err) {
+        for (const id of createdPrescriptionApiIds) {
+          try { await apiCall.post(`/prescription/${id}/delete`); } catch {}
+        }
+        for (const id of createdHealthMetricsApiIds) {
+          try { await apiCall.post(`/health-metrics/${id}/delete`); } catch {}
+        }
+        setLoading(false);
+        toast.error('Failed to create medical record. All created prescriptions and health metrics have been rolled back.');
+        return;
       }
-      if (data.success) {
-        toast.success(isEditing ? 'Medical record updated successfully' : 'Medical record created successfully');
-        setShowRecordForm(false);
-        setIsEditing(false);
-        setViewingRecord(null);
-        resetForm();
-        fetchCompletedAppointments();
-      }
-    } catch (error) {
-      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
-        toast.error(error.response.data.errors.map(e => e.msg).join('\n'));
-      } else {
-        toast.error(error.response?.data?.message || 'Failed to create medical record');
-      }
-      console.error('Error creating medical record:', error);
+      toast.success(isEditing ? 'Medical record updated successfully' : 'Medical record created successfully');
+      setShowRecordForm(false);
+      setIsEditing(false);
+      setViewingRecord(null);
+      resetForm();
+      fetchCompletedAppointments();
     } finally {
       setLoading(false);
     }
@@ -241,6 +399,7 @@ const DoctorRecords = () => {
   const resetForm = () => {
     setRecordData({
       chiefComplaint: '',
+      symptoms: '',
       historyOfPresentIllness: '',
       pastMedicalHistory: '',
       familyHistory: '',
@@ -249,16 +408,16 @@ const DoctorRecords = () => {
         alcohol: { status: 'never', details: '' },
         drugs: { status: 'never', details: '' }
       },
-      allergies: [],
-      currentMedications: [],
+      allergies: [{ allergen: '', reaction: '', severity: '' }],
       vitalSigns: {
-        bloodPressure: { systolic: '', diastolic: '' },
+        bloodPressure: { systolic: '', diastolic: '', formatted: '' },
         heartRate: '',
-        temperature: '',
+        temperature: { value: '', unit: 'celsius' },
         respiratoryRate: '',
         oxygenSaturation: '',
         weight: '',
-        height: ''
+        height: '',
+        bloodSugar: { value: '', testType: '', unit: 'mg/dl' }
       },
       physicalExamination: {
         general: '',
@@ -271,20 +430,17 @@ const DoctorRecords = () => {
         other: ''
       },
       assessment: '',
-      diagnosis: [],
+      diagnosis: [{ code: '', description: '', type: '' }],
       treatment: '',
       prescriptions: [
         { medication: '', dosage: '', frequency: '', duration: '', instructions: '', quantity: '' }
       ],
-      labOrders: [],
-      imagingOrders: [],
       followUp: {
         required: false,
         timeframe: '',
         instructions: ''
       },
-      referrals: [],
-      isConfidential: false
+      attachments: []
     });
     setSelectedAppointment(null);
   };
@@ -322,19 +478,67 @@ const DoctorRecords = () => {
 
   useEffect(() => {
     if (isEditing && viewingRecordData) {
-      setRecordData({
-        ...viewingRecordData,
-        prescriptions: (viewingRecordData.prescriptions && viewingRecordData.prescriptions.length > 0)
-          ? viewingRecordData.prescriptions.map(p => ({
-              medication: p.medication || p.name || '',
-              dosage: p.dosage || '',
-              frequency: p.frequency || '',
-              duration: p.duration || '',
-              instructions: p.instructions || '',
-              quantity: p.quantity || ''
-            }))
-          : [{ medication: '', dosage: '', frequency: '', duration: '', instructions: '', quantity: '' }]
-      });
+      const prescriptions = (viewingRecordData.prescriptionIds && viewingRecordData.prescriptionIds.length > 0)
+        ? viewingRecordData.prescriptionIds.map(p => {
+            const med = Array.isArray(p.medications) && p.medications.length > 0 ? p.medications[0] : {};
+            return {
+              _id: p._id,
+              medication: med.name || '',
+              dosage: med.dosage || '',
+              frequency: med.frequency || '',
+              duration: med.duration || '',
+              instructions: med.instructions || p.instructions || '',
+              quantity: med.quantity || '',
+              isUrgent: p.isUrgent || false
+            };
+          })
+        : [{ medication: '', dosage: '', frequency: '', duration: '', instructions: '', quantity: '', isUrgent: false }];
+      let vitalSigns = {
+        bloodPressure: { systolic: '', diastolic: '', formatted: '' },
+        heartRate: '',
+        temperature: { value: '', unit: 'celsius' },
+        respiratoryRate: '',
+        oxygenSaturation: '',
+        weight: '',
+        height: '',
+        bloodSugar: { value: '', testType: '', unit: 'mg/dl' }
+      };
+      if (viewingRecordData.healthMetricsIds && viewingRecordData.healthMetricsIds.length > 0) {
+        const latestMetric = viewingRecordData.healthMetricsIds[viewingRecordData.healthMetricsIds.length - 1];
+        vitalSigns = {
+          bloodPressure: latestMetric.bloodPressure || { systolic: '', diastolic: '', formatted: '' },
+          heartRate: latestMetric.heartRate || '',
+          temperature: latestMetric.temperature || { value: '', unit: 'celsius' },
+          respiratoryRate: latestMetric.respiratoryRate || '',
+          oxygenSaturation: latestMetric.oxygenSaturation || '',
+          weight: latestMetric.weight || '',
+          height: latestMetric.height || '',
+          bloodSugar: latestMetric.bloodSugar || { value: '', testType: '', unit: 'mg/dl' }
+        };
+      }
+
+      setRecordData(prev => ({
+        ...prev,
+        chiefComplaint: viewingRecordData.chiefComplaint || '',
+        symptoms: viewingRecordData.symptoms || '',
+        historyOfPresentIllness: viewingRecordData.historyOfPresentIllness || '',
+        pastMedicalHistory: viewingRecordData.pastMedicalHistory || '',
+        familyHistory: viewingRecordData.familyHistory || '',
+        socialHistory: viewingRecordData.socialHistory || prev.socialHistory,
+        allergies: viewingRecordData.allergies || [],
+        currentMedications: viewingRecordData.currentMedications || [],
+        vitalSigns,
+        physicalExamination: viewingRecordData.physicalExamination || prev.physicalExamination,
+        assessment: viewingRecordData.assessment || '',
+        diagnosis: viewingRecordData.diagnosis || [],
+        treatment: viewingRecordData.treatment || '',
+        prescriptions,
+        labOrders: viewingRecordData.labOrders || [],
+        imagingOrders: viewingRecordData.imagingOrders || [],
+        followUp: viewingRecordData.followUp || prev.followUp,
+        referrals: viewingRecordData.referrals || [],
+        isConfidential: viewingRecordData.isConfidential || false
+      }));
       setShowRecordForm(true);
     }
   }, [isEditing, viewingRecordData]);
@@ -405,9 +609,69 @@ const DoctorRecords = () => {
           </div>
         )}
 
-        {viewingRecord && viewingRecordData && !showRecordForm && (
-          <div className="doctorRecords_recordViewOverlay">
-            <div className="doctorRecords_recordViewPopup">
+        {viewingRecord && viewingRecordData && !showRecordForm && (() => {
+          const symptoms = viewingRecordData.symptoms || viewingRecordData.chiefComplaint || '';
+          const prescriptions = (viewingRecordData.prescriptionIds && viewingRecordData.prescriptionIds.length > 0)
+            ? viewingRecordData.prescriptionIds.map(p => {
+                const med = Array.isArray(p.medications) && p.medications.length > 0 ? p.medications[0] : {};
+                return {
+                  _id: p._id,
+                  medication: med.name || '',
+                  dosage: med.dosage || '',
+                  frequency: med.frequency || '',
+                  duration: med.duration || '',
+                  instructions: med.instructions || p.instructions || '',
+                  quantity: med.quantity || '',
+                  symptoms: symptoms || '',
+                  isUrgent: p.isUrgent || false
+                };
+              })
+            : [{ medication: '', dosage: '', frequency: '', duration: '', instructions: '', quantity: '', symptoms: symptoms || '', isUrgent: false }];
+
+          let vitalSigns = {
+            bloodPressure: { systolic: '', diastolic: '', formatted: '' },
+            heartRate: '',
+            temperature: { value: '', unit: 'celsius' },
+            respiratoryRate: '',
+            oxygenSaturation: '',
+            weight: '',
+            height: '',
+            bloodSugar: { value: '', testType: '', unit: 'mg/dl' },
+            notes: ''
+          };
+          if (viewingRecordData.healthMetricsIds && viewingRecordData.healthMetricsIds.length > 0) {
+            const latestMetric = viewingRecordData.healthMetricsIds[viewingRecordData.healthMetricsIds.length - 1];
+            vitalSigns = {
+              bloodPressure: latestMetric.bloodPressure || { systolic: '', diastolic: '', formatted: '' },
+              heartRate: latestMetric.heartRate || '',
+              temperature: latestMetric.temperature || { value: '', unit: 'celsius' },
+              respiratoryRate: latestMetric.respiratoryRate || '',
+              oxygenSaturation: latestMetric.oxygenSaturation || '',
+              weight: latestMetric.weight || '',
+              height: latestMetric.height || '',
+              bloodSugar: latestMetric.bloodSugar || { value: '', testType: '', unit: 'mg/dl' },
+              notes: latestMetric.notes || ''
+            };
+          }
+
+          const normalizedRecord = {
+            chiefComplaint: viewingRecordData.chiefComplaint || '',
+            symptoms,
+            historyOfPresentIllness: viewingRecordData.historyOfPresentIllness || '',
+            pastMedicalHistory: viewingRecordData.pastMedicalHistory || '',
+            familyHistory: viewingRecordData.familyHistory || '',
+            socialHistory: viewingRecordData.socialHistory || {},
+            allergies: viewingRecordData.allergies || [],
+            vitalSigns,
+            physicalExamination: viewingRecordData.physicalExamination || {},
+            assessment: viewingRecordData.assessment || '',
+            diagnosis: viewingRecordData.diagnosis || [],
+            treatment: viewingRecordData.treatment || '',
+            prescriptions,
+            followUp: viewingRecordData.followUp || {},
+          };
+          return (
+            <div className="doctorRecords_recordFormContainer">
               <div className="doctorRecords_formHeader">
                 <h3 className="doctorRecords_formTitle">Medical Record</h3>
                 <button 
@@ -419,66 +683,11 @@ const DoctorRecords = () => {
                   ×
                 </button>
               </div>
-              <div className="doctorRecords_recordDetails">
-                <div className="doctorRecords_detailRow">
-                  <strong>Patient:</strong> {viewingRecordData.patientId?.firstname} {viewingRecordData.patientId?.lastname}
-                </div>
-                <div className="doctorRecords_detailRow">
-                  <strong>Date:</strong> {viewingRecordData.visitDate ? new Date(viewingRecordData.visitDate).toLocaleDateString() : ''}
-                </div>
-                <div className="doctorRecords_detailRow">
-                  <strong>Chief Complaint:</strong> {viewingRecordData.chiefComplaint}
-                </div>
-                <div className="doctorRecords_detailRow">
-                  <strong>Diagnosis:</strong> {viewingRecordData.diagnosis && viewingRecordData.diagnosis.length > 0
-                    ? viewingRecordData.diagnosis.map(d => d.description).join(', ')
-                    : 'No diagnosis recorded'}
-                </div>
-                <div className="doctorRecords_detailRow">
-                  <strong>History of Present Illness:</strong> {viewingRecordData.historyOfPresentIllness}
-                </div>
-                <div className="doctorRecords_detailRow">
-                  <strong>Past Medical History:</strong> {viewingRecordData.pastMedicalHistory}
-                </div>
-                <div className="doctorRecords_detailRow">
-                  <strong>Family History:</strong> {viewingRecordData.familyHistory}
-                </div>
-                <div className="doctorRecords_detailRow">
-                  <strong>Vital Signs:</strong>
-                  <ul className="doctorRecords_vitalSignsList">
-                    <li>Blood Pressure: {viewingRecordData.vitalSigns?.bloodPressure?.systolic}/{viewingRecordData.vitalSigns?.bloodPressure?.diastolic} mmHg</li>
-                    <li>Heart Rate: {viewingRecordData.vitalSigns?.heartRate} bpm</li>
-                    <li>Temperature: {viewingRecordData.vitalSigns?.temperature} °C</li>
-                    <li>Weight: {viewingRecordData.vitalSigns?.weight} kg</li>
-                    <li>Height: {viewingRecordData.vitalSigns?.height} cm</li>
-                    <li>O2 Saturation: {viewingRecordData.vitalSigns?.oxygenSaturation} %</li>
-                  </ul>
-                </div>
-                <div className="doctorRecords_detailRow">
-                  <strong>Assessment:</strong> {viewingRecordData.assessment}
-                </div>
-                <div className="doctorRecords_detailRow">
-                  <strong>Treatment:</strong> {viewingRecordData.treatment}
-                </div>
-                {viewingRecordData.prescriptions && viewingRecordData.prescriptions.length > 0 && (
-                  <div className="doctorRecords_detailRow">
-                    <strong>Prescriptions:</strong>
-                    <ul className="doctorRecords_prescriptionsList">
-                      {viewingRecordData.prescriptions.map((p, idx) => (
-                        <li key={idx}>
-                          {p.medication || p.name} {p.dosage && `- ${p.dosage}`} {p.frequency && `(${p.frequency})`}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {viewingRecordData.followUp?.required && (
-                  <div className="doctorRecords_detailRow">
-                    <strong>Follow-up:</strong> {viewingRecordData.followUp?.timeframe} - {viewingRecordData.followUp?.instructions}
-                  </div>
-                )}
-              </div>
-              <div className="doctorRecords_recordViewActions">
+              <MedicalRecordForm
+                recordData={normalizedRecord}
+                readOnly={true}
+              />
+              <div className="doctorRecords_formActions">
                 <button
                   className="doctorRecords_actionButton doctorRecords_actionButton--primary"
                   onClick={handleEditRecord}
@@ -488,8 +697,8 @@ const DoctorRecords = () => {
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {showRecordForm && (
           <div className="doctorRecords_recordFormContainer">
@@ -510,290 +719,30 @@ const DoctorRecords = () => {
                 ×
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="doctorRecords_medicalRecordForm">
-              <div className="doctorRecords_formSection">
-                <h4 className="doctorRecords_sectionHeading">Chief Complaint</h4>
-                <textarea
-                  className="doctorRecords_textarea"
-                  name="chiefComplaint"
-                  value={recordData.chiefComplaint}
-                  onChange={handleInputChange}
-                  placeholder="Primary reason for the visit"
-                  required
-                  rows="3"
-                />
-              </div>
-              <div className="doctorRecords_formSection">
-                <h4 className="doctorRecords_sectionHeading">History</h4>
-                <div className="doctorRecords_formGroup">
-                  <label className="doctorRecords_label">History of Present Illness</label>
-                  <textarea
-                    className="doctorRecords_textarea"
-                    name="historyOfPresentIllness"
-                    value={recordData.historyOfPresentIllness}
-                    onChange={handleInputChange}
-                    placeholder="Detailed description of current illness"
-                    rows="4"
-                  />
-                </div>
-                <div className="doctorRecords_formGroup">
-                  <label className="doctorRecords_label">Past Medical History</label>
-                  <textarea
-                    className="doctorRecords_textarea"
-                    name="pastMedicalHistory"
-                    value={recordData.pastMedicalHistory}
-                    onChange={handleInputChange}
-                    placeholder="Previous medical conditions, surgeries, hospitalizations"
-                    rows="3"
-                  />
-                </div>
-                <div className="doctorRecords_formGroup">
-                  <label className="doctorRecords_label">Family History</label>
-                  <textarea
-                    className="doctorRecords_textarea"
-                    name="familyHistory"
-                    value={recordData.familyHistory}
-                    onChange={handleInputChange}
-                    placeholder="Relevant family medical history"
-                    rows="3"
-                  />
-                </div>
-              </div>
-              <div className="doctorRecords_formSection">
-                <h4 className="doctorRecords_sectionHeading">Vital Signs</h4>
-                <div className="doctorRecords_vitalsGrid">
-                  <div className="doctorRecords_formGroup">
-                    <label className="doctorRecords_label">Blood Pressure</label>
-                    <div className="doctorRecords_bpInputs">
-                      <input
-                        className="doctorRecords_input"
-                        type="number"
-                        name="vitalSigns.bloodPressure.systolic"
-                        value={recordData.vitalSigns.bloodPressure.systolic}
-                        onChange={handleInputChange}
-                        placeholder="Systolic"
-                      />
-                      <span className="doctorRecords_bpSeparator">/</span>
-                      <input
-                        className="doctorRecords_input"
-                        type="number"
-                        name="vitalSigns.bloodPressure.diastolic"
-                        value={recordData.vitalSigns.bloodPressure.diastolic}
-                        onChange={handleInputChange}
-                        placeholder="Diastolic"
-                      />
-                    </div>
-                  </div>
-                  <div className="doctorRecords_formGroup">
-                    <label className="doctorRecords_label">Heart Rate (bpm)</label>
-                    <input
-                      className="doctorRecords_input"
-                      type="number"
-                      name="vitalSigns.heartRate"
-                      value={recordData.vitalSigns.heartRate}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="doctorRecords_formGroup">
-                    <label className="doctorRecords_label">Temperature (°C)</label>
-                    <input
-                      className="doctorRecords_input"
-                      type="number"
-                      step="0.1"
-                      name="vitalSigns.temperature"
-                      value={recordData.vitalSigns.temperature}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="doctorRecords_formGroup">
-                    <label className="doctorRecords_label">Weight (kg)</label>
-                    <input
-                      className="doctorRecords_input"
-                      type="number"
-                      step="0.1"
-                      name="vitalSigns.weight"
-                      value={recordData.vitalSigns.weight}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="doctorRecords_formGroup">
-                    <label className="doctorRecords_label">Height (cm)</label>
-                    <input
-                      className="doctorRecords_input"
-                      type="number"
-                      name="vitalSigns.height"
-                      value={recordData.vitalSigns.height}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="doctorRecords_formGroup">
-                    <label className="doctorRecords_label">O2 Saturation (%)</label>
-                    <input
-                      className="doctorRecords_input"
-                      type="number"
-                      name="vitalSigns.oxygenSaturation"
-                      value={recordData.vitalSigns.oxygenSaturation}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="doctorRecords_formSection">
-                <h4 className="doctorRecords_sectionHeading">Assessment & Treatment</h4>
-                <div className="doctorRecords_formGroup">
-                  <label className="doctorRecords_label">Assessment *</label>
-                  <textarea
-                    className="doctorRecords_textarea"
-                    name="assessment"
-                    value={recordData.assessment}
-                    onChange={handleInputChange}
-                    placeholder="Clinical assessment and findings"
-                    required
-                    rows="4"
-                  />
-                </div>
-                <div className="doctorRecords_formGroup">
-                  <label className="doctorRecords_label">Treatment Plan</label>
-                  <textarea
-                    className="doctorRecords_textarea"
-                    name="treatment"
-                    value={recordData.treatment}
-                    onChange={handleInputChange}
-                    placeholder="Treatment recommendations and plan"
-                    rows="4"
-                  />
-                </div>
-              </div>
-              <div className="doctorRecords_formSection">
-                <h4 className="doctorRecords_sectionHeading">Prescriptions</h4>
-                <p className="doctorRecords_prescriptionsNote">
-                  (Optional) Add one or more prescriptions for this visit. Leave empty if not needed.
-                </p>
-                {recordData.prescriptions.map((presc, idx) => (
-                  <div key={idx} className="doctorRecords_prescriptionCard">
-                    <div className="doctorRecords_prescriptionHeader">
-                      <span className="doctorRecords_prescriptionTitle">Prescription {idx+1}</span>
-                      {recordData.prescriptions.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removePrescription(idx)}
-                          className="doctorRecords_removePrescriptionBtn"
-                          aria-label="Remove prescription"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                    <div className="doctorRecords_prescriptionFields">
-                      <input
-                        type="text"
-                        className="doctorRecords_input"
-                        placeholder="Medication name"
-                        value={presc.medication}
-                        onChange={e => handlePrescriptionChange(idx, 'medication', e.target.value)}
-                        required={false}
-                      />
-                      <input
-                        type="text"
-                        className="doctorRecords_input"
-                        placeholder="Dosage"
-                        value={presc.dosage}
-                        onChange={e => handlePrescriptionChange(idx, 'dosage', e.target.value)}
-                        required={false}
-                      />
-                      <input
-                        type="text"
-                        className="doctorRecords_input"
-                        placeholder="Frequency"
-                        value={presc.frequency}
-                        onChange={e => handlePrescriptionChange(idx, 'frequency', e.target.value)}
-                        required={false}
-                      />
-                      <input
-                        type="text"
-                        className="doctorRecords_input"
-                        placeholder="Duration"
-                        value={presc.duration}
-                        onChange={e => handlePrescriptionChange(idx, 'duration', e.target.value)}
-                        required={false}
-                      />
-                      <input
-                        type="text"
-                        className="doctorRecords_input"
-                        placeholder="Quantity"
-                        value={presc.quantity}
-                        onChange={e => handlePrescriptionChange(idx, 'quantity', e.target.value)}
-                        required={false}
-                      />
-                      <textarea
-                        className="doctorRecords_textarea"
-                        placeholder="Instructions"
-                        value={presc.instructions}
-                        onChange={e => handlePrescriptionChange(idx, 'instructions', e.target.value)}
-                        rows="2"
-                      />
-                    </div>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={addPrescription}
-                  className="doctorRecords_addPrescriptionBtn"
-                >
-                  Add Another Prescription
-                </button>
-              </div>
-              <div className="doctorRecords_formSection">
-                <h4 className="doctorRecords_sectionHeading">Follow-up</h4>
-                <div className="doctorRecords_formGroup">
-                  <label className="doctorRecords_checkboxLabel">
-                    <input
-                      className="doctorRecords_checkbox"
-                      type="checkbox"
-                      name="followUp.required"
-                      checked={recordData.followUp.required}
-                      onChange={handleInputChange}
-                    />
-                    Follow-up required
-                  </label>
-                </div>
-                {recordData.followUp.required && (
-                  <>
-                    <div className="doctorRecords_formGroup">
-                      <label className="doctorRecords_label">Follow-up Timeframe</label>
-                      <input
-                        className="doctorRecords_input"
-                        type="text"
-                        name="followUp.timeframe"
-                        value={recordData.followUp.timeframe}
-                        onChange={handleInputChange}
-                        placeholder="e.g., 1 week, 2 weeks, 1 month"
-                      />
-                    </div>
-                    <div className="doctorRecords_formGroup">
-                      <label className="doctorRecords_label">Follow-up Instructions</label>
-                      <textarea
-                        className="doctorRecords_textarea"
-                        name="followUp.instructions"
-                        value={recordData.followUp.instructions}
-                        onChange={handleInputChange}
-                        placeholder="Instructions for follow-up visit"
-                        rows="2"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="doctorRecords_formActions">                
-                <button
-                  type="submit"
-                  className="doctorRecords_actionButton doctorRecords_actionButton--primary"
-                  disabled={loading}
-                >
-                  {loading ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Create Medical Record')}
-                </button>
-              </div>
-            </form>
+            <MedicalRecordForm
+              recordData={recordData}
+              onInputChange={handleInputChange}
+              onPrescriptionChange={handlePrescriptionChange}
+              addPrescription={addPrescription}
+              removePrescription={removePrescription}
+              addArrayItem={addArrayItem}
+              removeArrayItem={removeArrayItem}
+              loading={loading}
+              isEditing={isEditing}
+              handleSubmit={handleSubmit}
+              readOnly={false}
+            />
+            <div className="doctorRecords_formActions">                
+              <button
+                type="submit"
+                className="doctorRecords_actionButton doctorRecords_actionButton--primary"
+                form="doctorRecords_medicalRecordForm"
+                disabled={loading}
+                onClick={handleSubmit}
+              >
+                {loading ? (isEditing ? 'Saving...' : 'Creating...') : (isEditing ? 'Save Changes' : 'Create Medical Record')}
+              </button>
+            </div>
           </div>
         )}
 

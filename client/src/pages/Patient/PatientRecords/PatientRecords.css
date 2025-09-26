@@ -272,6 +272,16 @@
   background-color: #dcfce7;
   transform: scale(1.05);
 }
+.patientRecords_actionBtn--refill {
+  background: var(--primary-color);
+  color: #fff;
+  width: 100%;
+}
+.patientRecords_actionBtn--refill:disabled {
+  background: #ffe9b0;
+  color: #b2a661;
+  cursor: not-allowed;
+}
 
 .patientRecords_cardBody {
   display: flex;

@@ -8,7 +8,7 @@ const Notification = require("../models/notificationModel");
 let RefillRequest;
 try {
   RefillRequest = mongoose.model("RefillRequest");
-} catch {
+} catch (e) {
   const refillRequestSchema = new mongoose.Schema({
     prescriptionId: { type: mongoose.SchemaTypes.ObjectId, ref: "Prescription", required: true },
     medicationName: { type: String, required: true },
@@ -23,62 +23,73 @@ try {
 
 const createPrescription = async (req, res) => {
   try {
-    const {
-      patientId,
-      appointmentId,
-      medications,
-      diagnosis,
-      instructions,
-      followUpDate,
-      notes
-    } = req.body;
-    if (req.user.isDoctor !== true) {
+    // Only use fields present in the Prescription model
+    const allowedFields = [
+      'patientId',
+      'appointmentId',
+      'medications',
+      'diagnosis',
+      'instructions',
+      'followUpDate',
+      'notes'
+    ];
+    const data = {};
+    for (const key of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+        data[key] = req.body[key];
+      }
+    }
+    if (data.symptoms) delete data.symptoms;
+    if (req.user.role !== 'Doctor') {
       return res.status(403).json({
         success: false,
         message: "Only doctors can create prescriptions"
       });
     }
-    const patient = await User.findById(patientId);
+    const patient = await User.findById(data.patientId);
     if (!patient) {
       return res.status(404).json({
         success: false,
         message: "Patient not found"
       });
     }
-    if (appointmentId) {
-      const appointment = await Appointment.findById(appointmentId);
+    if (data.appointmentId) {
+      const appointment = await Appointment.findById(data.appointmentId);
       if (!appointment) {
         return res.status(404).json({
           success: false,
           message: "Appointment not found"
         });
       }
-            if (appointment.doctorId.toString() !== req.user._id.toString() ||
-          appointment.patientId.toString() !== patientId) {
+      if (appointment.doctorId.toString() !== req.user._id.toString() ||
+          appointment.userId.toString() !== data.patientId) {
         return res.status(403).json({
           success: false,
           message: "Appointment does not match doctor and patient"
         });
       }
     }
-    const prescription = new Prescription({
-      patientId,
-      doctorId: req.user._id,
-      appointmentId,
-      medications,
-      diagnosis,
-      instructions,
-      followUpDate,
-      notes
-    });
+    data.doctorId = req.user._id;
+    const prescription = new Prescription(data);
     await prescription.save();
     await prescription.populate([
       { path: 'patientId', select: 'firstname lastname email phone' },
       { path: 'doctorId', select: 'firstname lastname specialization' }
     ]);
+    if (data.appointmentId) {
+      const MedicalRecord = require('../models/medicalRecordModel');
+      const medicalRecord = await MedicalRecord.findOne({ appointmentId: data.appointmentId });
+      if (medicalRecord) {
+        if (!Array.isArray(medicalRecord.prescriptionIds)) medicalRecord.prescriptionIds = [];
+        if (!medicalRecord.prescriptionIds.includes(prescription._id)) {
+          medicalRecord.prescriptionIds.push(prescription._id);
+          await medicalRecord.save();
+        }
+      }
+    }
     logger.info(`Prescription created: ${prescription._id} by Dr. ${req.user.firstname} ${req.user.lastname}`);
     await Notification.create({
-      userId: patientId,
+      userId: data.patientId,
       content: `A new prescription has been created for you by Dr. ${req.user.firstname} ${req.user.lastname}.`
     });
     res.status(201).json({
@@ -86,7 +97,6 @@ const createPrescription = async (req, res) => {
       message: "Prescription created successfully",
       data: prescription
     });
-
   } catch (error) {
     logger.error("Error creating prescription:", error);
     res.status(500).json({
@@ -256,45 +266,44 @@ const getPrescriptionById = async (req, res) => {
 const updatePrescriptionStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, acknowledgedAt, notes } = req.body;
-
+    // Only update fields that exist in the Prescription model
+    const allowedFields = [
+      'status',
+      'acknowledgedAt',
+      'notes'
+    ];
+    const updateData = req.body;
     const prescription = await Prescription.findById(id);
-    
     if (!prescription) {
       return res.status(404).json({
         success: false,
         message: "Prescription not found"
       });
     }
-
     // Check permissions
     const canUpdate = 
       req.user._id.toString() === prescription.patientId.toString() ||
       req.user._id.toString() === prescription.doctorId.toString() ||
       req.user.isAdmin;
-
     if (!canUpdate) {
       return res.status(403).json({
         success: false,
         message: "Access denied"
       });
     }
-
-    // Update fields
-    if (status) prescription.status = status;
-    if (acknowledgedAt) prescription.acknowledgedAt = acknowledgedAt;
-    if (notes) prescription.notes = notes;
-
+    // Only update allowed fields
+    for (const key of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(updateData, key)) {
+        prescription[key] = updateData[key];
+      }
+    }
     await prescription.save();
-
-    logger.info(`Prescription ${id} status updated to ${status} by ${req.user.firstname} ${req.user.lastname}`);
-
+    logger.info(`Prescription ${id} status updated by ${req.user.firstname} ${req.user.lastname}`);
     res.status(200).json({
       success: true,
       message: "Prescription updated successfully",
       data: prescription
     });
-
   } catch (error) {
     logger.error("Error updating prescription:", error);
     res.status(500).json({
@@ -309,17 +318,22 @@ const updatePrescriptionStatus = async (req, res) => {
 const updatePrescription = async (req, res) => {
   try {
     const { id } = req.params;
+    // Only update fields that exist in the Prescription model
+    const allowedFields = [
+      'medications',
+      'diagnosis',
+      'instructions',
+      'followUpDate',
+      'notes'
+    ];
     const updateData = req.body;
-
     const prescription = await Prescription.findById(id);
-    
     if (!prescription) {
       return res.status(404).json({
         success: false,
         message: "Prescription not found"
       });
     }
-
     // Only the prescribing doctor can update
     if (req.user._id.toString() !== prescription.doctorId.toString() && !req.user.isAdmin) {
       return res.status(403).json({
@@ -327,7 +341,6 @@ const updatePrescription = async (req, res) => {
         message: "Only the prescribing doctor can update this prescription"
       });
     }
-
     // Don't allow updating if prescription is acknowledged
     if (prescription.status === 'acknowledged') {
       return res.status(400).json({
@@ -335,24 +348,21 @@ const updatePrescription = async (req, res) => {
         message: "Cannot update acknowledged prescription"
       });
     }
-
-    // Update prescription
-    Object.keys(updateData).forEach(key => {
-      if (key !== '_id' && key !== 'createdAt' && key !== 'updatedAt') {
+    // Only update allowed fields
+    for (const key of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(updateData, key)) {
         prescription[key] = updateData[key];
       }
-    });
-
+    }
+    // Remove symptoms if present in updateData (backward compatibility)
+    if (prescription.symptoms) delete prescription.symptoms;
     await prescription.save();
-
     logger.info(`Prescription ${id} updated by Dr. ${req.user.firstname} ${req.user.lastname}`);
-
     res.status(200).json({
       success: true,
       message: "Prescription updated successfully",
       data: prescription
     });
-
   } catch (error) {
     logger.error("Error updating prescription:", error);
     res.status(500).json({
@@ -506,28 +516,46 @@ const getRefillRequests = async (req, res) => {
 
 const createRefillRequest = async (req, res) => {
   try {
-    const { prescriptionId, medicationName, reason, urgency, patientId } = req.body;
-    if (!prescriptionId || !medicationName || !reason || !urgency || !patientId) {
+    // Only use fields present in the RefillRequest model
+    const allowedFields = [
+      'prescriptionId',
+      'medicationName',
+      'patientId',
+      'reason',
+      'urgency'
+    ];
+    const data = {};
+    for (const key of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+        data[key] = req.body[key];
+      }
+    }
+    if (!data.prescriptionId || !data.medicationName || !data.reason || !data.urgency || !data.patientId) {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
     // Optionally, check if prescription exists and belongs to patient
-    // (You can add this check if needed)
+    const prescription = await Prescription.findById(data.prescriptionId);
+    if (!prescription) {
+      return res.status(404).json({ success: false, message: "Prescription not found" });
+    }
+    if (prescription.patientId.toString() !== data.patientId) {
+      return res.status(403).json({ success: false, message: "Prescription does not belong to patient" });
+    }
     const refillRequest = new RefillRequest({
-      prescriptionId,
-      medicationName,
-      patientId,
-      reason,
-      urgency,
-      status: "Pending"
+      prescriptionId: data.prescriptionId,
+      medicationName: data.medicationName,
+      patientId: data.patientId,
+      reason: data.reason,
+      urgency: data.urgency,
+      status: "pending"
     });
     await refillRequest.save();
 
     // --- Notify doctor about refill request ---
-    const prescription = await Prescription.findById(prescriptionId);
     if (prescription && prescription.doctorId) {
       await Notification.create({
         userId: prescription.doctorId,
-        content: `A refill request for "${medicationName}" has been submitted by the patient.`
+        content: `A refill request for "${data.medicationName}" has been submitted by the patient.`
       });
     }
 

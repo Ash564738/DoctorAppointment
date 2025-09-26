@@ -11,36 +11,14 @@ import {
   FaTimesCircle
 } from 'react-icons/fa';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-} from 'chart.js';
-import { Line, Doughnut } from 'react-chartjs-2';
+  LineChart, Line as ReLine, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
+} from 'recharts';
 import "./AdminDashboard.css";
 import NavbarWrapper from "../../../components/Common/NavbarWrapper/NavbarWrapper";
 import Footer from "../../../components/Common/Footer/Footer";
 import { apiCall } from "../../../helper/apiCall";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
-
-function AdminDashboard() {
+const AdminDashboard = () => {
   const { userInfo } = useSelector(state => state.root);
   const [adminDetails, setAdminDetails] = useState(null);
   const [analytics, setAnalytics] = useState(null);
@@ -416,92 +394,84 @@ function AdminDashboard() {
               ))}
             </div>
 
-            {analytics?.appointmentStats && analytics.appointmentStats.length > 0 && (
-              <div className="adminDashboard_appointmentOverview">
-                <h2 className="adminDashboard_appointmentOverviewTitle">Appointment Status Overview</h2>
-                <div className="adminDashboard_appointmentStats">
-                  {getAppointmentStats().map((stat, index) => (
-                    <div key={index} className="adminDashboard_appointmentStat">
-                      <div className="adminDashboard_statIconSmall" style={{ backgroundColor: '#f59e0b' }}>
-                        {stat.status === 'pending' && <FaClock />}
-                        {stat.status === 'completed' && <FaCheckCircle />}
-                        {stat.status === 'cancelled' && <FaTimesCircle />}
-                        {stat.status === 'confirmed' && <FaCheckCircle />}
-                      </div>
-                      <div className="adminDashboard_appointmentStatContent">
-                        <h3 className="adminDashboard_appointmentStatValue">{stat.count}</h3>
-                        <p className="adminDashboard_appointmentStatLabel">{stat.status.charAt(0).toUpperCase() + stat.status.slice(1)} ({stat.percentage}%)</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="adminDashboard_chartsSection">
               <h2 className="adminDashboard_chartsTitle">Visual Analytics</h2>
               <div className="adminDashboard_chartsGrid">
+
                 {getMonthlyGrowthChartData() && (
                   <div className="adminDashboard_chartContainer">
                     <h3 className="adminDashboard_chartTitle">Monthly Growth Trends</h3>
                     <div className="adminDashboard_chartInner">
-                      <Line 
-                        data={getMonthlyGrowthChartData()} 
-                        options={{
-                          ...chartOptions,
-                          plugins: {
-                            ...chartOptions.plugins,
-                            title: {
-                              display: true,
-                              text: 'User Registration Trends Over Time'
-                            }
-                          }
-                        }} 
-                      />
+                      <ResponsiveContainer width="100%" height={250}>
+                        <LineChart data={getMonthlyGrowthChartData().labels.map((label, idx) => ({
+                          month: label,
+                          users: getMonthlyGrowthChartData().datasets[0].data[idx],
+                          doctors: getMonthlyGrowthChartData().datasets[1].data[idx],
+                          patients: getMonthlyGrowthChartData().datasets[2].data[idx],
+                        }))} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Legend />
+                          <ReLine type="monotone" dataKey="users" stroke="#4bc0c0" strokeWidth={2} name="Total Users" />
+                          <ReLine type="monotone" dataKey="doctors" stroke="#36a2eb" strokeWidth={2} name="Doctors" />
+                          <ReLine type="monotone" dataKey="patients" stroke="#ff6384" strokeWidth={2} name="Patients" />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
                 )}
+
 
                 {getAppointmentStatusChartData() && (
                   <div className="adminDashboard_chartContainer">
                     <h3 className="adminDashboard_chartTitle">Appointment Status Distribution</h3>
                     <div className="adminDashboard_chartInner">
-                      <Doughnut 
-                        data={getAppointmentStatusChartData()} 
-                        options={{
-                          responsive: true,
-                          plugins: {
-                            legend: {
-                              position: 'bottom',
-                            },
-                            title: {
-                              display: true,
-                              text: 'Appointment Status Breakdown'
-                            }
-                          }
-                        }} 
-                      />
+                      <ResponsiveContainer width="100%" height={250}>
+                        <PieChart>
+                          <Pie
+                            data={getAppointmentStatusChartData().labels.map((label, idx) => ({
+                              name: label,
+                              value: getAppointmentStatusChartData().datasets[0].data[idx]
+                            }))}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            label
+                          >
+                            {getAppointmentStatusChartData().labels.map((_, idx) => (
+                              <Cell key={`cell-${idx}`} fill={getAppointmentStatusChartData().datasets[0].backgroundColor[idx % getAppointmentStatusChartData().datasets[0].backgroundColor.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
                 )}
+
 
                 {getRevenueChartData() && (
                   <div className="adminDashboard_chartContainer">
                     <h3 className="adminDashboard_chartTitle">Revenue Analytics</h3>
                     <div className="adminDashboard_chartInner">
-                      <Line 
-                        data={getRevenueChartData()} 
-                        options={{
-                          ...chartOptions,
-                          plugins: {
-                            ...chartOptions.plugins,
-                            title: {
-                              display: true,
-                              text: 'Monthly Revenue Trends'
-                            }
-                          }
-                        }} 
-                      />
+                      <ResponsiveContainer width="100%" height={250}>
+                        <LineChart data={getRevenueChartData().labels.map((label, idx) => ({
+                          month: label,
+                          revenue: getRevenueChartData().datasets[0].data[idx]
+                        }))} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis allowDecimals={false} />
+                          <Tooltip />
+                          <Legend />
+                          <ReLine type="monotone" dataKey="revenue" stroke="#4bc0c0" strokeWidth={2} name="Revenue ($)" />
+                        </LineChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
                 )}
@@ -513,6 +483,6 @@ function AdminDashboard() {
       <Footer />
     </div>
   );
-}
+};
 
 export default AdminDashboard;

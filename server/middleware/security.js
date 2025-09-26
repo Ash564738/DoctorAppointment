@@ -3,8 +3,6 @@ const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 
 app.use(helmet());
-
-  // Content Security Policy
   app.use(helmet.contentSecurityPolicy({
     directives: {
       defaultSrc: ["'self'"],

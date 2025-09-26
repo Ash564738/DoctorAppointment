@@ -30,27 +30,22 @@ function PatientDashboard() {
   });
   const [recentAppointments, setRecentAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [medicalRecordCount, setMedicalRecordCount] = useState(0);
   const [familyCount, setFamilyCount] = useState(0);
   const [ratingsCount, setRatingsCount] = useState(0);
-
   useEffect(() => {
     const fetchPatientStats = async () => {
       try {
         const appointmentsData = await apiCall.get('/appointment/patient-stats');
         const doctorsData = await apiCall.get('/doctor/getalldoctors');
-        
         console.log('Appointments Data:', appointmentsData);
         console.log('Doctors Data:', doctorsData);
-        
         setStats({
           totalAppointments: appointmentsData.totalAppointments || 0,
           upcomingAppointments: appointmentsData.upcomingAppointments || 0,
           completedAppointments: appointmentsData.completedAppointments || 0,
           totalDoctors: doctorsData.length || 0
         });
-        
         setRecentAppointments(appointmentsData.recentAppointments || []);
         setLoading(false);
       } catch (error) {
@@ -58,19 +53,16 @@ function PatientDashboard() {
         setLoading(false);
       }
     };
-
     const fetchCounts = async () => {
       try {
         const medicalRecordsData = await apiCall.get('/medical-record/patient');
         if (medicalRecordsData && medicalRecordsData.medicalRecords) {
           setMedicalRecordCount(medicalRecordsData.medicalRecords.length);
         }
-
         const familyData = await apiCall.get('/family-member/get-all');
         if (Array.isArray(familyData)) {
           setFamilyCount(familyData.length);
         }
-
         const ratingsData = await apiCall.get('/ratings/my-ratings');
         if (ratingsData && ratingsData.data && Array.isArray(ratingsData.data.ratings)) {
           setRatingsCount(ratingsData.data.ratings.length);
@@ -79,17 +71,14 @@ function PatientDashboard() {
         console.error('Error fetching counts:', error);
       }
     };
-
     if (userInfo) {
       fetchPatientStats();
       fetchCounts();
     }
   }, [userInfo]);
-
   const nextAppointment = recentAppointments
     .filter(a => a.status && ['pending', 'confirmed'].includes(a.status.toLowerCase()))
     .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
-
   const doctorVisitCounts = {};
   recentAppointments.forEach(a => {
     const docId = a.doctorId?._id || a.doctorId?.id;
@@ -99,11 +88,9 @@ function PatientDashboard() {
   });
   const mostVisitedDoctorId = Object.keys(doctorVisitCounts).sort((a, b) => doctorVisitCounts[b] - doctorVisitCounts[a])[0];
   const mostVisitedDoctor = recentAppointments.find(a => (a.doctorId?._id || a.doctorId?.id) === mostVisitedDoctorId)?.doctorId;
-
   const lastCompleted = recentAppointments
     .filter(a => a.status && a.status.toLowerCase() === 'completed')
     .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-
   const statCards = [
     {
       label: 'Total Appointments',
@@ -156,7 +143,6 @@ function PatientDashboard() {
       path: '/patient/ratings'
     }
   ];
-
   return (
     <div className="patientDashboard_page">
       <NavbarWrapper />
@@ -166,7 +152,6 @@ function PatientDashboard() {
               <p>Not logged in. Please <Link to="/login" className="patientDashboard_loginLink">login</Link> to access full features.</p>
             </div>
           )}
-
           <div className="patientDashboard_header">
             <h1 className="patientDashboard_heading">
               Welcome back, {userInfo?.firstname || 'Guest'}!
@@ -175,7 +160,6 @@ function PatientDashboard() {
               Manage your health and appointments
             </p>
           </div>
-
           <div className="patientDashboard_stats">
             {statCards.map((card, idx) => (
               <div
@@ -200,7 +184,6 @@ function PatientDashboard() {
               </div>
             ))}
           </div>
-
           <div className="patientDashboard_nextAppointment">
             <h2 className="patientDashboard_sectionTitle">Your Next Appointment</h2>
             {nextAppointment ? (
@@ -235,7 +218,6 @@ function PatientDashboard() {
               </div>
             )}
           </div>
-
           <div className="patientDashboard_recent">
             <h2 className="patientDashboard_sectionTitle">Recent Appointments</h2>
             {recentAppointments.length > 0 ? (

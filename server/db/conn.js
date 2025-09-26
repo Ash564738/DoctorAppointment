@@ -11,11 +11,11 @@ const client = mongoose
     useUnifiedTopology: true
   })
   .then(() => {
-    console.log("✅ Database connected successfully to", MONGO_URI);
+    console.log("Database connected successfully to", MONGO_URI);
     return mongoose.connection;
   })
   .catch((error) => {
-    console.error("❌ Database connection failed:", error.message);
+    console.error("Database connection failed:", error.message);
     throw error;
   });
 

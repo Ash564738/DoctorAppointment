@@ -164,34 +164,93 @@ const getMyPatients = async (req, res) => {
 const getDoctorAnalytics = async (req, res) => {
   try {
     const doctorId = req.userId;
-    const { startDate, endDate } = req.query;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    // Total appointments
     const totalAppointments = await Appointment.countDocuments({ doctorId });
-    const completedAppointments = await Appointment.countDocuments({ 
-      doctorId, 
-      status: 'Completed' 
-    });
-    const pendingAppointments = await Appointment.countDocuments({ 
-      doctorId, 
-      status: 'Pending' 
-    });
-    const analytics = {
-      totalAppointments,
-      completedAppointments,
-      pendingAppointments,
-      patientSatisfaction: 4.5,
-      averageConsultationTime: 25,
-      monthlyStats: [
-        { month: 'Jan', appointments: 45, revenue: 4500 },
-        { month: 'Feb', appointments: 52, revenue: 5200 },
-        { month: 'Mar', appointments: 48, revenue: 4800 },
-        { month: 'Apr', appointments: 61, revenue: 6100 },
-        { month: 'May', appointments: 55, revenue: 5500 },
-        { month: 'Jun', appointments: 58, revenue: 5800 },
-      ]
-    };
+    // Today's appointments
+    const todayAppointments = await Appointment.countDocuments({ doctorId, date: { $gte: today, $lt: tomorrow } });
+    // Pending appointments
+    const pendingAppointments = await Appointment.countDocuments({ doctorId, status: 'Pending' });
+    // Total unique patients
+    const totalPatients = await Appointment.distinct('userId', { doctorId });
+
+    // Monthly earnings (current month)
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    const monthlyPayments = await require('../models/paymentModel').aggregate([
+      { $match: { doctorId: require('mongoose').Types.ObjectId(doctorId), status: 'Succeeded', paymentDate: { $gte: startOfMonth, $lt: endOfMonth } } },
+      { $group: { _id: null, total: { $sum: '$doctorEarnings' } } }
+    ]);
+    const monthlyEarnings = monthlyPayments[0]?.total || 0;
+
+    // Average rating
+    const Rating = require('../models/ratingModel');
+    const ratingAgg = await Rating.aggregate([
+      { $match: { doctorId: require('mongoose').Types.ObjectId(doctorId) } },
+      { $group: { _id: null, avg: { $avg: '$rating' } } }
+    ]);
+    const averageRating = ratingAgg[0]?.avg || 0;
+
+    // Completion and cancellation rates
+    const completedCount = await Appointment.countDocuments({ doctorId, status: 'Completed' });
+    const cancelledCount = await Appointment.countDocuments({ doctorId, status: 'Cancelled' });
+    const totalTracked = completedCount + cancelledCount;
+    const completionRate = totalTracked > 0 ? Math.round((completedCount / totalTracked) * 100) : 0;
+    const cancellationRate = totalTracked > 0 ? Math.round((cancelledCount / totalTracked) * 100) : 0;
+
+    // Monthly trend (last 6 months)
+    const months = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        label: d.toLocaleString('default', { month: 'short', year: 'numeric' }),
+        start: new Date(d),
+        end: new Date(d.getFullYear(), d.getMonth() + 1, 1)
+      });
+    }
+    const monthlyTrend = await Promise.all(months.map(async m => {
+      const count = await Appointment.countDocuments({ doctorId, date: { $gte: m.start, $lt: m.end } });
+      return { month: m.label, appointments: count };
+    }));
+
+    // Status distribution (pie chart)
+    const statusAgg = await Appointment.aggregate([
+      { $match: { doctorId: require('mongoose').Types.ObjectId(doctorId) } },
+      { $group: { _id: '$status', count: { $sum: 1 } } }
+    ]);
+    const statusDistribution = statusAgg.reduce((acc, cur) => {
+      acc[cur._id] = cur.count;
+      return acc;
+    }, {});
+
+    // Time slot popularity (bar chart)
+    const slotAgg = await Appointment.aggregate([
+      { $match: { doctorId: require('mongoose').Types.ObjectId(doctorId) } },
+      { $group: { _id: '$time', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+    const timeSlotPopularity = slotAgg.map(s => ({ time: s._id, count: s.count }));
+
     res.status(200).json({
       success: true,
-      analytics
+      analytics: {
+        totalAppointments,
+        todayAppointments,
+        pendingAppointments,
+        totalPatients: totalPatients.length,
+        monthlyEarnings,
+        averageRating,
+        completionRate,
+        cancellationRate,
+        monthlyTrend,
+        statusDistribution,
+        timeSlotPopularity
+      }
     });
   } catch (error) {
     console.error('Error fetching doctor analytics:', error);

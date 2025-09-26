@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { 
@@ -23,6 +24,20 @@ import './PatientRecords.css';
 const PatientRecords = () => {
   const [records, setRecords] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);
+  const [refillLoading, setRefillLoading] = useState(null);
+  const handleRefillRequest = async (recordId, prescription) => {
+    if (!window.confirm("Request a refill for this prescription?")) return;
+    setRefillLoading(recordId + (prescription?._id || ''));
+    try {
+      const res = await apiCall.post(`/prescription/refill`, { recordId, prescriptionId: prescription?._id });
+      if (res.success) toast.success("Refill request sent");
+      else toast.error(res.message || "Failed to request refill");
+    } catch (e) {
+      toast.error("Failed to request refill");
+    } finally {
+      setRefillLoading(null);
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,17 +52,13 @@ const PatientRecords = () => {
     totalPrescriptions: 0,
     totalDiagnoses: 0
   });
-
   const { userInfo } = useSelector((state) => state.root);
-
   useEffect(() => {
     fetchMedicalRecords();
   }, []);
-
   useEffect(() => {
     filterRecords();
   }, [searchTerm, dateFilter, records]);
-
   const fetchMedicalRecords = async () => {
     try {
       setLoading(true);
@@ -67,21 +78,16 @@ const PatientRecords = () => {
       setLoading(false);
     }
   };
-
   const calculateStats = (recordsData) => {
     const now = new Date();
     const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-    
     const recentRecords = recordsData.filter(record => 
       new Date(record.createdAt) >= oneMonthAgo
     ).length;
-    
     const totalPrescriptions = recordsData.reduce((total, record) => 
-      total + (record.prescriptions ? record.prescriptions.length : 0), 0
+      total + (record.prescriptionIds ? record.prescriptionIds.length : 0), 0
     );
-    
     const uniqueDiagnoses = new Set(recordsData.map(record => record.diagnosis)).size;
-    
     setStats({
       totalRecords: recordsData.length,
       recentRecords,
@@ -89,10 +95,8 @@ const PatientRecords = () => {
       totalDiagnoses: uniqueDiagnoses
     });
   };
-
   const filterRecords = () => {
     let filtered = records;
-
     if (searchTerm) {
       filtered = filtered.filter(record => {
         let diagnosisText = '';
@@ -189,6 +193,39 @@ const PatientRecords = () => {
       day: 'numeric'
     });
   };
+
+  // When displaying a record, show all required prescription and health metric fields
+  const renderPrescription = (presc) => (
+    <div className="patientRecords_prescriptionCard">
+      <div><strong>Medication:</strong> {presc.medication || presc.name}</div>
+      <div><strong>Dosage:</strong> {presc.dosage}</div>
+      <div><strong>Frequency:</strong> {presc.frequency}</div>
+      <div><strong>Duration:</strong> {presc.duration}</div>
+      <div><strong>Quantity:</strong> {presc.quantity}</div>
+      <div><strong>Instructions:</strong> {presc.instructions}</div>
+      <div><strong>Diagnosis:</strong> {presc.diagnosis}</div>
+      <div><strong>Symptoms:</strong> {presc.symptoms}</div>
+      <div><strong>Is Urgent:</strong> {presc.isUrgent ? 'Yes' : 'No'}</div>
+      <div><strong>Follow Up Date:</strong> {presc.followUpDate ? new Date(presc.followUpDate).toLocaleDateString() : '-'}</div>
+      <div><strong>Notes:</strong> {presc.notes}</div>
+    </div>
+  );
+
+  const renderHealthMetrics = (hm) => (
+    <div className="patientRecords_healthMetricsCard">
+      <div><strong>Blood Pressure:</strong> {hm.bloodPressure?.systolic || '-'} / {hm.bloodPressure?.diastolic || '-'} mmHg</div>
+      <div><strong>Heart Rate:</strong> {hm.heartRate || '-'}</div>
+      <div><strong>Temperature:</strong> {hm.temperature?.value || '-'}°{hm.temperature?.unit || 'C'}</div>
+      <div><strong>Weight:</strong> {hm.weight || '-'} kg</div>
+      <div><strong>Height:</strong> {hm.height || '-'} cm</div>
+      <div><strong>O2 Saturation:</strong> {hm.oxygenSaturation || '-'}%</div>
+      <div><strong>Respiratory Rate:</strong> {hm.respiratoryRate || '-'}</div>
+      <div><strong>Blood Sugar:</strong> {hm.bloodSugar?.value || '-'} {hm.bloodSugar?.unit || 'mg/dl'} ({hm.bloodSugar?.testType || '-'})</div>
+      <div><strong>Notes:</strong> {hm.notes}</div>
+      <div><strong>Recorded By:</strong> {hm.recordedBy}</div>
+      <div><strong>Recorded At:</strong> {hm.recordedAt ? new Date(hm.recordedAt).toLocaleString() : '-'}</div>
+    </div>
+  );
 
   return (
     <div className="patientRecords_page">
@@ -343,18 +380,18 @@ const PatientRecords = () => {
                         <span className="patientRecords_cardSymptoms">
                           <strong>Symptoms:</strong> {record.chiefComplaint || record.symptoms || 'No symptoms recorded'}
                         </span>
-                        {record.prescriptions && record.prescriptions.length > 0 && (
+                        {record.prescriptionIds && record.prescriptionIds.length > 0 && (
                           <div className="patientRecords_prescriptions">
                             <strong>Prescriptions:</strong>
                             <div className="patientRecords_prescriptionTags">
-                              {record.prescriptions.slice(0, 2).map((prescription, index) => (
+                              {record.prescriptionIds.slice(0, 2).map((prescriptionId, index) => (
                                 <span key={index} className="patientRecords_prescriptionTag">
-                                  {prescription.medication || prescription.name || 'Medication'}
+                                  Prescription #{index + 1}
                                 </span>
                               ))}
-                              {record.prescriptions.length > 2 && (
+                              {record.prescriptionIds.length > 2 && (
                                 <span className="patientRecords_prescriptionTag patientRecords_prescriptionTag--more">
-                                  +{record.prescriptions.length - 2} more
+                                  +{record.prescriptionIds.length - 2} more
                                 </span>
                               )}
                             </div>
@@ -424,34 +461,25 @@ const PatientRecords = () => {
                   <span className="patientRecords_detailText">{selectedRecord.treatment}</span>
                 </div>
                 
-                {selectedRecord.prescriptions && selectedRecord.prescriptions.length > 0 && (
+                {selectedRecord.prescriptionIds && selectedRecord.prescriptionIds.length > 0 && (
                   <div className="patientRecords_detailSection">
                     <h4 className="patientRecords_sectionTitle">Prescriptions</h4>
                     <div className="patientRecords_prescriptionList">
-                      {selectedRecord.prescriptions.map((prescription, index) => (
+                      {selectedRecord.prescriptionIds.map((prescriptionId, index) => (
                         <div key={index} className="patientRecords_prescriptionItem">
                           <div className="patientRecords_prescriptionDetails">
                             <span className="patientRecords_medicationName">
-                              {prescription.medication || prescription.name || 'Medication'}
+                              Prescription #{index + 1}
                             </span>
-                            {prescription.dosage && (
-                              <span className="patientRecords_dosage"> - {prescription.dosage}</span>
-                            )}
-                            {prescription.frequency && (
-                              <span className="patientRecords_frequency"> ({prescription.frequency})</span>
-                            )}
-                            {prescription.duration && (
-                              <span className="patientRecords_duration">, {prescription.duration}</span>
-                            )}
-                            {prescription.quantity && (
-                              <span className="patientRecords_quantity">, Qty: {prescription.quantity}</span>
-                            )}
                           </div>
-                          {prescription.instructions && (
-                              <div className="patientRecords_instructions">
-                                <span className="patientRecords_medicationName">Instructions:</span> {prescription.instructions}
-                              </div>
-                            )}
+                          <button
+                            className="patientRecords_actionBtn patientRecords_actionBtn--refill"
+                            style={{marginTop: 8}}
+                            onClick={() => handleRefillRequest(selectedRecord._id, { _id: prescriptionId })}
+                            disabled={refillLoading === selectedRecord._id + (prescriptionId || '')}
+                          >
+                            {refillLoading === selectedRecord._id + (prescriptionId || '') ? 'Requesting...' : 'Request Refill'}
+                          </button>
                         </div>
                       ))}
                     </div>

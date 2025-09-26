@@ -507,7 +507,6 @@ const DoctorScheduling = () => {
         )}
         {activeTab === 'leave' && (
           <div>
-            <h2>Leave Requests</h2>
             {requestsLoading ? <div className="doctorScheduling_requestsLoading">Loading...</div> : null}
             {requestsError ? <div className="doctorScheduling_requestsError">{requestsError}</div> : null}
             <table className="doctorScheduling_requestsTable">
@@ -539,7 +538,6 @@ const DoctorScheduling = () => {
         )}
         {activeTab === 'overtime' && (
           <div>
-            <h2>Overtime Requests</h2>
             {requestsLoading ? <div className="doctorScheduling_requestsLoading">Loading...</div> : null}
             {requestsError ? <div className="doctorScheduling_requestsError">{requestsError}</div> : null}
             <table className="doctorScheduling_requestsTable">
@@ -569,7 +567,6 @@ const DoctorScheduling = () => {
         )}
         {activeTab === 'swap' && (
           <div>
-            <h2>Shift Swap Requests</h2>
             {requestsLoading ? <div className="doctorScheduling_requestsLoading">Loading...</div> : null}
             {requestsError ? <div className="doctorScheduling_requestsError">{requestsError}</div> : null}
             <table className="doctorScheduling_requestsTable">

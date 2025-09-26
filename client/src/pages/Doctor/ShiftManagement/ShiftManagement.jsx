@@ -50,7 +50,6 @@ const ShiftManagement = () => {
     setLoading(false);
   };
 
-  // Fetch available shifts for swap/overtime dropdowns
   const fetchAvailableShifts = async () => {
     try {
       const res = await apiCall.get('/shift/mydoctorshifts');
@@ -60,7 +59,6 @@ const ShiftManagement = () => {
     }
   };
 
-  // Fetch colleagues (other doctors) for swap dropdown
   const fetchColleagues = async () => {
     try {
       const res = await apiCall.get('/doctor/getalldoctors');
@@ -70,13 +68,12 @@ const ShiftManagement = () => {
     }
   };
 
-  // Form handlers
   const handleSwapSubmit = async (e) => {
     e.preventDefault();
     try {
       await apiCall.post('/shift-swap/create', {
         originalShiftId: swapForm.shiftId,
-        requestedShiftId: swapForm.shiftId, // or allow selection of another shift
+        requestedShiftId: swapForm.shiftId,
         swapWithId: swapForm.withUser,
         reason: swapForm.reason
       });
@@ -111,7 +108,7 @@ const ShiftManagement = () => {
     e.preventDefault();
     try {
       await apiCall.post('/overtime/create', {
-        shiftId: overtimeForm.shiftId || '', // allow selection if needed
+        shiftId: overtimeForm.shiftId || '',
         date: overtimeForm.date,
         hours: overtimeForm.hours,
         reason: overtimeForm.reason
@@ -135,7 +132,6 @@ const ShiftManagement = () => {
             <p className="shiftManagement_subtitle">Manage your shifts, leave requests, and overtime records</p>
           </div>
 
-          {/* Stats Row */}
           <div className="shiftManagement_statsRow">
             <div className="shiftManagement_statCard">
               <p className="shiftManagement_statTitle">Total Shifts</p>
@@ -156,7 +152,6 @@ const ShiftManagement = () => {
           </div>
 
           <div className="shiftManagement_mainGrid">
-            {/* My Shifts Section */}
             <div className="shiftManagement_section">
               <div className="shiftManagement_sectionHeader">
                 <h3 className="shiftManagement_sectionTitle">My Shifts</h3>
@@ -199,7 +194,6 @@ const ShiftManagement = () => {
               </div>
             </div>
 
-            {/* Leave Requests Section */}
             <div className="shiftManagement_section">
               <div className="shiftManagement_sectionHeader">
                 <h3 className="shiftManagement_sectionTitle">Leave Requests</h3>
@@ -245,7 +239,6 @@ const ShiftManagement = () => {
             </div>
           </div>
 
-          {/* Additional Sections */}
           <div className="shiftManagement_section">
             <div className="shiftManagement_sectionHeader">
               <h3 className="shiftManagement_sectionTitle">Swap Requests</h3>
@@ -416,7 +409,6 @@ const ShiftManagement = () => {
         </div>
       )}
 
-      {/* Leave Modal */}
       {showLeaveModal && (
         <div className="shiftManagement_modalOverlay">
           <div className="shiftManagement_modal">
@@ -498,7 +490,6 @@ const ShiftManagement = () => {
         </div>
       )}
 
-      {/* Overtime Modal */}
       {showOvertimeModal && (
         <div className="shiftManagement_modalOverlay">
           <div className="shiftManagement_modal">

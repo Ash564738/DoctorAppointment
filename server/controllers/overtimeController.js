@@ -1,6 +1,6 @@
 const Overtime = require('../models/overtimeModel');
-const User = require('../models/userModel'); // <-- Add this line
-const Notification = require('../models/notificationModel'); // <-- Add this line
+const User = require('../models/userModel');
+const Notification = require('../models/notificationModel');
 
 // Create overtime request
 const createOvertime = async (req, res) => {

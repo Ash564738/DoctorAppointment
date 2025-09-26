@@ -1,0 +1,75 @@
+
+.doctorRating_page {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+}
+
+.doctorRating_container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 32px 16px 40px 16px;
+  background: none;
+}
+
+.doctorRating_title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: #2d3a4a;
+  text-align: center;
+}
+
+.doctorRating_loading,
+.doctorRating_empty {
+  text-align: center;
+  color: #888;
+  margin: 32px 0;
+}
+
+.doctorRating_list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.doctorRating_card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 18px 20px;
+  background: #fafbfc;
+  transition: box-shadow 0.2s;
+}
+.doctorRating_card:hover {
+  box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+}
+
+.doctorRating_cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.doctorRating_score {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #f7b731;
+}
+
+.doctorRating_date {
+  font-size: 0.95rem;
+  color: #888;
+}
+
+.doctorRating_feedback {
+  font-size: 1.05rem;
+  color: #2d3a4a;
+  margin-bottom: 6px;
+}
+
+.doctorRating_patient {
+  font-size: 0.95rem;
+  color: #4b6584;
+}

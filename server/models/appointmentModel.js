@@ -14,6 +14,18 @@ const schema = mongoose.Schema(
       required: true,
       index: true,
     },
+    prescriptionId: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "Prescription"
+    },
+    medicalRecordId: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "MedicalRecord"
+    },
+    paymentId: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "Payment"
+    },
     date: {
       type: Date,
       required: true,
@@ -37,9 +49,9 @@ const schema = mongoose.Schema(
     },
     status: {
       type: String,
-      default: "Pending",
+      default: "Confirmed",
       enum: {
-        values: ["Pending", "Confirmed", "Completed", "Cancelled"],
+        values: ["Confirmed", "Completed", "Cancelled"],
         message: 'Invalid status'
       },
       index: true
@@ -63,19 +75,11 @@ const schema = mongoose.Schema(
       enum: ['Low', 'Normal', 'High', 'Urgent'],
       default: 'Normal'
     },
-    medicalRecordId: {
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: "MedicalRecord"
-    },
     paymentStatus: {
       type: String,
-      enum: ['Pending', 'Paid', 'Failed', 'Refunded'],
-      default: 'Pending',
+      enum: ['Paid', 'Refunded'],
+      default: 'Paid',
       index: true
-    },
-    paymentId: {
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: "Payment"
     },
     cancellationReason: {
       type: String,
@@ -103,10 +107,6 @@ const schema = mongoose.Schema(
     estimatedDuration: {
       type: Number,
       default: 30
-    },
-    prescriptionId: {
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: "Prescription"
     }
   },
   {

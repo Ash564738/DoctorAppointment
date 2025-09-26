@@ -4,14 +4,12 @@ const jwt = require("jsonwebtoken");
 const Doctor = require("../models/doctorModel");
 const Appointment = require("../models/appointmentModel");
 const nodemailer = require("nodemailer");
-const Notification = require("../models/notificationModel"); // <-- Add this line
+const Notification = require("../models/notificationModel");
 require("dotenv").config();
 
 const getuser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
-
-    // If user is a doctor, include doctor information
     if (user && user.role === 'Doctor') {
       const doctorInfo = await Doctor.findOne({ userId: user._id });
       if (doctorInfo) {
@@ -19,7 +17,7 @@ const getuser = async (req, res) => {
           specialization: doctorInfo.specialization,
           experience: doctorInfo.experience,
           fees: doctorInfo.fees,
-          department: doctorInfo.department, // ensure department is included
+          department: doctorInfo.department,
           isDoctor: doctorInfo.isDoctor
         };
       }
@@ -33,7 +31,6 @@ const getuser = async (req, res) => {
 
 const getallusers = async (req, res) => {
   try {
-    // Get the current user to check their role
     const currentUser = await User.findById(req.locals);
     console.log('=== getallusers DEBUG ===');
     console.log('Current user:', {
@@ -43,13 +40,8 @@ const getallusers = async (req, res) => {
       roleType: typeof currentUser?.role,
       roleLowercase: currentUser?.role?.toLowerCase()
     });
-    
-    // Check for admin role with case insensitive comparison
     const isAdmin = currentUser?.role?.toLowerCase() === 'admin';
     console.log('Is admin check:', isAdmin);
-    
-    // If the current user is an admin, include all users (including themselves)
-    // Otherwise, exclude the current user from the results
     let userQuery = User.find();
     if (!isAdmin) {
       console.log('Non-admin user, excluding current user from results');
@@ -57,7 +49,6 @@ const getallusers = async (req, res) => {
     } else {
       console.log('Admin user detected, including all users in results');
     }
-    
     const users = await userQuery.select("-password");
     console.log('Found users count:', users.length);
     console.log('All users with roles:', users.map(u => ({ 
@@ -66,27 +57,21 @@ const getallusers = async (req, res) => {
       role: u.role,
       roleType: typeof u.role 
     })));
-
-    // Check which users are doctors by looking up Doctor records and calculate age
     const usersWithDoctorStatus = await Promise.all(
       users.map(async (user) => {
         const doctorRecord = await Doctor.findOne({ userId: user._id });
         const userObj = user.toObject();
-
-        // Calculate age if dateOfBirth exists
         let calculatedAge = userObj.age;
         if (userObj.dateOfBirth) {
           const today = new Date();
           const birthDate = new Date(userObj.dateOfBirth);
           let age = today.getFullYear() - birthDate.getFullYear();
           const monthDiff = today.getMonth() - birthDate.getMonth();
-
           if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
             age--;
           }
           calculatedAge = age;
         }
-
         return {
           ...userObj,
           age: calculatedAge,
@@ -435,8 +420,6 @@ const resetpassword = async (req, res) => {
   try {
     const { id, token } = req.params;
     const { password } = req.body;
-    // console.log(token)
-    // console.log(password);
     jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
       if (err) {
         console.log(err);

@@ -3,26 +3,19 @@ const { ChatRoom, Message } = require('../models/chatModel');
 const User = require('../models/userModel');
 const { socketLogger } = require('../middleware/requestLogger');
 const { info, error: logError, chat, socket: logSocket } = require('../utils/logger');
-
-// Store active connections
 const activeUsers = new Map();
-
-// Socket authentication middleware
 const authenticateSocket = async (socket, next) => {
   const startTime = Date.now();
-
   try {
     const token = socket.handshake.auth.token;
     const ip = socket.handshake.address;
     const userAgent = socket.handshake.headers['user-agent'];
-
     logSocket('authentication_attempt', {
       socketId: socket.id,
       ip,
       userAgent,
       hasToken: !!token
     });
-
     if (!token) {
       logError('Socket authentication failed: No token provided', null, {
         socketId: socket.id,
@@ -31,10 +24,8 @@ const authenticateSocket = async (socket, next) => {
       });
       return next(new Error('Authentication error: No token provided'));
     }
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select('-password');
-
     if (!user) {
       logError('Socket authentication failed: User not found', null, {
         socketId: socket.id,
@@ -44,7 +35,6 @@ const authenticateSocket = async (socket, next) => {
       });
       return next(new Error('Authentication error: User not found'));
     }
-
     socket.userId = user._id.toString();
     socket.userRole = user.role;
     socket.userName = `${user.firstname} ${user.lastname}`;
@@ -74,7 +64,6 @@ const authenticateSocket = async (socket, next) => {
   }
 };
 
-// Handle socket connections
 const handleConnection = (io) => {
   return async (socket) => {
     const connectionTime = Date.now();
@@ -88,8 +77,6 @@ const handleConnection = (io) => {
       userAgent: socket.handshake.headers['user-agent'],
       timestamp: new Date().toISOString()
     });
-
-    // Store active user
     activeUsers.set(socket.userId, {
       socketId: socket.id,
       userId: socket.userId,
@@ -100,10 +87,7 @@ const handleConnection = (io) => {
     });
 
     try {
-      // Emit user online status to relevant chat rooms
       await updateUserOnlineStatus(socket.userId, true);
-
-      // Join user to their chat rooms
       await joinUserChatRooms(socket);
 
       info('User successfully joined chat rooms', {

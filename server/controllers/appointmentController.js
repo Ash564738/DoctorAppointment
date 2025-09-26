@@ -292,7 +292,7 @@ const getUpcomingAppointments = async (req, res) => {
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     let query = {
       date: { $gte: today.toISOString() },
-      status: { $in: ['Pending', 'Confirmed'] }
+      status: { $in: ['Confirmed'] }
     };
     if (userType === 'doctor') {
       query.doctorId = userId;
@@ -341,7 +341,7 @@ const getPatientStats = async (req, res) => {
     
     const totalAppointments = appointmentsWithSpecialization.length;
     const upcomingAppointments = appointmentsWithSpecialization.filter(apt => 
-      new Date(apt.date) >= startOfToday && (apt.status?.toLowerCase() === 'Pending' || apt.status?.toLowerCase() === 'Confirmed')
+      new Date(apt.date) >= startOfToday && (apt.status?.toLowerCase() === 'Confirmed')
     ).length;
     const completedAppointments = appointmentsWithSpecialization.filter(apt => 
       apt.status?.toLowerCase() === 'Completed'

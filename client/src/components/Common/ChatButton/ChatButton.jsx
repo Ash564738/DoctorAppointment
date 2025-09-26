@@ -25,14 +25,12 @@ const FloatingChatButton = () => {
   const [fallbackMode, setFallbackMode] = useState(false);
   const [fallbackChatUser, setFallbackChatUser] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
-  const [currentUser, setCurrentUser] = useState(null);
   const [userToken, setUserToken] = useState(localStorage.getItem("token") || "");
   const [apiRetryCount, setApiRetryCount] = useState(0);
   const [lastFetchTime, setLastFetchTime] = useState(0);
   const MAX_API_RETRIES = 3;
-  const MIN_FETCH_INTERVAL = 2000; // 2 seconds minimum between fetches
+  const MIN_FETCH_INTERVAL = 2000;
 
-  // Helper function to safely render user names
   const safeUserName = (user, includeTitle = false) => {
     if (!user || typeof user !== 'object') return 'Unknown User';
     const firstName = user.firstname || '';
@@ -41,7 +39,6 @@ const FloatingChatButton = () => {
     return `${title}${firstName} ${lastName}`.trim() || 'Unknown User';
   };
 
-  // Helper function to safely render message content
   const safeMessageContent = (message) => {
     if (!message) return 'No messages yet';
     if (typeof message === 'string') return message;
@@ -49,7 +46,6 @@ const FloatingChatButton = () => {
     return 'No messages yet';
   };
 
-  // Helper function to filter users by search term
   const filterUsersBySearch = (users, searchTerm) => {
     if (!searchTerm) return users;
     const searchLower = searchTerm.toLowerCase();
@@ -62,12 +58,10 @@ const FloatingChatButton = () => {
     );
   };
 
-  // Create unified user list with chat history and online status
   const getUnifiedUserList = () => {
     const userMap = new Map();
-    const currentUserId = user?.userId; // JWT contains userId, not _id
+    const currentUserId = user?.userId;
 
-    // Add users from chat rooms (these have chat history)
     chatRooms.forEach(room => {
       let otherUser = null;
 
@@ -76,11 +70,10 @@ const FloatingChatButton = () => {
       } else if (room.patient && room.patient._id === currentUserId) {
         otherUser = room.doctor;
       } else {
-        return; // Current user is not part of this chat room
+        return; 
       }
 
       if (otherUser && otherUser._id !== currentUserId) {
-        // Calculate unread count based on user's position in this specific chat room
         const isUserDoctor = room.doctor && room.doctor._id === currentUserId;
         const isUserPatient = room.patient && room.patient._id === currentUserId;
         
@@ -102,15 +95,12 @@ const FloatingChatButton = () => {
       }
     });
 
-    // Add all available users (some may not have chat history)
     availableUsers.forEach(availableUser => {
       if (availableUser._id !== currentUserId) {
         if (userMap.has(availableUser._id)) {
-          // Update existing entry with full user data
           const existing = userMap.get(availableUser._id);
           userMap.set(availableUser._id, { ...existing, ...availableUser });
         } else {
-          // Add new user without chat history
           userMap.set(availableUser._id, {
             ...availableUser,
             hasChat: false,
@@ -127,7 +117,6 @@ const FloatingChatButton = () => {
     return userList;
   };
 
-  // Get user from token like Navbar does - memoized to prevent infinite re-renders
   const user = useMemo(() => {
     const token = userToken;
     if (!token) return null;
@@ -236,7 +225,6 @@ const FloatingChatButton = () => {
   const fetchAvailableUsers = async () => {
     if (!user) return;
 
-    // Prevent rapid successive calls
     const now = Date.now();
     if (now - lastFetchTime < MIN_FETCH_INTERVAL) {
       return;
@@ -245,68 +233,20 @@ const FloatingChatButton = () => {
 
     try {
       const token = localStorage.getItem('token');
-
-      // Fetch all users instead of just available/online users
-      const response = await axiosInstance.get('/user/getallusers', {
+      const response = await axiosInstance.get('/chat/available-users', {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-
-      // Handle different response structures
-      let users = [];
-      if (Array.isArray(response.data)) {
-        users = response.data;
-      } else if (response.data && Array.isArray(response.data.users)) {
-        users = response.data.users;
-      } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        users = response.data.data;
+      if (response.data.success && Array.isArray(response.data.users)) {
+        setAvailableUsers(response.data.users);
+        setApiRetryCount(0);
       } else {
-        console.error('Unexpected API response structure:', response.data);
-        return;
+        setAvailableUsers([]);
       }
-
-      // Filter out current user and format the data
-      const currentUserId = user?.userId; // JWT contains userId, not _id
-      
-      const filteredUsers = users
-        .filter(u => u._id !== currentUserId)
-        .map(u => ({
-          _id: u._id,
-          firstname: u.firstname,
-          lastname: u.lastname,
-          email: u.email,
-          role: u.role,
-          specialization: u.specialization,
-          pic: u.pic,
-          isOnline: false // We'll assume offline for now, can be enhanced later
-        }));
-
-      setAvailableUsers(filteredUsers);
-      setApiRetryCount(0); // Reset retry count on success
     } catch (error) {
-      console.error('Error fetching all users:', error);
-      
-      // Only try fallback if we haven't exceeded retry limit
-      if (apiRetryCount < MAX_API_RETRIES) {
-        try {
-          const token = localStorage.getItem('token');
-          const response = await axiosInstance.get('/chat/available-users', {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          });
-          if (response.data.success) {
-            setAvailableUsers(response.data.users);
-            setApiRetryCount(0); // Reset on success
-          }
-        } catch (fallbackError) {
-          console.error('Fallback API also failed:', fallbackError);
-          setApiRetryCount(prev => prev + 1);
-        }
-      } else {
-        // Max retry limit reached, stop trying
-      }
+      console.error('Error fetching available users:', error);
+      setAvailableUsers([]);
     }
   };
 
@@ -314,7 +254,6 @@ const FloatingChatButton = () => {
     try {
       const token = localStorage.getItem('token');
 
-      // Find the target user for better feedback
       const targetUser = availableUsers.find(u => u._id === targetUserId);
       const userName = targetUser ?
         `${targetUser.role === 'Doctor' ? 'Dr. ' : ''}${targetUser.firstname} ${targetUser.lastname}` :
@@ -333,7 +272,7 @@ const FloatingChatButton = () => {
         const apiRoom = response.data.chatRoom;
         const normalizedChatRoom = {
           _id: apiRoom._id || apiRoom.id,
-          id: apiRoom._id || apiRoom.id, // Keep both for compatibility
+          id: apiRoom._id || apiRoom.id,
           doctor: apiRoom.doctor,
           patient: apiRoom.patient,
           isDirectChat: apiRoom.isDirectChat,
@@ -354,23 +293,16 @@ const FloatingChatButton = () => {
 
         setSelectedChatRoom(normalizedChatRoom);
         setShowUserList(false);
-
-        // Refresh chat rooms to include the new one
         fetchChatRooms();
       }
     } catch (error) {
       console.error('Error creating direct chat:', error);
-
-      // Provide user-friendly error message
       const targetUser = availableUsers.find(u => u._id === targetUserId);
       const userName = targetUser ?
         `${targetUser.role === 'Doctor' ? 'Dr. ' : ''}${targetUser.firstname} ${targetUser.lastname}` :
         'this user';
 
-      // Handle specific error cases
       if (error.response?.status === 500) {
-        // Server error - provide helpful message and try fallback
-        // Try to find existing chat room as fallback
         fetchChatRooms().then(rooms => {
           const existingRoom = rooms?.find(room =>
             (room.patient._id === targetUserId || room.doctor._id === targetUserId) &&
@@ -381,7 +313,6 @@ const FloatingChatButton = () => {
             setSelectedChatRoom(existingRoom);
             setShowUserList(false);
           } else {
-            // Enable fallback mode for offline chatting
             setFallbackMode(true);
             setFallbackChatUser(targetUser);
             setSelectedChatRoom({
@@ -399,8 +330,7 @@ const FloatingChatButton = () => {
           console.log(`Unable to start chat with ${userName}. Please try again later.`);
         });
       } else if (error.response?.status === 400) {
-        // Bad request - might be duplicate chat
-        fetchChatRooms(); // Refresh to show existing chats
+        fetchChatRooms();
       } else {
         toast.error(`Unable to start chat with ${userName}. Please try again later.`);
       }
@@ -425,16 +355,13 @@ const FloatingChatButton = () => {
     setSelectedChatRoom(null);
   };
 
-  // Helper function to update unread count for a specific room
   const updateUnreadCountForRoom = (chatRoomId, newUnreadCount) => {
     setChatRooms(prevRooms => 
       prevRooms.map(room => {
         if (room._id === chatRoomId) {
           const updatedRoom = { ...room };
-          // Update the appropriate unread count based on user's position in this room
           const isUserDoctor = room.doctor && room.doctor._id === user?.userId;
           const isUserPatient = room.patient && room.patient._id === user?.userId;
-          
           if (isUserDoctor) {
             updatedRoom.unreadCountDoctor = newUnreadCount;
           } else if (isUserPatient) {
@@ -447,7 +374,6 @@ const FloatingChatButton = () => {
       })
     );
 
-    // Recalculate total unread count
     setUnreadCount(prevCount => {
       const currentRoom = chatRooms.find(room => room._id === chatRoomId);
       if (!currentRoom) return prevCount;
@@ -467,7 +393,6 @@ const FloatingChatButton = () => {
   };
 
   const openChatRoom = (chatRoom) => {
-    // Ensure chat room has proper ID structure
     const normalizedChatRoom = {
       ...chatRoom,
       _id: chatRoom._id || chatRoom.id,
@@ -482,11 +407,8 @@ const FloatingChatButton = () => {
     });
     
     setSelectedChatRoom(normalizedChatRoom);
-    
-    // Immediately update unread count by removing this room's unread count
     updateUnreadCountForRoom(normalizedChatRoom._id, 0);
     
-    // Refresh the chat rooms data after a delay to get server updates
     setTimeout(() => {
       fetchChatRooms();
     }, 2000);
@@ -496,15 +418,13 @@ const FloatingChatButton = () => {
     setSelectedChatRoom(null);
     setFallbackMode(false);
     setFallbackChatUser(null);
-    fetchChatRooms(); // Refresh the list
+    fetchChatRooms();
   };
 
-  // Don't show chat button if user is not logged in or is on login/register pages
   if (!user) {
     return null;
   }
 
-  // Don't show on certain pages
   const currentPath = window.location.pathname;
   const excludedPaths = ['/login', '/register'];
   if (excludedPaths.includes(currentPath)) {

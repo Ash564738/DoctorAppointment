@@ -1,4 +1,5 @@
 // ...existing code...
+
 import React, { useEffect, useState } from 'react';
 import { apiCall } from '../../../helper/apiCall';
 import NavbarWrapper from '../../../components/Common/NavbarWrapper/NavbarWrapper';
@@ -8,18 +9,17 @@ import { FaClipboardList } from 'react-icons/fa';
 import './AppointmentManagement.css';
 import { MdCheckCircle } from 'react-icons/md';
 
-const rowsPerPage = 20;
-
 const AppointmentManagement = () => {
   const [appointments, setAppointments] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [dateFilter, setDateFilter] = useState('');
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
+  const rowsPerPage = 20;
   const fetchAppointments = async (page = 1) => {
     setLoading(true);
     setError(null);
@@ -31,8 +31,23 @@ const AppointmentManagement = () => {
       if (searchTerm) params.search = searchTerm;
       const res = await apiCall.get('/appointment/getallappointments', { params });
       if (res && res.success && Array.isArray(res.appointments)) {
-        setAppointments(res.appointments);
-        setPagination(res.pagination || { page: 1, totalPages: 1, total: res.appointments.length });
+        const mappedAppointments = res.appointments.map(appt => ({
+          ...appt,
+          patient: appt.userId
+            ? {
+                name: [appt.userId.firstname, appt.userId.lastname].filter(Boolean).join(' '),
+                email: appt.userId.email || '-',
+              }
+            : { name: '-', email: '-' },
+          doctor: appt.doctorId
+            ? {
+                name: [appt.doctorId.firstname, appt.doctorId.lastname].filter(Boolean).join(' '),
+                email: appt.doctorId.email || '-',
+              }
+            : { name: '-', email: '-' },
+        }));
+        setAppointments(mappedAppointments);
+        setPagination(res.pagination || { page: 1, totalPages: 1, total: mappedAppointments.length });
       } else {
         setAppointments([]);
         setPagination({ page: 1, totalPages: 1, total: 0 });
@@ -54,7 +69,7 @@ const AppointmentManagement = () => {
     fetchAppointments(currentPage);
   }, [currentPage, searchTerm]);
   const filteredAppointments = appointments.filter(appt => {
-    if (filter !== 'all' && appt.status?.toLowerCase() !== filter.toLowerCase()) {
+    if (filter !== 'all' && appt.status?.toLowerCase() !== filter) {
       return false;
     }
     if (dateFilter) {
@@ -66,47 +81,6 @@ const AppointmentManagement = () => {
     return true;
   });
 
-  const getStatusStats = () => {
-    return {
-      total: pagination.total,
-      pending: appointments.filter(a => a.status?.toLowerCase() === 'pending').length,
-      confirmed: appointments.filter(a => a.status?.toLowerCase() === 'confirmed').length,
-      completed: appointments.filter(a => a.status?.toLowerCase() === 'completed').length,
-      cancelled: appointments.filter(a => a.status?.toLowerCase() === 'cancelled').length,
-    };
-  };
-
-  const handleStatusChange = async (appointmentId, newStatus) => {
-    try {
-      await apiCall.put(`/appointment/update/${appointmentId}`, {
-        status: newStatus
-      });
-      setAppointments(appointments.map(appt =>
-        appt._id === appointmentId ? { ...appt, status: newStatus } : appt
-      ));
-      alert(`Appointment ${newStatus} successfully!`);
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to update appointment status';
-      alert(errorMessage);
-    }
-  };
-
-  const getStatusClassName = (status) => {
-    const baseClass = 'appointmentManagement_status';
-    switch (status?.toLowerCase()) {
-      case 'confirmed':
-        return `${baseClass} appointmentManagement_statusConfirmed`;
-      case 'pending':
-        return `${baseClass} appointmentManagement_statusPending`;
-      case 'cancelled':
-        return `${baseClass} appointmentManagement_statusCancelled`;
-      case 'completed':
-        return `${baseClass} appointmentManagement_statusCompleted`;
-      default:
-        return `${baseClass} appointmentManagement_statusPending`;
-    }
-  };
-
   const handlePageChange = (page) => {
     setCurrentPage(page);
     fetchAppointments(page);
@@ -116,20 +90,6 @@ const AppointmentManagement = () => {
     switch (status) {
       case 'Paid':
         return <MdCheckCircle size={18} color="#155724" style={{ marginRight: 4 }} />;
-      case 'Pending':
-        return (
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ marginRight: 4 }}>
-            <circle cx="10" cy="10" r="10" fill="#fff3cd" />
-            <path d="M10 5v5l3 3" stroke="#856404" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        );
-      case 'Failed':
-        return (
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ marginRight: 4 }}>
-            <circle cx="10" cy="10" r="10" fill="#f8d7da" />
-            <path d="M7 7l6 6M13 7l-6 6" stroke="#721c24" strokeWidth="2" fill="none" strokeLinecap="round"/>
-          </svg>
-        );
       case 'Refunded':
         return (
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ marginRight: 4 }}>
@@ -148,6 +108,7 @@ const AppointmentManagement = () => {
     }
   };
 
+
   return (
     <div className="appointmentManagement_page">
       <NavbarWrapper />
@@ -159,75 +120,24 @@ const AppointmentManagement = () => {
               Manage all patient appointments, update statuses, and monitor appointment workflow.
             </p>
           </div>
-          {!loading && !error && (
-            <div className="appointmentManagement_statsContainer">
-              {(() => {
-                const stats = getStatusStats();
-                return (
-                  <>
-                    <div className="appointmentManagement_statCard">
-                      <span className="appointmentManagement_statNumber">{stats.total}</span>
-                      <span className="appointmentManagement_statLabel">Total</span>
-                    </div>
-                    <div className="appointmentManagement_statCard appointmentManagement_statPending">
-                      <span className="appointmentManagement_statNumber">{stats.pending}</span>
-                      <span className="appointmentManagement_statLabel">Pending</span>
-                    </div>
-                    <div className="appointmentManagement_statCard appointmentManagement_statConfirmed">
-                      <span className="appointmentManagement_statNumber">{stats.confirmed}</span>
-                      <span className="appointmentManagement_statLabel">Confirmed</span>
-                    </div>
-                    <div className="appointmentManagement_statCard appointmentManagement_statCompleted">
-                      <span className="appointmentManagement_statNumber">{stats.completed}</span>
-                      <span className="appointmentManagement_statLabel">Completed</span>
-                    </div>
-                    <div className="appointmentManagement_statCard appointmentManagement_statCancelled">
-                      <span className="appointmentManagement_statNumber">{stats.cancelled}</span>
-                      <span className="appointmentManagement_statLabel">Cancelled</span>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          )}
         </div>
 
-        {/* Filters Section */}
+        {/* Filters Section - search and date only */}
         <div className="appointmentManagement_filtersSection">
-          <div className="appointmentManagement_filterGroup">
-            <label className="appointmentManagement_filterLabel">Search:</label>
+          <div className="appointmentManagement_filters">
             <input
               type="text"
               placeholder="Search by patient, doctor, or email..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={e => setSearchTerm(e.target.value)}
               className="appointmentManagement_searchInput"
             />
-          </div>
-          <div className="appointmentManagement_filterGroup">
-            <label className="appointmentManagement_filterLabel">Status:</label>
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="appointmentManagement_filterSelect"
-            >
-              <option value="all">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>
-          <div className="appointmentManagement_filterGroup">
-            <label className="appointmentManagement_filterLabel">Date:</label>
             <input
               type="date"
               value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
+              onChange={e => setDateFilter(e.target.value)}
               className="appointmentManagement_dateInput"
             />
-          </div>
-          <div className="appointmentManagement_filterGroup">
             <button
               className="appointmentManagement_clearFiltersButton"
               onClick={() => {
@@ -235,189 +145,142 @@ const AppointmentManagement = () => {
                 setFilter('all');
                 setDateFilter('');
               }}
-            >
-              Clear Filters
-            </button>
+            >Clear Filters</button>
           </div>
         </div>
 
-        {loading ? (
-          <div className="appointmentManagement_loadingContainer">
-            <p>Loading appointments...</p>
+      <div className="appointmentManagement_tableSection">
+        <div className="appointmentManagement_sectionHeader">
+          <div className="appointmentManagement_filters">
+          {(() => {
+            const statusCounts = appointments.reduce(
+              (acc, appt) => {
+                const status = (appt.status || '').toLowerCase();
+                if (status === 'confirmed') acc.confirmed += 1;
+                else if (status === 'completed') acc.completed += 1;
+                else if (status === 'cancelled') acc.cancelled += 1;
+                acc.all += 1;
+                return acc;
+              },
+              { all: 0, confirmed: 0, completed: 0, cancelled: 0 }
+            );
+            return (
+              <>
+                <button
+                  className={filter === 'all' ? 'appointmentManagement_filterButton appointmentManagement_filterActive' : 'appointmentManagement_filterButton'}
+                  onClick={() => setFilter('all')}
+                >All ({statusCounts.all})</button>
+                <button
+                  className={filter === 'confirmed' ? 'appointmentManagement_filterButton appointmentManagement_filterActive' : 'appointmentManagement_filterButton'}
+                  onClick={() => setFilter('confirmed')}
+                >Confirmed ({statusCounts.confirmed})</button>
+                <button
+                  className={filter === 'completed' ? 'appointmentManagement_filterButton appointmentManagement_filterActive' : 'appointmentManagement_filterButton'}
+                  onClick={() => setFilter('completed')}
+                >Completed ({statusCounts.completed})</button>
+                <button
+                  className={filter === 'cancelled' ? 'appointmentManagement_filterButton appointmentManagement_filterActive' : 'appointmentManagement_filterButton'}
+                  onClick={() => setFilter('cancelled')}
+                >Cancelled ({statusCounts.cancelled})</button>
+              </>
+            );
+          })()}
           </div>
-        ) : error ? (
-          <div className="appointmentManagement_errorMessage">
-            <div className="appointmentManagement_errorIcon">
-              <MdErrorOutline size={48} color="#dc2626" />
-            </div>
-            <div className="appointmentManagement_errorText">
-              <h3>Error Loading Appointments</h3>
-              <p>{error}</p>
-              <button
-                className="appointmentManagement_retryButton"
-                onClick={() => {
-                  setError(null);
-                  setLoading(true);
-                  fetchAppointments(currentPage);
-                }}
-              >
-                Retry
-              </button>
-            </div>
-          </div>
-        ) : filteredAppointments.length > 0 ? (
-          <div className="appointmentManagement_tableSection">
-            <div className="appointmentManagement_tableHeader">
-              <h3 className="appointmentManagement_sectionTitle">
-                Appointments ({filteredAppointments.length} of {pagination.total})
-              </h3>
-            </div>
-            <div className="appointmentManagement_tableContainer">
-              <table className="appointmentManagement_table">
-                <thead className="appointmentManagement_tableHead">
+        </div>
+
+          <div className="appointmentManagement_tableContainer">
+            <table className="appointmentManagement_table">
+              <thead>
+                <tr>
+                  <th className="appointmentManagement_tableHeaderCell">Patient</th>
+                  <th className="appointmentManagement_tableHeaderCell">Doctor</th>
+                  <th className="appointmentManagement_tableHeaderCell">Date</th>
+                  <th className="appointmentManagement_tableHeaderCell">Time</th>
+                  <th className="appointmentManagement_tableHeaderCell">Status</th>
+                  <th className="appointmentManagement_tableHeaderCell">Payment</th>
+                  <th className="appointmentManagement_tableHeaderCell">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="appointmentManagement_tableBody">
+                {loading ? (
                   <tr>
-                    <th className="appointmentManagement_tableHeaderCell">Patient Info</th>
-                    <th className="appointmentManagement_tableHeaderCell">Doctor</th>
-                    <th className="appointmentManagement_tableHeaderCell">Date & Time</th>
-                    <th className="appointmentManagement_tableHeaderCell">Status</th>
-                    <th className="appointmentManagement_tableHeaderCell">Payment</th>
-                    <th className="appointmentManagement_tableHeaderCell">Actions</th>
+                    <td colSpan="7" className="appointmentManagement_tableCell appointmentManagement_loadingContainer">
+                      Loading...
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="appointmentManagement_tableBody">
-                  {filteredAppointments.map((appt, idx) => (
-                    <tr key={appt._id || idx} className="appointmentManagement_tableRow">
-                      <td className="appointmentManagement_tableCell">
-                        <div className="appointmentManagement_patientInfo">
-                          <span className="appointmentManagement_patientName">
-                            {appt.userId ?
-                              `${appt.userId.firstname || ''} ${appt.userId.lastname || ''}`.trim() || 'N/A'
-                              : appt.patientName || 'N/A'
-                            }
+                ) : error ? (
+                  <tr>
+                    <td colSpan="7" className="appointmentManagement_tableCell appointmentManagement_errorMessage">
+                      {error}
+                    </td>
+                  </tr>
+                ) : filteredAppointments.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="appointmentManagement_tableCell appointmentManagement_noDataMessage">
+                      No appointments found.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredAppointments
+                    .slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+                    .map((appointment) => (
+                      <tr key={appointment._id} className="appointmentManagement_tableRow">
+                        <td className="appointmentManagement_tableCell">
+                          <div className="appointmentManagement_patientInfo">
+                            <span className="appointmentManagement_patientName">{appointment.patient?.name || '-'}</span>
+                            <span className="appointmentManagement_patientEmail">{appointment.patient?.email || '-'}</span>
+                          </div>
+                        </td>
+                        <td className="appointmentManagement_tableCell">
+                          <div className="appointmentManagement_doctorName">{appointment.doctor?.name || '-'}</div>
+                          <div className="appointmentManagement_doctorEmail">{appointment.doctor?.email || '-'}</div>
+                        </td>
+                        <td className="appointmentManagement_tableCell">
+                          <span className="appointmentManagement_appointmentDate">{appointment.date}</span>
+                        </td>
+                        <td className="appointmentManagement_tableCell">
+                          <span className="appointmentManagement_appointmentTime">{appointment.time}</span>
+                        </td>
+                        <td className="appointmentManagement_tableCell">
+                          <span className={`appointmentManagement_status appointmentManagement_status${appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}`}>{appointment.status}</span>
+                        </td>
+                        <td className="appointmentManagement_tableCell">
+                          <span className={`appointmentManagement_paymentStatus ${appointment.paymentStatus?.toLowerCase()}`.trim()}>
+                            <PaymentStatusIcon status={appointment.paymentStatus} />
+                            {appointment.paymentStatus}
                           </span>
-                          <span className="appointmentManagement_patientEmail">
-                            {appt.userId?.email || 'N/A'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="appointmentManagement_tableCell">
-                        <span className="appointmentManagement_doctorName">
-                          {appt.doctorId ?
-                            `Dr. ${appt.doctorId.firstname || ''} ${appt.doctorId.lastname || ''}`.trim() || 'N/A'
-                            : appt.doctorName || 'N/A'
-                          }
-                        </span>
-                      </td>
-                      <td className="appointmentManagement_tableCell">
-                        <div className="appointmentManagement_dateTimeInfo">
-                          <span className="appointmentManagement_appointmentDate">
-                            {appt.date ? new Date(appt.date).toLocaleDateString() : 'N/A'}
-                          </span>
-                          {appt.time && (
-                            <span className="appointmentManagement_appointmentTime">
-                              {appt.time}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="appointmentManagement_tableCell">
-                        <span className={getStatusClassName(appt.status)}>
-                          {appt.status || 'Pending'}
-                        </span>
-                      </td>
-                      <td className="appointmentManagement_tableCell">
-                        <span className={`appointmentManagement_paymentStatus ${(appt.paymentStatus || 'Pending').toLowerCase()}`}>
-                          <PaymentStatusIcon status={appt.paymentStatus || 'Pending'} />
-                          {(() => {
-                            switch (appt.paymentStatus) {
-                              case 'Paid': return 'Paid';
-                              case 'Pending': return 'Pending';
-                              case 'Failed': return 'Failed';
-                              case 'Refunded': return 'Refunded';
-                              default: return 'Pending';
-                            }
-                          })()}
-                        </span>
-                      </td>
-                      <td className="appointmentManagement_tableCell">
-                        <div className="appointmentManagement_actionButtons">
-                          {appt.status === 'pending' && (
-                            <button
-                              className="appointmentManagement_approveButton"
-                              onClick={() => handleStatusChange(appt._id, 'confirmed')}
-                            >
-                              Approve
-                            </button>
-                          )}
-                          {appt.status === 'confirmed' && (
-                            <button
-                              className="appointmentManagement_completeButton"
-                              onClick={() => handleStatusChange(appt._id, 'completed')}
-                            >
-                              Complete
-                            </button>
-                          )}
-                          {(appt.status === 'pending' || appt.status === 'confirmed') && (
-                            <button
-                              className="appointmentManagement_cancelButton"
-                              onClick={() => handleStatusChange(appt._id, 'cancelled')}
-                            >
-                              Cancel
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {pagination.totalPages > 1 && (
-                <div className="appointmentManagement_pagination" style={{ display: 'flex', justifyContent: 'center', margin: '16px 0' }}>
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => handlePageChange(currentPage - 1)}
-                  >
-                    Previous
-                  </button>
-                  {[...Array(pagination.totalPages)].map((_, idx) => (
-                    <button
-                      key={idx + 1}
-                      className={currentPage === idx + 1 ? 'active' : ''}
-                      onClick={() => handlePageChange(idx + 1)}
-                    >
-                      {idx + 1}
-                    </button>
-                  ))}
-                  <button
-                    disabled={currentPage === pagination.totalPages}
-                    onClick={() => handlePageChange(currentPage + 1)}
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
-            </div>
+                        </td>
+                        <td className="appointmentManagement_tableCell">
+                          {/* Actions here */}
+                        </td>
+                      </tr>
+                    ))
+                )}
+              </tbody>
+            </table>
           </div>
-        ) : (
-          <div className="appointmentManagement_noDataContainer">
-            <div className="appointmentManagement_noDataMessage">
-              <div className="appointmentManagement_noDataIcon">
-                <FaClipboardList size={48} color="#bdbdbd" />
-              </div>
-              <h3 className="appointmentManagement_noDataTitle">No Appointments Found</h3>
-              <p className="appointmentManagement_noDataText">
-                {searchTerm || filter !== 'all' || dateFilter
-                  ? 'No appointments match your current filters. Try adjusting your search criteria.'
-                  : 'No appointments have been scheduled yet.'
-                }
-              </p>
-            </div>
+          <div className="appointmentManagement_pagination">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >Previous</button>
+            {Array.from({ length: Math.ceil(filteredAppointments.length / rowsPerPage) }, (_, i) => (
+              <button
+                key={i + 1}
+                className={currentPage === i + 1 ? 'active' : ''}
+                onClick={() => handlePageChange(i + 1)}
+              >{i + 1}</button>
+            ))}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === Math.ceil(filteredAppointments.length / rowsPerPage) || filteredAppointments.length === 0}
+            >Next</button>
           </div>
-        )}
+        </div>
       </div>
       <Footer />
     </div>
   );
-};
+}
 
 export default AppointmentManagement;

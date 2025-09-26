@@ -43,7 +43,6 @@ export const Admin = ({ children }) => {
   return children;
 };
 
-// Role-specific wrappers
 export const PatientProtected = ({ children }) => {
   const token = localStorage.getItem('token');
   if (!token) return <Navigate to="/login" replace />;
@@ -80,7 +79,6 @@ export const AdminProtected = ({ children }) => {
   return children;
 };
 
-// Default export - simple authenticated route for any logged-in user
 const AuthenticatedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
   if (!token) {

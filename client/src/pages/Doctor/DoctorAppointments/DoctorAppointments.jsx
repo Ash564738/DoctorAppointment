@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import Empty from "../../../components/Common/Empty/Empty";
 import NavbarWrapper from "../../../components/Common/NavbarWrapper/NavbarWrapper";
@@ -12,6 +13,7 @@ import "./DoctorAppointments.css";
 
 const DoctorAppointments = () => {
   const [appointments, setAppointments] = useState([]);
+  const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState("all");
   const [editFields, setEditFields] = useState({}); 
   const { loading } = useSelector((state) => state.root);
@@ -42,7 +44,7 @@ const DoctorAppointments = () => {
 
   const filteredAppointments = useMemo(() => {
     if (filterStatus === "all") return appointments;
-    return appointments.filter((a) => (a.status || "").toLowerCase() === filterStatus);
+    return appointments.filter((a) => (a.status || "") === filterStatus);
   }, [appointments, filterStatus]);
 
   const handleStatusUpdate = async (appointmentId, nextStatus) => {
@@ -122,7 +124,6 @@ const DoctorAppointments = () => {
               className="doctorAppointments_statusFilter"
             >
               <option value="all">All</option>
-              <option value="Pending">Pending</option>
               <option value="Confirmed">Confirmed</option>
               <option value="Completed">Completed</option>
               <option value="Cancelled">Cancelled</option>
@@ -133,7 +134,7 @@ const DoctorAppointments = () => {
             <div className="doctorAppointments_grid">
               {filteredAppointments.map((appointment) => {
                 const id = appointment._id;
-                const status = (appointment.status || "").toLowerCase();
+                const status = appointment.status || "";
                 const patient = appointment.userId || {};
                 const isEditing = !!editFields[id];
                 return (
@@ -143,7 +144,7 @@ const DoctorAppointments = () => {
                         {patient.firstname} {patient.lastname}
                       </h3>
                       <span
-                        className={`doctorAppointments_statusBadge doctorAppointments_statusBadge--${status}`}
+                        className={`doctorAppointments_statusBadge doctorAppointments_statusBadge--${status.toLowerCase()}`}
                       >
                         {status || "-"}
                       </span>
@@ -169,7 +170,7 @@ const DoctorAppointments = () => {
                           <Select
                             size="small"
                             value={editFields[id]?.appointmentType ?? appointment.appointmentType ?? "Regular"}
-                            style={{ width: 120 }}
+                            className="doctorAppointments_select doctorAppointments_select--appointmentType"
                             onChange={(v) => handleEditFieldChange(id, "appointmentType", v)}
                             options={[
                               { value: "Regular", label: "Regular" },
@@ -188,7 +189,7 @@ const DoctorAppointments = () => {
                           <Select
                             size="small"
                             value={editFields[id]?.priority ?? appointment.priority ?? "Normal"}
-                            style={{ width: 120 }}
+                            className="doctorAppointments_select doctorAppointments_select--priority"
                             onChange={(v) => handleEditFieldChange(id, "priority", v)}
                             options={[
                               { value: "Low", label: "Low" },
@@ -210,7 +211,7 @@ const DoctorAppointments = () => {
                             max={240}
                             value={editFields[id]?.estimatedDuration ?? appointment.estimatedDuration ?? 30}
                             onChange={e => handleEditFieldChange(id, "estimatedDuration", Number(e.target.value))}
-                            style={{ width: 80 }}
+                            className="doctorAppointments_input doctorAppointments_input--duration"
                           />
                         ) : (
                           <span className="doctorAppointments_detailValue">{appointment.estimatedDuration ? `${appointment.estimatedDuration} min` : "30 min"}</span>
@@ -222,7 +223,7 @@ const DoctorAppointments = () => {
                           <Select
                             size="small"
                             value={editFields[id]?.recurringPattern?.frequency ?? appointment.recurringPattern?.frequency ?? ""}
-                            style={{ width: 120 }}
+                            className="doctorAppointments_select doctorAppointments_select--recurring"
                             onChange={v => handleEditFieldChange(id, "recurringPattern", { ...appointment.recurringPattern, frequency: v })}
                             options={[
                               { value: "", label: "None" },
@@ -251,19 +252,25 @@ const DoctorAppointments = () => {
 
                     <div className="doctorAppointments_cardActions">
                       {!isEditing ? (
-                        <button
-                          onClick={() => setEditFields((prev) => ({ ...prev, [id]: {} }))}
-                          className="doctorAppointments_actionBtn"
-                          style={{ background: "#faad14", color: "#fff" }}
-                        >
-                          Edit Details
-                        </button>
+                        <>
+                          <button
+                            onClick={() => setEditFields((prev) => ({ ...prev, [id]: {} }))}
+                            className="doctorAppointments_actionBtn doctorAppointments_actionBtn--edit"
+                          >
+                            Edit Details
+                          </button>
+                          <button
+                            onClick={() => navigate('/doctor/medical-records')}
+                            className="doctorAppointments_actionBtn doctorAppointments_actionBtn--records"
+                          >
+                            View Medical Records
+                          </button>
+                        </>
                       ) : (
                         <>
                           <button
                             onClick={() => handleSaveEdit(id)}
-                            className="doctorAppointments_actionBtn"
-                            style={{ background: "#52c41a", color: "#fff" }}
+                            className="doctorAppointments_actionBtn doctorAppointments_actionBtn--save"
                           >
                             Save
                           </button>
@@ -273,30 +280,13 @@ const DoctorAppointments = () => {
                               delete copy[id];
                               return copy;
                             })}
-                            className="doctorAppointments_actionBtn"
-                            style={{ background: "#ff4d4f", color: "#fff" }}
+                            className="doctorAppointments_actionBtn doctorAppointments_actionBtn--cancel"
                           >
                             Cancel
                           </button>
                         </>
                       )}
-                    {status === "pending" && (
-                      <>
-                        <button
-                          onClick={() => handleStatusUpdate(id, "Confirmed")}
-                          className="doctorAppointments_actionBtn doctorAppointments_actionBtn--approve"
-                        >
-                          Confirm
-                        </button>
-                        <button
-                          onClick={() => handleStatusUpdate(id, "Cancelled")}
-                          className="doctorAppointments_actionBtn doctorAppointments_actionBtn--reject"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                    {status === "confirmed" && (
+                    {status === "Confirmed" && (
                         <button
                           onClick={() => handleStatusUpdate(id, "Completed")}
                           className="doctorAppointments_actionBtn doctorAppointments_actionBtn--complete"

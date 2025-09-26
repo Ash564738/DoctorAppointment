@@ -215,6 +215,75 @@
 .patientAppointments_statusText--danger {
   color: #dc2626;
 }
+.patientAppointments_actionBtn--refill {
+  background: #f7b731;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  margin: 2px 0 2px 6px;
+  font-size: 0.98rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.patientAppointments_actionBtn--refill:disabled {
+  background: #ffe9b0;
+  color: #b2a661;
+  cursor: not-allowed;
+}
+.patientAppointments_actionBtn--waitlist {
+  background: #4b7bec;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  margin: 2px 0 2px 6px;
+  font-size: 0.98rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.patientAppointments_actionBtn--waitlist:disabled {
+  background: #b3c7f9;
+  color: #5d6d8b;
+  cursor: not-allowed;
+}
+.patientAppointments_actionBtn--walkin {
+  background: #20bf6b;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  margin: 2px 0 2px 6px;
+  font-size: 0.98rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.patientAppointments_actionBtn--walkin:disabled {
+  background: #b8eac7;
+  color: #4b6584;
+  cursor: not-allowed;
+}
+.patientAppointments_actionBtn--recurring {
+  background: #8854d0;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 14px;
+  margin: 2px 0 2px 6px;
+  font-size: 0.98rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.patientAppointments_actionBtn--recurring:disabled {
+  background: #d6c6f7;
+  color: #6d5c7c;
+  cursor: not-allowed;
+}
+.patientAppointments_statusText--queue {
+  color: #4b7bec;
+  font-weight: 500;
+  margin-left: 8px;
+}
 
 /* Pagination */
 .patientAppointments_pagination {

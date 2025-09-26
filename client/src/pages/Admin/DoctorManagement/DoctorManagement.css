@@ -61,7 +61,7 @@
 }
 
 .doctorManagement_sectionHeader {
-  padding: 24px 24px 0 24px;
+  padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md) var(--spacing-lg);
 }
 
 .doctorManagement_sectionTitle {
@@ -75,8 +75,6 @@
 .doctorManagement_filters {
   display: flex;
   gap: var(--spacing-xs);
-  margin-top: var(--spacing-sm);
-  margin-bottom: var(--spacing-sm);
 }
 
 .doctorManagement_filterButton {
@@ -90,12 +88,9 @@
   font-size: var(--font-size-base);
 }
 
-.doctorManagement_filterButton:hover {
-}
-
 .doctorManagement_filterActive {
   background: var(--primary-color);
-  color: white !important;
+  color: white;
 }
 
 /* Table */
@@ -417,11 +412,11 @@
 }
 
 .doctorManagement_modalCloseButton {
-  background: none;
+  background: var(--danger-color);
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #666;
+  color: white;
   padding: 4px;
   width: 32px;
   height: 32px;
@@ -433,7 +428,8 @@
 }
 
 .doctorManagement_modalCloseButton:hover {
-  background-color: #f1f5f9;
+  background: #c82333;
+  transform: scale(1.1);
 }
 
 .doctorManagement_modalBody {

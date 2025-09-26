@@ -1,4 +1,5 @@
-﻿.adminDashboard_page {
+﻿
+.adminDashboard_page {
   min-height: 100vh;
   background-color: #f8fafc;
   font-size: var(--font-size-base);
@@ -15,6 +16,13 @@
 }
 
 .adminDashboard_header {
+  background: white;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: var(--spacing-md);
 }
 
@@ -120,156 +128,98 @@
   transition: background 0.2s;
 }
 
+
 .adminDashboard_statsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
 }
 
 .adminDashboard_statCard {
   background: white;
-  border-radius: 12px;
+  border-radius: var(--border-radius-lg);
   padding: var(--spacing-lg);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   border-left: 4px solid var(--primary-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
 }
-
+.adminDashboard_statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1);
+}
 .adminDashboard_statIcon {
+  font-size: var(--font-size-lg);
   width: 60px;
   height: 60px;
-  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: var(--border-radius-lg);
   color: white;
-  font-size: var(--font-size-lg);
   flex-shrink: 0;
 }
-
 .adminDashboard_statContent {
   flex: 1;
 }
-
 .adminDashboard_statValue {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: #1e293b;
-  margin: 0;
+  margin: 0 0 var(--spacing-xs) 0;
 }
-
 .adminDashboard_statTitle {
   color: #64748b;
-  margin: var(--spacing-xs) 0;
+  margin: 0;
   font-weight: var(--font-weight-medium);
   font-size: var(--font-size-base);
 }
-
 .adminDashboard_statChange {
   font-size: var(--font-size-sm);
   color: #10b981;
   font-weight: var(--font-weight-medium);
 }
-
 .adminDashboard_statPercentage {
   color: #666;
   margin-left: 8px;
 }
 
-.adminDashboard_appointmentOverview {
-  background: white;
-  border-radius: 12px;
-  padding: var(--spacing-xl);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  margin-top: var(--spacing-lg);
-}
-
-.adminDashboard_appointmentOverviewTitle {
-  color: #1e293b;
-  margin-bottom: var(--spacing-lg);
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-}
-
-.adminDashboard_appointmentStats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-lg);
-}
-
-.adminDashboard_appointmentStat {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
-  border-radius: 8px;
-  background: #f8fafc;
-}
-
-.adminDashboard_statIconSmall {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: var(--font-size-base);
-}
-
-.adminDashboard_appointmentStatContent {
-  flex: 1;
-}
-
-.adminDashboard_appointmentStatValue {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  color: #1e293b;
-  margin: 0;
-}
-
-.adminDashboard_appointmentStatLabel {
-  color: #64748b;
-  margin: 0;
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-base);
-}
-
 .adminDashboard_chartsSection {
+  margin-bottom: var(--spacing-xl);
   margin-top: 32px;
 }
-
 .adminDashboard_chartsTitle {
   color: #1e293b;
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: 16px;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-lg);
 }
-
 .adminDashboard_chartsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
 }
-
 .adminDashboard_chartContainer {
-  background: #fff;
-  border-radius: 12px;
-  padding: 24px;
+  background: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  padding: var(--spacing-lg);
   min-height: 350px;
   display: flex;
   flex-direction: column;
 }
-
 .adminDashboard_chartTitle {
-  margin-bottom: 16px;
-  color: #1e293b;
   font-size: var(--font-size-base);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-medium);
+  color: #1e293b;
+  margin-bottom: var(--spacing-md);
 }
-
 .adminDashboard_chartInner {
   height: 250px;
   display: flex;
@@ -282,8 +232,12 @@
     width: 90vw;
   }
 }
-
 @media (max-width: 768px) {
+  .adminDashboard_header {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    text-align: center;
+  }
   .adminDashboard_container {
     padding: var(--spacing-md);
   }
@@ -291,5 +245,8 @@
   .adminDashboard_appointmentStats,
   .adminDashboard_chartsGrid {
     grid-template-columns: 1fr;
+  }
+  .adminDashboard_chartContainer {
+    padding: var(--spacing-md);
   }
 }

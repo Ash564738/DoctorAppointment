@@ -149,10 +149,14 @@ const validatePrescription = [
     .withMessage('Frequency is required and must be under 50 characters'),
 
   body('diagnosis')
-    .optional()
     .trim()
-    .isLength({ max: 500 })
-    .withMessage('Diagnosis must be under 500 characters'),
+    .isLength({ min: 1, max: 500 })
+    .withMessage('Diagnosis is required and must be under 500 characters'),
+
+  body('symptoms')
+    .trim()
+    .isLength({ min: 3, max: 1000 })
+    .withMessage('Symptoms are required and must be between 3 and 1000 characters'),
 
   body('instructions')
     .optional()
@@ -179,7 +183,7 @@ const validateHealthMetrics = [
     .isFloat({ min: 30, max: 250 })
     .withMessage('Heart rate must be between 30 and 250'),
 
-  body('vitalSigns.temperature')
+  body('vitalSigns.temperature.value')
     .optional()
     .isFloat({ min: 35, max: 45 })
     .withMessage('Temperature must be between 35°C and 45°C'),

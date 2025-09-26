@@ -139,14 +139,12 @@
 
 /* Filters */
 .userManagement_sectionHeader {
-  padding: var(--spacing-lg) var(--spacing-lg) 0 var(--spacing-lg);
+  padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md) var(--spacing-lg);
 }
 
 .userManagement_filters {
   display: flex;
   gap: var(--spacing-xs);
-  margin-top: var(--spacing-sm);
-  margin-bottom: var(--spacing-sm);
 }
 
 .userManagement_filterButton {
@@ -451,11 +449,11 @@
 }
 
 .userManagement_modalCloseButton {
-  background: none;
+  background: var(--danger-color);
   border: none;
   font-size: var(--font-size-lg);
   cursor: pointer;
-  color: #666;
+  color: white;
   padding: var(--spacing-xs);
   width: 32px;
   height: 32px;
@@ -467,7 +465,8 @@
 }
 
 .userManagement_modalCloseButton:hover {
-  background-color: #f1f5f9;
+  background: #c82333;
+  transform: scale(1.1);
 }
 
 .userManagement_modalBody {

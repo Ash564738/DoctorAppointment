@@ -5,22 +5,16 @@ const Notification = require("../models/notificationModel");
 const Doctor = require("../models/doctorModel");
 const { validationResult } = require('express-validator');
 
-// Helper for role check
 const isAdmin = user => user && user.role && user.role.toLowerCase() === 'admin';
 
-// Generate time slots for a shift
 const generateTimeSlots = (shift, date) => {
   const slots = [];
   const startTime = shift.startTime;
   const endTime = shift.endTime;
   const slotDuration = shift.slotDuration;
-  
-  // Convert time strings to minutes
-  const startMinutes = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
+    const startMinutes = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
   const endMinutes = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1]);
-  
-  // Check for break time
-  let breakStartMinutes = null;
+    let breakStartMinutes = null;
   let breakEndMinutes = null;
   if (shift.breakTime && shift.breakTime.start && shift.breakTime.end) {
     breakStartMinutes = parseInt(shift.breakTime.start.split(':')[0]) * 60 + parseInt(shift.breakTime.start.split(':')[1]);
@@ -29,9 +23,7 @@ const generateTimeSlots = (shift, date) => {
   
   for (let minutes = startMinutes; minutes < endMinutes; minutes += slotDuration) {
     const slotEndMinutes = minutes + slotDuration;
-    
-    // Skip if slot overlaps with break time
-    if (breakStartMinutes && breakEndMinutes) {
+        if (breakStartMinutes && breakEndMinutes) {
       if ((minutes >= breakStartMinutes && minutes < breakEndMinutes) ||
           (slotEndMinutes > breakStartMinutes && slotEndMinutes <= breakEndMinutes)) {
         continue;
