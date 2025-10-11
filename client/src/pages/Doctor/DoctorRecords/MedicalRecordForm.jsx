@@ -579,47 +579,6 @@ const MedicalRecordForm = ({
                   Add Another Prescription
                 </button>
               </div>
-              <div className="doctorRecords_formSection">
-                <h4 className="doctorRecords_sectionHeading">Follow-up</h4>
-                <div className="doctorRecords_formGroup">
-                  <label className="doctorRecords_checkboxLabel">
-                    <input
-                      className="doctorRecords_checkbox"
-                      type="checkbox"
-                      name="followUp.required"
-                      checked={recordData.followUp.required}
-                      onChange={onInputChange}
-                    />
-                    Follow-up required
-                  </label>
-                </div>
-                {recordData.followUp.required && (
-                  <>
-                    <div className="doctorRecords_formGroup">
-                      <label className="doctorRecords_label">Follow-up Timeframe</label>
-                      <input
-                        className="doctorRecords_input"
-                        type="text"
-                        name="followUp.timeframe"
-                        value={recordData.followUp.timeframe}
-                        onChange={onInputChange}
-                        placeholder="e.g., 1 week, 2 weeks, 1 month"
-                      />
-                    </div>
-                    <div className="doctorRecords_formGroup">
-                      <label className="doctorRecords_label">Follow-up Instructions</label>
-                      <textarea
-                        className="doctorRecords_textarea"
-                        name="followUp.instructions"
-                        value={recordData.followUp.instructions}
-                        onChange={onInputChange}
-                        placeholder="Instructions for follow-up visit"
-                        rows="2"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
   </form>
   );
 };

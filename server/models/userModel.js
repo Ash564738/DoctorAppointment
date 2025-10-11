@@ -173,10 +173,8 @@ schema.virtual('calculatedAge').get(function() {
 schema.pre('save', async function(next) {
   try {
     if (this.isModified('password')) {
-      console.log('Hashing password for user:', this.email);
       const salt = await bcrypt.genSalt(12);
       this.password = await bcrypt.hash(this.password, salt);
-      console.log('Password hashed successfully for:', this.email);
     }
     if (this.isModified('role')) {
       this.isAdmin = this.role === 'Admin';

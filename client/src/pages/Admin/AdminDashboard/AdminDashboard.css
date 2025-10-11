@@ -16,14 +16,6 @@
 }
 
 .adminDashboard_header {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
 }
 
 .adminDashboard_title {
@@ -43,11 +35,10 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  margin-bottom: var(--spacing-md);
 }
 
 .adminDashboard_periodLabel {
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-bold);
   color: #1e293b;
 }
 
@@ -136,16 +127,16 @@
 }
 
 .adminDashboard_statCard {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-lg);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   border-left: 4px solid var(--primary-color);
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
 }
 .adminDashboard_statCard:hover {
   transform: translateY(-2px);
@@ -166,7 +157,7 @@
   flex: 1;
 }
 .adminDashboard_statValue {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   color: #1e293b;
   margin: 0 0 var(--spacing-xs) 0;
@@ -184,18 +175,12 @@
 }
 .adminDashboard_statPercentage {
   color: #666;
-  margin-left: 8px;
 }
 
-.adminDashboard_chartsSection {
-  margin-bottom: var(--spacing-xl);
-  margin-top: 32px;
-}
 .adminDashboard_chartsTitle {
   color: #1e293b;
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
-  margin-bottom: var(--spacing-lg);
 }
 .adminDashboard_chartsGrid {
   display: grid;
@@ -204,21 +189,16 @@
   margin-bottom: var(--spacing-lg);
 }
 .adminDashboard_chartContainer {
-  background: white;
+  background: var(--white);
+  border: 1px solid rgba(0,0,0,0.05);
   border-radius: var(--border-radius-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  overflow: hidden;
+  box-shadow: var(--shadow-sm);
   padding: var(--spacing-lg);
-  min-height: 350px;
-  display: flex;
-  flex-direction: column;
 }
 .adminDashboard_chartTitle {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   color: #1e293b;
-  margin-bottom: var(--spacing-md);
 }
 .adminDashboard_chartInner {
   height: 250px;

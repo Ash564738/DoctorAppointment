@@ -8,8 +8,6 @@ const SERVER_ROOT = rawServer.replace(/\/$/, '');
 const axiosInstance = axios.create({
   baseURL: SERVER_ROOT + '/api'
 });
-
-// Request interceptor for timing
 axiosInstance.interceptors.request.use(
   (config) => {
     const startTime = Date.now();
@@ -22,7 +20,6 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Response interceptor for logging
 axiosInstance.interceptors.response.use(
   (response) => {
     const endTime = Date.now();
@@ -97,10 +94,11 @@ const apiCall = {
 
   post: async (url, data = {}, config = {}) => {
     try {
+      const isForm = typeof FormData !== 'undefined' && data instanceof FormData;
       const response = await axiosInstance.post(url, data, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
-          'Content-Type': 'application/json',
+          ...(isForm ? {} : { 'Content-Type': 'application/json' }),
           ...config.headers
         },
         ...config
@@ -113,10 +111,11 @@ const apiCall = {
 
   put: async (url, data = {}, config = {}) => {
     try {
+      const isForm = typeof FormData !== 'undefined' && data instanceof FormData;
       const response = await axiosInstance.put(url, data, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
-          'Content-Type': 'application/json',
+          ...(isForm ? {} : { 'Content-Type': 'application/json' }),
           ...config.headers
         },
         ...config
@@ -144,10 +143,11 @@ const apiCall = {
 
   patch: async (url, data = {}, config = {}) => {
     try {
+      const isForm = typeof FormData !== 'undefined' && data instanceof FormData;
       const response = await axiosInstance.patch(url, data, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
-          'Content-Type': 'application/json',
+          ...(isForm ? {} : { 'Content-Type': 'application/json' }),
           ...config.headers
         },
         ...config

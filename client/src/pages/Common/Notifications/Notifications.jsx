@@ -7,9 +7,7 @@ import fetchData, { apiCall } from "../../../helper/apiCall";
 import { setLoading } from "../../../redux/reducers/rootSlice";
 import Loading from "../../../components/Common/Loading/Loading";
 import "./Notifications.css";
-// axios import removed; using unified apiCall helper
 import toast from "react-hot-toast";
-import axios from "axios";
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -32,11 +30,7 @@ const Notifications = () => {
   const clearAllNotifications = async () => {
     try {
       dispatch(setLoading(true));
-      await axios.delete("/notification/clearallnotifs", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      await apiCall.delete("/notification/clearallnotifs");
       setNotifications([]);
       dispatch(setLoading(false));
       toast.success("All notifications cleared successfully");
@@ -79,7 +73,7 @@ const Notifications = () => {
   );
 
   return (
-    <>
+    <div className="notifications_page">
       <NavbarWrapper />
       {loading ? (
         <Loading />
@@ -145,7 +139,7 @@ const Notifications = () => {
         </section>
       )}
       <Footer />
-    </>
+    </div>
   );
 };
 

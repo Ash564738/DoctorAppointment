@@ -3,17 +3,25 @@ import NavbarWrapper from '../../../components/Common/NavbarWrapper/NavbarWrappe
 import Footer from '../../../components/Common/Footer/Footer';
 import { apiCall } from '../../../helper/apiCall';
 import toast from 'react-hot-toast';
-import { jwtDecode } from 'jwt-decode';
-import { FaFileInvoice, FaDownload, FaEye } from 'react-icons/fa';
+// removed unused jwtDecode import
+import { FaFileInvoice, FaDownload, FaEye, FaUndo, FaExclamationTriangle, FaSpinner } from 'react-icons/fa';
+import { MdCheckCircle } from 'react-icons/md';
 import './PaymentBilling.css';
+import PageHeader from '../../../components/Common/PageHeader/PageHeader';
 
 const PaymentBilling = () => {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showInvoiceDetails, setShowInvoiceDetails] = useState(false);
   const [invoiceDetails, setInvoiceDetails] = useState(null);
+  
+  // Refund state
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [refundReason, setRefundReason] = useState('');
+  const [refundRequesting, setRefundRequesting] = useState({});
 
-  const { userId } = jwtDecode(localStorage.getItem("token"));
+  // removed unused userId
 
   useEffect(() => {
     fetchInvoices();
@@ -56,15 +64,16 @@ const PaymentBilling = () => {
 
   const downloadInvoice = async (invoiceId) => {
     try {
-      const response = await apiCall.get(`payment/download/${invoiceId}/`, { responseType: 'blob' });
-      if (response && response.data) {
-        const url = window.URL.createObjectURL(response.data);
+      const blob = await apiCall.get(`payment/download/${invoiceId}/`, { responseType: 'blob' });
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.setAttribute('download', `invoice-${invoiceId}.pdf`);
         document.body.appendChild(link);
         link.click();
         link.remove();
+        window.URL.revokeObjectURL(url);
         toast.success('Invoice download started');
       } else {
         toast.error('Failed to download invoice');
@@ -96,13 +105,50 @@ const PaymentBilling = () => {
     setInvoiceDetails(null);
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'paid': return '#28a745';
-      case 'overdue': return '#dc3545';
-      default: return '#6c757d';
+  // Refund functionality
+  const requestRefund = async (invoiceId, reason) => {
+    setRefundRequesting(prev => ({ ...prev, [invoiceId]: true }));
+    
+    try {
+      const response = await apiCall.post('/payment/request-refund', {
+        paymentId: invoiceId,
+        reason
+      });
+
+      if (response.success) {
+        toast.success('Refund request submitted successfully!');
+        setShowRefundModal(false);
+        setSelectedInvoice(null);
+        setRefundReason('');
+        await fetchInvoices(); // Refresh the invoices
+      } else {
+        toast.error('Failed to submit refund request: ' + response.message);
+      }
+    } catch (error) {
+      console.error('Refund request error:', error);
+      toast.error('Error submitting refund request. Please try again.');
+    } finally {
+      setRefundRequesting(prev => ({ ...prev, [invoiceId]: false }));
     }
   };
+
+  const openRefundModal = (invoice) => {
+    setSelectedInvoice(invoice);
+    setShowRefundModal(true);
+  };
+
+  const closeRefundModal = () => {
+    setShowRefundModal(false);
+    setSelectedInvoice(null);
+    setRefundReason('');
+  };
+
+  const canRequestRefund = (invoice) => {
+    const status = getPrettyStatusLabel(invoice).toLowerCase();
+    return status === 'paid' && !invoice.refundRequested;
+  };
+
+  // removed unused getStatusColor helper
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -118,16 +164,45 @@ const PaymentBilling = () => {
 
   const filteredInvoices = invoices;
 
+  const PaymentStatusIcon = ({ status }) => {
+    switch (status) {
+      case 'Paid':
+        return <MdCheckCircle size={18} color="#155724" style={{ marginRight: 4 }} />;
+      case 'Refunded':
+        return (
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ marginRight: 4 }}>
+            <circle cx="10" cy="10" r="10" fill="#d1ecf1" />
+            <path d="M13 7v3a3 3 0 01-3 3H7" stroke="#0c5460" strokeWidth="2" fill="none" strokeLinecap="round"/>
+            <path d="M7 13l2-2-2-2" stroke="#0c5460" strokeWidth="2" fill="none" strokeLinecap="round"/>
+          </svg>
+        );
+      default:
+        return (
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ marginRight: 4 }}>
+            <circle cx="10" cy="10" r="10" fill="#fff3cd" />
+            <path d="M10 5v5l3 3" stroke="#856404" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        );
+    }
+  };
+
+  const getPrettyStatusLabel = (invoice) => {
+    const raw = (invoice?.paymentRaw?.status || invoice?.status || '').toLowerCase();
+    if (raw === 'succeeded' || raw === 'paid') return 'Paid';
+    if (raw === 'refunded') return 'Refunded';
+    if (!raw) return 'Unknown';
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  };
+
   return (
     <div className="paymentBilling_page">
       <NavbarWrapper />
       <div className="paymentBilling_container">
-        <div className="paymentBilling_header">
-          <h1 className="paymentBilling_title">Payment & Billing</h1>
-          <p className="paymentBilling_description">
-            Manage your medical bills and transaction history.
-          </p>
-        </div>
+        <PageHeader
+          title="Payment & Billing"
+          subtitle="Manage your medical bills and transaction history."
+          className="paymentBilling_header"
+        />
 
         {loading ? (
           <div className="paymentBilling_loading">
@@ -151,10 +226,9 @@ const PaymentBilling = () => {
                         <div className="paymentBilling_invoiceAmount">
                           <span className="paymentBilling_amount">{formatCurrency(invoice.amount)}</span>
                           <span 
-                            className="paymentBilling_status" 
-                            style={{ backgroundColor: getStatusColor(invoice.status) }}
-                          >
-                            {invoice.status}
+                            className={`paymentBilling_status paymentBilling_status--${getPrettyStatusLabel(invoice).toLowerCase().replace(/\s+/g, '-')}`}>
+                            <PaymentStatusIcon status={getPrettyStatusLabel(invoice)} />
+                            {getPrettyStatusLabel(invoice)}
                           </span>
                         </div>
                       </div>
@@ -195,6 +269,39 @@ const PaymentBilling = () => {
                         >
                           <FaDownload /> Download
                         </button>
+                        
+                        {/* Refund Button - only for paid invoices that haven't been refunded */}
+                        {canRequestRefund(invoice) && (
+                          <button 
+                            className="paymentBilling_actionButton paymentBilling_refundButton"
+                            onClick={() => openRefundModal(invoice)}
+                            disabled={refundRequesting[invoice._id]}
+                          >
+                            {refundRequesting[invoice._id] ? (
+                              <>
+                                <FaSpinner className="fa-spin" />
+                                Requesting...
+                              </>
+                            ) : (
+                              <>
+                                <FaUndo />
+                                Request Refund
+                              </>
+                            )}
+                          </button>
+                        )}
+                        
+                        {/* Show refund status if already refunded or requested */}
+                        {getPrettyStatusLabel(invoice).toLowerCase() === 'refunded' && (
+                          <div className="paymentBilling_refundStatus">
+                            <FaUndo /> Refunded
+                          </div>
+                        )}
+                        {invoice.refundRequested && getPrettyStatusLabel(invoice).toLowerCase() !== 'refunded' && (
+                          <div className="paymentBilling_refundStatus paymentBilling_refundPending">
+                            <FaExclamationTriangle /> Refund Pending
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -266,6 +373,72 @@ const PaymentBilling = () => {
             )}
           </>
         )}
+
+        {/* Refund Request Modal */}
+        {showRefundModal && selectedInvoice && (
+          <div className="paymentBilling_modalOverlay">
+            <div className="paymentBilling_refundModal">
+              <div className="paymentBilling_modalHeader">
+                <h3>Request Refund</h3>
+                <button 
+                  className="paymentBilling_modalClose"
+                  onClick={closeRefundModal}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="paymentBilling_modalContent">
+                <div className="paymentBilling_refundDetails">
+                  <p><strong>Invoice:</strong> {selectedInvoice.invoiceNumber}</p>
+                  <p><strong>Amount:</strong> {formatCurrency(selectedInvoice.amount)}</p>
+                  <p><strong>Doctor:</strong> {selectedInvoice.doctorName}</p>
+                  <p><strong>Service:</strong> {selectedInvoice.serviceDescription}</p>
+                </div>
+                
+                <div className="paymentBilling_refundWarning">
+                  <FaExclamationTriangle />
+                  <span>Refund requests are subject to review and approval. Processing may take 3-5 business days.</span>
+                </div>
+                
+                <div className="paymentBilling_formGroup">
+                  <label htmlFor="refundReason">Reason for Refund Request:</label>
+                  <select
+                    id="refundReason"
+                    value={refundReason}
+                    onChange={(e) => setRefundReason(e.target.value)}
+                    className="paymentBilling_select"
+                  >
+                    <option value="">Select a reason</option>
+                    <option value="Appointment cancelled by patient">Appointment cancelled by patient</option>
+                    <option value="Appointment cancelled by doctor">Appointment cancelled by doctor</option>
+                    <option value="Medical emergency">Medical emergency</option>
+                    <option value="Billing error">Billing error</option>
+                    <option value="Service not satisfactory">Service not satisfactory</option>
+                    <option value="Technical issues">Technical issues</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                
+                <div className="paymentBilling_modalActions">
+                  <button 
+                    className="paymentBilling_btnCancel"
+                    onClick={closeRefundModal}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className="paymentBilling_btnSubmit"
+                    onClick={() => requestRefund(selectedInvoice._id, refundReason)}
+                    disabled={!refundReason || refundRequesting[selectedInvoice._id]}
+                  >
+                    {refundRequesting[selectedInvoice._id] ? 'Submitting...' : 'Submit Request'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
       <Footer />
     </div>

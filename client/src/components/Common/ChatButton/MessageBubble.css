@@ -91,9 +91,8 @@
 }
 
 .messageBubble_own .messageBubble_content {
-  background: #3b82f6;
+  background: var(--primary-color);
   color: white;
-  border-color: #3b82f6;
 }
 
 .messageBubble_system .messageBubble_content {

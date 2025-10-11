@@ -55,11 +55,9 @@ const NavbarWrapper = () => {
           { name: 'Dashboard', path: '/admin/dashboard', icon: <FaTachometerAlt /> },
           { name: 'Users', path: '/admin/users', icon: <FaUser /> },
           { name: 'Doctors', path: '/admin/doctors', icon: <FaUserMd /> },
-          { name: 'Scheduling', path: '/admin/schedule', icon: <FaCalendarCheck /> },
+          { name: 'Schedule', path: '/admin/schedule', icon: <FaCalendarCheck /> },
           { name: 'Appointments', path: '/admin/appointments', icon: <FaCalendarAlt /> },
-          { name: 'Billing', path: '/admin/billing', icon: <FaDollarSign /> },
-          { name: 'Branch Mgmt', path: '/admin/branch-management', icon: <FaUsers /> },
-          { name: 'Audit Logs', path: '/admin/audit-logs', icon: <FaFileAlt /> }
+          { name: 'Billing', path: '/admin/billing', icon: <FaDollarSign /> }
         ];
       default:
         return [];
@@ -77,15 +75,12 @@ const NavbarWrapper = () => {
   return (
     <nav className="navbarWrapper_navbar">
       <div className="navbarWrapper_navContainer">
-        {/* Brand */}
         <div className="navbarWrapper_navBrand">
           <NavLink to="/" className="navbarWrapper_navBrandLink">
             <FaStethoscope className="navbarWrapper_navBrandIcon" />
             <h2 className="navbarWrapper_navBrandTitle">HealthCare+</h2>
           </NavLink>
         </div>
-
-        {/* Desktop Navigation */}
         {isAuthenticated ? (
           <div className="navbarWrapper_desktopNav">
             {navigation.map((item) => (
@@ -100,8 +95,6 @@ const NavbarWrapper = () => {
                 <span className="navbarWrapper_navLinkText">{item.name}</span>
               </NavLink>
             ))}
-            
-            {/* User Dropdown */}
             <div className="navbarWrapper_navUser">
               <button
                 className="navbarWrapper_navLink navbarWrapper_navUserButton"
@@ -131,7 +124,6 @@ const NavbarWrapper = () => {
             </div>
           </div>
         ) : (
-          /* Public Navigation */
           <div className="navbarWrapper_publicNav">
             <div className="navbarWrapper_navLinks">
               <NavLink to="/login" className="navbarWrapper_navLink">
@@ -143,8 +135,6 @@ const NavbarWrapper = () => {
             </div>
           </div>
         )}
-
-        {/* Mobile Menu Toggle */}
         <button
           className="navbarWrapper_mobileMenuToggle"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -152,8 +142,6 @@ const NavbarWrapper = () => {
           ☰
         </button>
       </div>
-
-      {/* Mobile Navigation */}
       {isMobileMenuOpen && (
         <>
           <div 

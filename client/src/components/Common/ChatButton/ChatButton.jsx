@@ -7,9 +7,11 @@ import ChatInterface from './ChatInterface';
 import logger from '../../../utils/logger';
 import './ChatButton.css';
 
-// Configure axios with the correct base URL structure
+// Configure axios with a robust base URL (mirrors helper/apiCall.js)
+const rawServer = process.env.REACT_APP_SERVER_URL || 'http://localhost:5015';
+const SERVER_ROOT = rawServer.replace(/\/$/, '');
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_SERVER_URL + '/api' || 'http://localhost:5015/api'
+  baseURL: SERVER_ROOT + '/api'
 });
 
 const FloatingChatButton = () => {
@@ -156,18 +158,26 @@ const FloatingChatButton = () => {
     };
   }, [userToken]);
 
+  // Fetch chat rooms and available users on mount (to get unread count for badge)
+  useEffect(() => {
+    if (user?.userId) {
+      fetchChatRooms();
+      fetchAvailableUsers();
+    }
+  }, [user?.userId]);
+
+  // Refresh data when chat window is opened
   useEffect(() => {
     if (isOpen && !isMinimized && user?.userId) {
       fetchChatRooms();
       fetchAvailableUsers();
     }
-  }, [isOpen, isMinimized, user?.userId]); // Only depend on userId, not the entire user object
+  }, [isOpen, isMinimized]); // Removed user?.userId dependency to avoid duplicate calls
 
   const fetchChatRooms = async () => {
     // Prevent rapid successive calls
     const now = Date.now();
     if (now - lastFetchTime < MIN_FETCH_INTERVAL) {
-      console.log('Skipping fetchChatRooms due to rate limiting');
       return;
     }
 
@@ -177,7 +187,6 @@ const FloatingChatButton = () => {
       
       const token = localStorage.getItem('token');
       if (!token) {
-        console.log('No token available for fetchChatRooms');
         return;
       }
 
@@ -197,9 +206,7 @@ const FloatingChatButton = () => {
         
         setChatRooms(normalizedRooms);
 
-        // Calculate total unread count based on user's position in each chat room
         const totalUnread = normalizedRooms.reduce((total, room) => {
-          // Determine if current user is the doctor or patient in this specific chat room
           const isUserDoctor = room.doctor && room.doctor._id === user?.userId;
           const isUserPatient = room.patient && room.patient._id === user?.userId;
           
@@ -327,7 +334,6 @@ const FloatingChatButton = () => {
           }
         }).catch(fallbackError => {
           console.error('Fallback also failed:', fallbackError);
-          console.log(`Unable to start chat with ${userName}. Please try again later.`);
         });
       } else if (error.response?.status === 400) {
         fetchChatRooms();

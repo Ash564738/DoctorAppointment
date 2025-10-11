@@ -108,6 +108,13 @@ const updateAppointmentRating = async (req, res) => {
         message: "Appointment not found"
       });
     }
+    // Ensure only completed appointments' ratings can be updated
+    if (appointment.status !== 'Completed') {
+      return res.status(400).json({
+        success: false,
+        message: "You can only rate or update ratings for completed appointments"
+      });
+    }
     if (appointment.userId._id.toString() !== userId) {
       return res.status(403).json({
         success: false,
@@ -296,6 +303,55 @@ const getPatientRatings = async (req, res) => {
   }
 };
 
+const getMyDoctorRatings = async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { page = 1, limit = 10 } = req.query;
+    const doctor = await User.findById(userId);
+    if (!doctor) {
+      return res.status(404).json({
+        success: false,
+        message: "Doctor not found"
+      });
+    }
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const ratings = await Rating.find({ doctorId: userId })
+      .populate('patientId', 'firstname lastname pic')
+      .select('rating createdAt comment')
+      .sort({ 'createdAt': -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+    const formattedRatings = ratings.map(rating => ({
+      _id: rating._id,
+      rating: rating.rating,
+      comment: rating.comment,
+      patientName: rating.patientId 
+        ? `${rating.patientId.firstname} ${rating.patientId.lastname}`
+        : 'Anonymous',
+      createdAt: rating.createdAt
+    }));
+    const total = await Rating.countDocuments({ doctorId: userId });
+    return res.status(200).json({
+      success: true,
+      message: "Doctor ratings retrieved successfully",
+      data: formattedRatings,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit)),
+        totalItems: total,
+        itemsPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    logger.error("Error fetching doctor's own ratings:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch doctor ratings",
+      error: error.message
+    });
+  }
+};
+
 const updateDoctorAverageRating = async (doctorId) => {
   try {
     const stats = await Rating.aggregate([
@@ -328,5 +384,6 @@ module.exports = {
   rateAppointment,
   updateAppointmentRating,
   getDoctorRatings,
-  getPatientRatings
+  getPatientRatings,
+  getMyDoctorRatings
 };

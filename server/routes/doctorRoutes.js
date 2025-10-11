@@ -15,5 +15,7 @@ router.put("/admin-update/:id", auth, doctorController.adminUpdateDoctor);
 router.get("/my-patients", auth, doctorController.getMyPatients);
 router.get("/analytics", auth, doctorController.getDoctorAnalytics);
 router.get("/recent-activity", auth, doctorController.getRecentActivity);
+router.get("/:doctorId/availability", doctorController.getDoctorAvailability);
+router.get("/:doctorId/status", doctorController.getDoctorCurrentStatus);
 
 module.exports = router;

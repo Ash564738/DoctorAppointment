@@ -12,18 +12,42 @@ const useAdminDoctorRequests = () => {
     setLoading(true);
     setError(null);
     try {
-      const [leaveRes, overtimeRes, swapRes] = await Promise.all([
+      const results = await Promise.allSettled([
         apiCall.get('/leave?limit=100'),
         apiCall.get('/overtime/all'),
         apiCall.get('/shift-swap/all'),
       ]);
-      setLeaveRequests(leaveRes?.leaveRequests || []);
-      setOvertimeRequests(overtimeRes?.data || []);
-      setSwapRequests(swapRes?.data || []);
+
+      const [leaveRes, overtimeRes, swapRes] = results;
+
+      if (leaveRes.status === 'fulfilled') {
+        setLeaveRequests(leaveRes.value?.leaveRequests || []);
+      } else {
+        setLeaveRequests([]);
+      }
+
+      if (overtimeRes.status === 'fulfilled') {
+        setOvertimeRequests(overtimeRes.value?.data || []);
+      } else {
+        setOvertimeRequests([]);
+      }
+
+      if (swapRes.status === 'fulfilled') {
+        setSwapRequests(swapRes.value?.data || []);
+      } else {
+        setSwapRequests([]);
+        const status = swapRes.reason?.response?.status;
+        if (status === 403) {
+          setError('Shift swaps: Admin only. Please sign in with an admin account.');
+        } else {
+          setError('Failed to fetch requests');
+        }
+      }
     } catch (err) {
       setError('Failed to fetch requests');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => { fetchAll(); }, []);

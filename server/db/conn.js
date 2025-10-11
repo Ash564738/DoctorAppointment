@@ -11,7 +11,10 @@ const client = mongoose
     useUnifiedTopology: true
   })
   .then(() => {
-    console.log("Database connected successfully to", MONGO_URI);
+    try {
+      const { info } = require('../utils/logger');
+      info('Database connected successfully', { mongoUri: MONGO_URI ? 'Configured' : 'Not configured' });
+    } catch {}
     return mongoose.connection;
   })
   .catch((error) => {

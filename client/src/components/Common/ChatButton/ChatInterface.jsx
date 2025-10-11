@@ -8,9 +8,11 @@ import FileUpload from './FileUpload';
 import logger from '../../../utils/logger';
 import './ChatInterface.css';
 
-// Configure axios with the correct base URL structure
+// Configure axios with a robust base URL (mirrors helper/apiCall.js)
+const rawServer = process.env.REACT_APP_SERVER_URL || 'http://localhost:5015';
+const SERVER_ROOT = rawServer.replace(/\/$/, '');
 const axiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_SERVER_URL + '/api' || 'http://localhost:5015/api'
+  baseURL: SERVER_ROOT + '/api'
 });
 
 const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, isFloating, onMessagesRead }) => {
@@ -28,13 +30,27 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
 
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const markedAsReadRef = useRef(null); // Track which room we've marked as read
+  const lastSentMessageTimeRef = useRef(0); // Track when we last sent a message
 
   // Define markMessagesAsRead function early to avoid hoisting issues
-  const markMessagesAsRead = async (socketInstance, chatRoomId) => {
+  const markMessagesAsRead = async (socketInstance, chatRoomId, force = false) => {
     if (!chatRoomId || !socketInstance || !socketInstance.connected) {
       return;
     }
 
+    // CRITICAL: Never mark as read if we just sent a message (prevents sender from resetting recipient's unread count)
+    const timeSinceLastSent = Date.now() - lastSentMessageTimeRef.current;
+    if (timeSinceLastSent < 10000) {
+      return;
+    }
+
+    // Prevent duplicate mark-as-read calls for the same room
+    if (!force && markedAsReadRef.current === chatRoomId) {
+      return;
+    }
+
+    markedAsReadRef.current = chatRoomId;
     socketInstance.emit('mark-messages-read', { chatRoomId });
     
     // Don't call onMessagesRead here to prevent infinite loops
@@ -70,6 +86,9 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
       
       // Reset messages when switching chats
       setMessages([]);
+      
+      // Reset the marked-as-read tracker when switching rooms
+      markedAsReadRef.current = null;
 
       // Load messages for the initial chat room
       if (initialChatRoom._id) {
@@ -87,13 +106,6 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
       }
     }
   }, [initialChatRoom, chatRoom]);
-
-  // Mark messages as read when chat room changes (inside useEffect to prevent infinite loops)
-  useEffect(() => {
-    if (chatRoomId && socket && socket.connected) {
-      markMessagesAsRead(socket, chatRoomId);
-    }
-  }, [chatRoomId, socket?.connected]); // Only trigger when chatRoomId or socket connection changes
 
   const loadMessagesViaHTTP = async (chatRoomId, token) => {
     try {
@@ -123,6 +135,8 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
           };
           setChatRoom(chatRoomData);
         }
+
+        // Messages will be marked as read when socket connects (see socket 'connect' handler)
       }
     } catch (error) {
       console.error('HTTP message loading failed:', error.response?.status, error.message);
@@ -202,6 +216,8 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
       setLoading(false);
 
       // Join the chat room
+      const roomToJoin = chatRoomId || (chatRoom && chatRoom._id);
+      
       if (chatRoomId) {
         // Direct chat - join by chat room ID
         newSocket.emit('join-chat-room', { chatRoomId });
@@ -211,6 +227,14 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
       } else if (chatRoom && chatRoom._id) {
         // Join by current chat room
         newSocket.emit('join-chat-room', { chatRoomId: chatRoom._id });
+      }
+
+      // Mark messages as read after connecting if user has opened a chat
+      // This handles the case where socket connects after messages are loaded
+      if (roomToJoin) {
+        setTimeout(() => {
+          markMessagesAsRead(newSocket, roomToJoin);
+        }, 1000);
       }
     });
 
@@ -289,10 +313,8 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
         });
       }
 
-      // Mark messages as read if chat is open
-      if (document.hasFocus()) {
-        markMessagesAsRead(newSocket, data.chatRoomId);
-      }
+      // Don't auto-mark messages as read in the new-message handler
+      // User will mark as read by explicitly opening the chat
     });
 
     newSocket.on('user-typing', (data) => {
@@ -313,7 +335,7 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
       // Reduce noise - disabled offline notifications
     });
 
-    newSocket.on('messages-read', () => {
+    newSocket.on('messages-read', (data) => {
       // Messages marked as read - refresh chat rooms immediately
       if (onMessagesRead) {
         onMessagesRead();
@@ -372,7 +394,8 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
     const messageContent = newMessage.trim();
     const startTime = Date.now();
 
-    logger.chat('send_message_attempt', chatRoom?._id, {
+    logger.debug('Chat: send_message_attempt', {
+      chatRoomId: chatRoom?._id,
       messageLength: messageContent.length,
       messageType: 'text',
       hasSocket: !!socket,
@@ -397,18 +420,20 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
     try {
       // Try to send via socket first
       if (socket && chatRoom) {
-        logger.socket('send-message', {
+        logger.debug('Socket: send-message emit', {
           chatRoomId: chatRoom._id,
           contentLength: messageContent.length
-        }, 'emit');
+        });
 
+        // Record timestamp before sending to prevent auto-mark-as-read
+        lastSentMessageTimeRef.current = Date.now();
+        
         socket.emit('send-message', {
           chatRoomId: chatRoom._id,
           content: messageContent,
           messageType: 'text'
         });
       } else {
-        // Fallback: send via HTTP API
         const token = localStorage.getItem('token');
         await axiosInstance.post('/chat/send-message', {
           chatRoomId: chatRoom?._id || chatRoomId,
@@ -420,15 +445,11 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
           }
         });
       }
-
-      // For HTTP, the message will be received via socket or page refresh
       if (socket && chatRoom) {
-        // Don't update temp flag here - let the new-message handler deal with it
-        // This prevents the temp message from being marked as permanent before
-        // the server responds with the actual message
       }
 
-      logger.chat('send_message_success', chatRoom?._id, {
+      logger.debug('Chat: send_message_success', {
+        chatRoomId: chatRoom?._id,
         messageLength: messageContent.length,
         sendTime: `${Date.now() - startTime}ms`,
         method: socket && chatRoom ? 'socket' : 'http'
@@ -442,15 +463,12 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
         hasSocket: !!socket,
         hasChatRoom: !!chatRoom
       });
-
-      // Mark message as failed but keep it in the UI
       setMessages(prev => prev.map(msg =>
         msg._id === tempMessage._id ? { ...msg, failed: true } : msg
       ));
 
       toast.error('Failed to send message. Please try again.');
     }
-
     stopTyping();
   };
 
@@ -465,37 +483,28 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
 
   const handleTyping = () => {
     if (!socket || !chatRoom) return;
-
     if (!isTyping) {
       setIsTyping(true);
       socket.emit('typing-start', { chatRoomId: chatRoom._id });
     }
-
-    // Clear existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-
-    // Set new timeout
     typingTimeoutRef.current = setTimeout(() => {
       stopTyping();
     }, 1000);
   };
-
   const stopTyping = () => {
     if (isTyping && socket && chatRoom) {
       setIsTyping(false);
       socket.emit('typing-stop', { chatRoomId: chatRoom._id });
     }
-    
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
   };
-
   const handleFileUpload = (fileData) => {
     if (!socket || !chatRoom) return;
-
     socket.emit('file-uploaded', {
       chatRoomId: chatRoom._id,
       fileName: fileData.fileName,
@@ -506,11 +515,9 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
 
     setShowFileUpload(false);
   };
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
   if (loading) {
     return (
       <div className="chatInterface_loading">
@@ -519,8 +526,6 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
       </div>
     );
   }
-
-  // Only show error if we don't have chatRoom AND we're not loading AND we don't have any way to get chat data
   if (!chatRoom && !loading && !chatRoomId && !appointmentId && !initialChatRoom) {
     logger.warn("No chat room data available", {
       chatRoom,
@@ -678,17 +683,16 @@ const ChatInterface = ({ appointmentId, chatRoomId, onClose, initialChatRoom, is
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type your message... (Press Enter to send)"
+            placeholder={!isConnected ? "Connecting... You can still type and send messages" : "Type your message... (Press Enter to send)"}
             className="chatInterface_messageInput"
             rows="1"
-            disabled={!isConnected}
           />
 
           <button
             onClick={sendMessage}
-            disabled={!newMessage.trim() || !isConnected}
+            disabled={!newMessage.trim()}
             className="chatInterface_sendBtn"
-            title="Send message"
+            title={!isConnected ? "Send via fallback (HTTP)" : "Send message"}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

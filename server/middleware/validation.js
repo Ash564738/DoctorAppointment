@@ -2,11 +2,11 @@ const { body, validationResult } = require('express-validator');
 const { logger } = require('./monitoring');
 
 const validateRequest = (req, res, next) => {
-  console.log('Validating request body:', JSON.stringify(req.body));
+  // Validation middleware: avoid logging request bodies to reduce noise and protect sensitive data
   
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    console.log('Validation errors:', errors.array());
+  // Avoid noisy console logs; return structured 400 with first error message
     return res.status(400).json({
       success: false,
       message: errors.array()[0].msg,
@@ -67,10 +67,10 @@ const validateUserLogin = [
     .withMessage('Password is required'),
 
   (req, res, next) => {
-    console.log('Login request body:', req.body);
+  // Avoid logging login payloads
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array());
+  // Avoid noisy console logs; respond with 400
       return res.status(400).json({
         success: false,
         message: errors.array()[0].msg,

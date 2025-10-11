@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import Empty from "../../../components/Common/Empty/Empty";
@@ -9,7 +9,9 @@ import { setLoading } from "../../../redux/reducers/rootSlice";
 import Loading from "../../../components/Common/Loading/Loading";
 import toast from "react-hot-toast";
 import { Select } from "antd";
+import { FaUndo, FaSpinner, FaExclamationTriangle } from "react-icons/fa";
 import "./DoctorAppointments.css";
+import PageHeader from "../../../components/Common/PageHeader/PageHeader";
 
 const DoctorAppointments = () => {
   const [appointments, setAppointments] = useState([]);
@@ -18,8 +20,15 @@ const DoctorAppointments = () => {
   const [editFields, setEditFields] = useState({}); 
   const { loading } = useSelector((state) => state.root);
   const dispatch = useDispatch();
-
-  const fetchDoctorAppointments = async () => {
+  
+  // Refund state
+  const [refundProcessing, setRefundProcessing] = useState({});
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [selectedRefund, setSelectedRefund] = useState(null);
+  const [refundReason, setRefundReason] = useState('');
+  const [refundAmount, setRefundAmount] = useState(0);
+  const DOCTOR_REFUND_LIMIT = 500;
+  const fetchDoctorAppointments = useCallback(async () => {
     try {
       dispatch(setLoading(true));
       const response = await apiCall.get("/appointment/doctor");
@@ -36,11 +45,11 @@ const DoctorAppointments = () => {
     } finally {
       dispatch(setLoading(false));
     }
-  };
+  }, [dispatch]);
 
   useEffect(() => {
     fetchDoctorAppointments();
-  }, []);
+  }, [fetchDoctorAppointments]);
 
   const filteredAppointments = useMemo(() => {
     if (filterStatus === "all") return appointments;
@@ -110,13 +119,65 @@ const DoctorAppointments = () => {
     }
   };
 
+  // Refund functionality
+  const processRefund = async (appointmentId, amount, reason) => {
+    setRefundProcessing(prev => ({ ...prev, [appointmentId]: true }));
+    
+    try {
+      const response = await apiCall.post('/refunds/process', {
+        appointmentId,
+        amount: parseFloat(amount),
+        reason
+      });
+
+      if (response.success) {
+        toast.success('Refund processed successfully!');
+        setShowRefundModal(false);
+        setSelectedRefund(null);
+        setRefundReason('');
+        setRefundAmount(0);
+        await fetchDoctorAppointments();
+      } else {
+        toast.error('Failed to process refund: ' + response.message);
+      }
+    } catch (error) {
+      console.error('Refund processing error:', error);
+      toast.error('Error processing refund. Please try again.');
+    } finally {
+      setRefundProcessing(prev => ({ ...prev, [appointmentId]: false }));
+    }
+  };
+
+  const openRefundModal = (appointment) => {
+    setSelectedRefund(appointment);
+    setRefundAmount(100); // Default appointment fee
+    setShowRefundModal(true);
+  };
+
+  const closeRefundModal = () => {
+    setShowRefundModal(false);
+    setSelectedRefund(null);
+    setRefundReason('');
+    setRefundAmount(0);
+  };
+
+  const canProcessRefund = (appointment) => {
+    return appointment.status === 'Cancelled' && 
+           appointment.paymentStatus === 'Paid' &&
+           parseFloat(refundAmount || 100) <= DOCTOR_REFUND_LIMIT;
+  };
+
   if (loading) return <Loading />;
 
   return (
     <div className="doctorAppointments_page">
       <NavbarWrapper />
         <div className="doctorAppointments_container">
-          <h2 className="doctorAppointments_title">My Appointments</h2>
+          <PageHeader
+            title="My Appointments"
+            subtitle="Review and manage your upcoming and past appointments"
+            className="doctorAppointments_header"
+          />
           <div className="doctorAppointments_filterContainer">
             <select
               value={filterStatus}
@@ -265,6 +326,28 @@ const DoctorAppointments = () => {
                           >
                             View Medical Records
                           </button>
+                          
+                          {/* Refund Button - only for cancelled paid appointments */}
+                          {appointment.status === 'Cancelled' && appointment.paymentStatus === 'Paid' && (
+                            <button
+                              onClick={() => openRefundModal(appointment)}
+                              disabled={refundProcessing[id]}
+                              className="doctorAppointments_actionBtn doctorAppointments_actionBtn--refund"
+                              title={`Process refund (Doctor limit: $${DOCTOR_REFUND_LIMIT})`}
+                            >
+                              {refundProcessing[id] ? (
+                                <>
+                                  <FaSpinner className="fa-spin" size={14} />
+                                  Processing...
+                                </>
+                              ) : (
+                                <>
+                                  <FaUndo size={14} />
+                                  Process Refund
+                                </>
+                              )}
+                            </button>
+                          )}
                         </>
                       ) : (
                         <>
@@ -303,6 +386,88 @@ const DoctorAppointments = () => {
             <Empty message="No appointments found" />
           )}
         </div>
+
+        {/* Refund Modal */}
+        {showRefundModal && selectedRefund && (
+          <div className="doctorAppointments_modalOverlay">
+            <div className="doctorAppointments_modal">
+              <div className="doctorAppointments_modalHeader">
+                <h3>Process Refund</h3>
+                <button 
+                  className="doctorAppointments_modalClose"
+                  onClick={closeRefundModal}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="doctorAppointments_modalContent">
+                <div className="doctorAppointments_refundDetails">
+                  <p><strong>Patient:</strong> {selectedRefund.userId?.firstname} {selectedRefund.userId?.lastname}</p>
+                  <p><strong>Date:</strong> {fmtDate(selectedRefund.date)}</p>
+                  <p><strong>Time:</strong> {selectedRefund.time}</p>
+                </div>
+                
+                <div className="doctorAppointments_limitWarning">
+                  <FaExclamationTriangle />
+                  <span>Doctor refund limit: ${DOCTOR_REFUND_LIMIT}. Amounts above this require admin approval.</span>
+                </div>
+                
+                <div className="doctorAppointments_formGroup">
+                  <label htmlFor="refundAmount">Refund Amount ($):</label>
+                  <input
+                    id="refundAmount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={DOCTOR_REFUND_LIMIT}
+                    value={refundAmount}
+                    onChange={(e) => setRefundAmount(e.target.value)}
+                    className="doctorAppointments_input"
+                  />
+                  {parseFloat(refundAmount) > DOCTOR_REFUND_LIMIT && (
+                    <small className="doctorAppointments_error">
+                      Amount exceeds doctor limit. Please contact admin for larger refunds.
+                    </small>
+                  )}
+                </div>
+                
+                <div className="doctorAppointments_formGroup">
+                  <label htmlFor="refundReason">Reason for Refund:</label>
+                  <select
+                    id="refundReason"
+                    value={refundReason}
+                    onChange={(e) => setRefundReason(e.target.value)}
+                    className="doctorAppointments_select"
+                  >
+                    <option value="">Select a reason</option>
+                    <option value="Doctor unavailable">Doctor unavailable</option>
+                    <option value="Medical emergency">Medical emergency</option>
+                    <option value="Technical issues">Technical issues</option>
+                    <option value="Schedule conflict">Schedule conflict</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                
+                <div className="doctorAppointments_modalActions">
+                  <button 
+                    className="doctorAppointments_btnCancel"
+                    onClick={closeRefundModal}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className="doctorAppointments_btnProcess"
+                    onClick={() => processRefund(selectedRefund._id, refundAmount, refundReason)}
+                    disabled={!refundAmount || !refundReason || parseFloat(refundAmount) > DOCTOR_REFUND_LIMIT || refundProcessing[selectedRefund._id]}
+                  >
+                    {refundProcessing[selectedRefund._id] ? 'Processing...' : 'Process Refund'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       <Footer />
     </div>
   );

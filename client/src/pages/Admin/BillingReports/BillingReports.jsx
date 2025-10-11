@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { FaDollarSign, FaClock, FaFileInvoiceDollar, FaChartLine, FaDownload } from 'react-icons/fa';
+import { FaDollarSign, FaClock, FaFileInvoiceDollar, FaChartLine, FaDownload, FaUndo, FaExclamationTriangle } from 'react-icons/fa';
+import { MdCheckCircle, MdCancel, MdHourglassEmpty, MdUndo as MdUndoIcon } from 'react-icons/md';
 import NavbarWrapper from '../../../components/Common/NavbarWrapper/NavbarWrapper';
 import Footer from '../../../components/Common/Footer/Footer';
 import './BillingReports.css';
 import { apiCall } from '../../../helper/apiCall';
+import PageHeader from '../../../components/Common/PageHeader/PageHeader';
 
 const BillingReports = () => {
   const [billing, setBilling] = useState(null);
@@ -18,9 +20,14 @@ const BillingReports = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  
+  // Refund analytics state
+  const [refundData, setRefundData] = useState(null);
+  const [refundLoading, setRefundLoading] = useState(true);
 
   useEffect(() => {
     fetchBilling();
+    fetchRefundAnalytics();
   }, [currentPage, filters]);
 
   const fetchBilling = async () => {
@@ -30,7 +37,7 @@ const BillingReports = () => {
 
       const params = new URLSearchParams({
         page: currentPage,
-        limit: 10,
+        limit: 20,
         ...filters
       });
 
@@ -43,7 +50,7 @@ const BillingReports = () => {
       const response = await apiCall.get(`/admin/analytics/billing-reports?${params}`);
       if (response.success) {
         setBilling(response.data);
-        setTotalPages(response.data.totalPages || 1);
+        setTotalPages(response.data.totalPages || Math.ceil((response.data.total || 0) / 20) || 1);
       } else {
         setError(response.message || 'Failed to fetch billing reports');
       }
@@ -51,6 +58,41 @@ const BillingReports = () => {
       setError('Failed to fetch billing reports. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRefundAnalytics = async () => {
+    try {
+      setRefundLoading(true);
+  const response = await apiCall.get('/refunds/analytics');
+      if (response?.success) {
+        const d = response.data || {};
+        const summary = d.summary || {};
+        const recent = Array.isArray(d.recent) ? d.recent : [];
+        const totalRefunds = Number(summary.totalRefunds || 0);
+        const totalRefundCount = Number(summary.totalRefundCount || 0);
+        const avg = totalRefundCount > 0 ? totalRefunds / totalRefundCount : 0;
+        // Normalize to shape used by UI
+        setRefundData({
+          totalRefunds,
+          totalRefundCount,
+          refundRate: Number(summary.refundRate || 0),
+          averageRefundAmount: avg,
+          recentRefundsCount: recent.length,
+          recentRefunds: recent.map(r => ({
+            patientName: r.patient,
+            processedDate: r.date,
+            amount: r.amount,
+            reason: r.reason
+          }))
+        });
+      } else {
+        console.error('Failed to fetch refund analytics:', response?.message);
+      }
+    } catch (err) {
+      console.error('Failed to fetch refund analytics:', err);
+    } finally {
+      setRefundLoading(false);
     }
   };
 
@@ -114,6 +156,17 @@ const BillingReports = () => {
     }
   };
 
+  // Icon displayed before the status label, mirroring AppointmentManagement
+  const StatusIcon = ({ status }) => {
+    const s = status?.toLowerCase();
+    const cls = 'billingReports_paymentStatusIcon';
+    if (s === 'succeeded' || s === 'paid') return <MdCheckCircle className={cls} size={16} />;
+    if (s === 'pending' || s === 'processing') return <MdHourglassEmpty className={cls} size={16} />;
+    if (s === 'failed' || s === 'cancelled') return <MdCancel className={cls} size={16} />;
+    if (s === 'refunded' || s === 'partially_refunded') return <MdUndoIcon className={cls} size={16} />;
+    return <MdHourglassEmpty className={cls} size={16} />;
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -134,22 +187,22 @@ const BillingReports = () => {
       className: 'billingReports_cardRevenue'
     },
     {
-      title: 'Pending Payments',
-      value: formatCurrency(billing?.summary?.pendingPayments || 0),
-      icon: <FaClock size={22} />,
-      className: 'billingReports_cardPending'
-    },
-    {
       title: 'This Month',
       value: formatCurrency(billing?.summary?.monthRevenue || 0),
       icon: <FaChartLine size={22} />,
       className: 'billingReports_cardMonth'
     },
     {
-      title: 'Failed/Overdue',
-      value: formatCurrency(billing?.summary?.overdueAmount || 0),
-      icon: <FaFileInvoiceDollar size={22} />,
-      className: 'billingReports_cardOverdue'
+      title: 'Total Refunds',
+      value: formatCurrency((billing?.summary?.totalRefunds) ?? (refundData?.totalRefunds || 0)),
+      icon: <FaUndo size={22} />,
+      className: 'billingReports_cardRefunds'
+    },
+    {
+      title: 'Refund Count',
+      value: (billing?.summary?.totalRefundCount) ?? (refundData?.totalRefundCount || 0),
+      icon: <FaExclamationTriangle size={22} />,
+      className: 'billingReports_cardPendingRefunds'
     }
   ];
 
@@ -157,12 +210,11 @@ const BillingReports = () => {
     <div className="billingReports_page" id="billingReports_page">
       <NavbarWrapper />
       <div className="billingReports_container" id="billingReports_container">
-        <div className="billingReports_header" id="billingReports_header">
-          <h2 className="billingReports_title" id="billingReports_title">Billing Reports</h2>
-          <p className="billingReports_subtitle" id="billingReports_subtitle">
-            Monitor revenue, track payments, and manage financial operations
-          </p>
-        </div>
+        <PageHeader
+          title="Billing Reports"
+          subtitle="Monitor revenue, track payments, and manage financial operations"
+          className="billingReports_header"
+        />
 
         <div className="billingReports_filters" id="billingReports_filters">
           <div className="billingReports_filterGroup" id="billingReports_filterGroup_status">
@@ -270,68 +322,97 @@ const BillingReports = () => {
               ))}
             </div>
 
+            {/* Refund Analytics Section */}
+            {!refundLoading && refundData && (
+              <div className="billingReports_refundSection">
+                <h3 className="billingReports_sectionTitle">Refund Analytics</h3>
+                
+                <div className="billingReports_refundStats">
+                  <div className="billingReports_refundStat">
+                    <div className="billingReports_refundStatLabel">Recent Refunds (30 days)</div>
+                    <div className="billingReports_refundStatValue">{refundData.recentRefundsCount || 0}</div>
+                  </div>
+                  <div className="billingReports_refundStat">
+                    <div className="billingReports_refundStatLabel">Average Refund Amount</div>
+                    <div className="billingReports_refundStatValue">{formatCurrency(refundData.averageRefundAmount || 0)}</div>
+                  </div>
+                  <div className="billingReports_refundStat">
+                    <div className="billingReports_refundStatLabel">Refund Rate</div>
+                    <div className="billingReports_refundStatValue">{refundData.refundRate || 0}%</div>
+                  </div>
+                </div>
+
+                {refundData.recentRefunds && refundData.recentRefunds.length > 0 && (
+                  <div className="billingReports_recentRefunds">
+                    <h4>Recent Refunds</h4>
+                    <div className="billingReports_refundList">
+                      {refundData.recentRefunds.slice(0, 5).map((refund, index) => (
+                        <div key={index} className="billingReports_refundItem">
+                          <div className="billingReports_refundInfo">
+                            <div className="billingReports_refundPatient">{refund.patientName}</div>
+                            <div className="billingReports_refundDate">{new Date(refund.processedDate).toLocaleDateString()}</div>
+                          </div>
+                          <div className="billingReports_refundAmount">{formatCurrency(refund.amount)}</div>
+                          <div className="billingReports_refundReason">{refund.reason}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Billing Reports Table */}
             <div className="billingReports_tableSection" id="billingReports_tableSection">
-              <div className="billingReports_tableHeader" id="billingReports_tableHeader">
-                <h3 className="billingReports_tableTitle" id="billingReports_tableTitle">
-                  Payment Records ({billing?.reports?.length || 0} of {billing?.total || 0})
-                </h3>
-                <div className="billingReports_tableActions" id="billingReports_tableActions">
-                  <button 
-                    className="billingReports_button billingReports_refreshButton"
-                    id="billingReports_refreshButton"
-                    onClick={fetchBilling}
-                    disabled={loading}
-                  >
-                    {loading ? <FaClock /> : <FaDownload />} Refresh
-                  </button>
-                </div>
-              </div>
+              {/* Table header removed per request; counts can be shown elsewhere if needed */}
               
               {billing.reports && billing.reports.length > 0 ? (
                 <>
-                  <table className="billingReports_table" id="billingReports_table">
-                    <thead className="billingReports_tableHead" id="billingReports_tableHead">
-                      <tr>
-                        <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_invoice">Invoice #</th>
-                        <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_patient">Patient</th>
-                        <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_doctor">Doctor</th>
-                        <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_services">Services</th>
-                        <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_amount">Amount</th>
-                        <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_status">Status</th>
-                        <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_date">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody className="billingReports_tableBody" id="billingReports_tableBody">
-                      {billing.reports.map((report) => (
-                        <tr key={report._id} className="billingReports_tableRow" id={`billingReports_tableRow_${report._id}`}>
-                          <td className="billingReports_tableCell billingReports_invoiceNumber" id={`billingReports_tableCell_invoice_${report._id}`}>
-                            {report.invoiceNumber}
-                          </td>
-                          <td className="billingReports_tableCell billingReports_patientName" id={`billingReports_tableCell_patient_${report._id}`}>
-                            {report.patientName}
-                          </td>
-                          <td className="billingReports_tableCell billingReports_doctorName" id={`billingReports_tableCell_doctor_${report._id}`}>
-                            {report.doctorName}
-                          </td>
-                          <td className="billingReports_tableCell billingReports_services" id={`billingReports_tableCell_services_${report._id}`}>
-                            {report.services}
-                          </td>
-                          <td className="billingReports_tableCell billingReports_amount" id={`billingReports_tableCell_amount_${report._id}`}>
-                            {formatCurrency(report.amount)}
-                          </td>
-                          <td className="billingReports_tableCell" id={`billingReports_tableCell_status_${report._id}`}>
-                            <span className={getStatusClassName(report.status)} id={`billingReports_status_${report._id}`}>
-                              {getStatusLabel(report.status)}
-                            </span>
-                          </td>
-                          <td className="billingReports_tableCell billingReports_date" id={`billingReports_tableCell_date_${report._id}`}>
-                            {formatDate(report.date)}
-                          </td>
+                  <div className="billingReports_tableContainer" id="billingReports_tableContainer">
+                    <table className="billingReports_table" id="billingReports_table">
+                      <thead className="billingReports_tableHead" id="billingReports_tableHead">
+                        <tr>
+                          <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_invoice">Invoice #</th>
+                          <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_patient">Patient</th>
+                          <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_doctor">Doctor</th>
+                          <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_services">Services</th>
+                          <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_amount">Amount</th>
+                          <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_status">Status</th>
+                          <th className="billingReports_tableHeaderCell" id="billingReports_tableHeaderCell_date">Date</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="billingReports_tableBody" id="billingReports_tableBody">
+                        {billing.reports.map((report) => (
+                          <tr key={report._id} className="billingReports_tableRow" id={`billingReports_tableRow_${report._id}`}>
+                            <td className="billingReports_tableCell billingReports_invoiceNumber" id={`billingReports_tableCell_invoice_${report._id}`}>
+                              {report.invoiceNumber}
+                            </td>
+                            <td className="billingReports_tableCell billingReports_patientName" id={`billingReports_tableCell_patient_${report._id}`}>
+                              {report.patientName}
+                            </td>
+                            <td className="billingReports_tableCell billingReports_doctorName" id={`billingReports_tableCell_doctor_${report._id}`}>
+                              {report.doctorName}
+                            </td>
+                            <td className="billingReports_tableCell billingReports_services" id={`billingReports_tableCell_services_${report._id}`}>
+                              {report.services}
+                            </td>
+                            <td className="billingReports_tableCell billingReports_amount" id={`billingReports_tableCell_amount_${report._id}`}>
+                              {formatCurrency(report.amount)}
+                            </td>
+                            <td className="billingReports_tableCell" id={`billingReports_tableCell_status_${report._id}`}>
+                              <span className={getStatusClassName(report.status)} id={`billingReports_status_${report._id}`}>
+                                <StatusIcon status={report.status} />
+                                {getStatusLabel(report.status)}
+                              </span>
+                            </td>
+                            <td className="billingReports_tableCell billingReports_date" id={`billingReports_tableCell_date_${report._id}`}>
+                              {formatDate(report.date)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
 
                   {/* Pagination */}
                   <div className="billingReports_pagination" id="billingReports_pagination">
@@ -343,14 +424,19 @@ const BillingReports = () => {
                     >
                       Previous
                     </button>
-                    
-                    <div className="billingReports_paginationInfo" id="billingReports_paginationInfo">
-                      <span>Page {currentPage} of {totalPages}</span>
-                      <span className="billingReports_totalCount" id="billingReports_totalCount">
-                        ({billing?.total || 0} total records)
-                      </span>
+                    {/* Numbered pages for consistency with other admin tables */}
+                    <div className="billingReports_paginationNumbers">
+                      {Array.from({ length: totalPages }, (_, i) => (
+                        <button
+                          key={i + 1}
+                          className={`billingReports_paginationButton ${currentPage === i + 1 ? 'active' : ''}`}
+                          onClick={() => setCurrentPage(i + 1)}
+                          disabled={loading}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
                     </div>
-                    
                     <button 
                       className="billingReports_button billingReports_paginationButton"
                       id="billingReports_paginationButton_next"

@@ -8,9 +8,6 @@ import { useDispatch, useSelector } from "react-redux";
 import Loading from "../../../components/Common/Loading/Loading";
 import fetchData, { apiCall } from "../../../helper/apiCall";
 import { jwtDecode } from "jwt-decode";
-import axios from "axios";
-
-axios.defaults.baseURL = process.env.REACT_APP_SERVER_DOMAIN;
 
 function ChangePassword() {
   const { userId } = jwtDecode(localStorage.getItem("token"));
@@ -61,23 +58,17 @@ function ChangePassword() {
     }
 
     try {
-      const response = await axios.put(
+      const response = await apiCall.put(
         "/user/changepassword",
         {
           userId: userId,
           currentPassword: password,
           newPassword: newpassword,
           confirmNewPassword: confnewpassword,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
         }
       );
-      // console.log(response.data);
 
-      if (response.data === "Password changed successfully") {
+      if (response === "Password changed successfully") {
         toast.success("Password updated successfully");
         setFormDetails({
           ...formDetails,
@@ -90,7 +81,7 @@ function ChangePassword() {
       }
     } catch (error) {
       console.error("Error updating password:", error);
-      if (error.response) {
+      if (error.response?.data) {
         toast.error(error.response.data);
       } else {
         toast.error("Network error. Please try again.");

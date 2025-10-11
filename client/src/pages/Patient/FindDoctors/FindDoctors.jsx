@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import DoctorCard from ".//DoctorCard";
 import Footer from "../../../components/Common/Footer/Footer";
 import NavbarWrapper from "../../../components/Common/NavbarWrapper/NavbarWrapper";
@@ -9,6 +8,7 @@ import Loading from "../../../components/Common/Loading/Loading";
 import { useDispatch, useSelector } from "react-redux";
 import { setLoading } from "../../../redux/reducers/rootSlice";
 import Empty from "../../../components/Common/Empty/Empty";
+import PageHeader from "../../../components/Common/PageHeader/PageHeader";
 
 const Doctors = () => {
   const [doctors, setDoctors] = useState([]);
@@ -20,15 +20,8 @@ const Doctors = () => {
   const [feeRange, setFeeRange] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [specializations, setSpecializations] = useState([]);
-  const [doctorStats, setDoctorStats] = useState({
-    totalDoctors: 0,
-    averageExperience: 0,
-    specializations: 0,
-    averageFee: 0
-  });
   const dispatch = useDispatch();
-  const { loading, userInfo } = useSelector((state) => state.root);
-
+  const { loading } = useSelector((state) => state.root);
   useEffect(() => {
     const fetchAllDocs = async () => {
       try {
@@ -38,14 +31,6 @@ const Doctors = () => {
         setFilteredDoctors(data);
         const uniqueSpecializations = [...new Set(data.map(doctor => doctor.specialization))];
         setSpecializations(uniqueSpecializations);
-        const stats = {
-          totalDoctors: data.length,
-          averageExperience: data.length > 0 ? (data.reduce((sum, doc) => sum + doc.experience, 0) / data.length).toFixed(1) : 0,
-          specializations: uniqueSpecializations.length,
-          averageFee: data.length > 0 ? Math.round(data.reduce((sum, doc) => sum + doc.fees, 0) / data.length) : 0
-        };
-        setDoctorStats(stats);
-
       } catch (error) {
         console.error("Error fetching doctors:", error);
         setDoctors([]);
@@ -54,13 +39,10 @@ const Doctors = () => {
         dispatch(setLoading(false));
       }
     };
-
     fetchAllDocs();
   }, [dispatch]);
-
   useEffect(() => {
     let filtered = [...doctors];
-
     if (searchQuery) {
       filtered = filtered.filter(doctor => 
         `${doctor.userId?.firstname} ${doctor.userId?.lastname}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -113,34 +95,26 @@ const Doctors = () => {
         }
       });
     }
-
     setFilteredDoctors(filtered);
   }, [searchQuery, selectedSpecialization, selectedTiming, experienceRange, feeRange, sortBy, doctors]);
-
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
-
   const handleSpecializationChange = (e) => {
     setSelectedSpecialization(e.target.value);
   };
-
   const handleTimingChange = (e) => {
     setSelectedTiming(e.target.value);
   };
-
   const handleExperienceChange = (e) => {
     setExperienceRange(e.target.value);
   };
-
   const handleFeeChange = (e) => {
     setFeeRange(e.target.value);
   };
-
   const handleSortChange = (e) => {
     setSortBy(e.target.value);
   };
-
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedSpecialization("");
@@ -149,9 +123,7 @@ const Doctors = () => {
     setFeeRange("");
     setSortBy("");
   };
-
   const hasActiveFilters = searchQuery || selectedSpecialization || selectedTiming || experienceRange || feeRange || sortBy;
-
   return (
     <div className="findDoctors_page">
       <NavbarWrapper/>
@@ -159,11 +131,13 @@ const Doctors = () => {
       {!loading && (
         <div className="findDoctors_content" name="findDoctors_content">
           <section className="findDoctors_container" name="findDoctors_container">
-            <h2 className="findDoctors_heading" name="findDoctors_heading">Find Your Perfect Doctor</h2>
-            {/* Search and Filter Section (all real data) */}
+            <PageHeader
+              title="Find Your Perfect Doctor"
+              subtitle="Search, filter, and discover the right specialist for you"
+              className="findDoctors_header"
+            />
             <div className="findDoctors_filtersSection" name="findDoctors_filtersSection">
               <div className="findDoctors_searchWrapper" name="findDoctors_searchWrapper">
-                {/* Professional SVG icon for search */}
                 <span className="findDoctors_searchIcon" name="findDoctors_searchIcon">
                   <svg viewBox="0 0 24 24" fill="none" width="20" height="20" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="11" cy="11" r="8"/>
@@ -179,7 +153,6 @@ const Doctors = () => {
                   name="findDoctors_searchInput"
                 />
               </div>
-              
               <div className="findDoctors_filtersGrid" name="findDoctors_filtersGrid">
                 <div className="findDoctors_filterGroup" name="findDoctors_filterGroup_specialization">
                   <label className="findDoctors_filterLabel" name="findDoctors_filterLabel_specialization">Specialization</label>
@@ -195,7 +168,6 @@ const Doctors = () => {
                     ))}
                   </select>
                 </div>
-
                 <div className="findDoctors_filterGroup" name="findDoctors_filterGroup_timing">
                   <label className="findDoctors_filterLabel" name="findDoctors_filterLabel_timing">Available Timing</label>
                   <select
@@ -211,7 +183,6 @@ const Doctors = () => {
                     <option value="night">Night (9PM-6AM)</option>
                   </select>
                 </div>
-
                 <div className="findDoctors_filterGroup" name="findDoctors_filterGroup_experience">
                   <label className="findDoctors_filterLabel" name="findDoctors_filterLabel_experience">Experience</label>
                   <select
@@ -228,7 +199,6 @@ const Doctors = () => {
                     <option value="20">20+ years</option>
                   </select>
                 </div>
-
                 <div className="findDoctors_filterGroup" name="findDoctors_filterGroup_fee">
                   <label className="findDoctors_filterLabel" name="findDoctors_filterLabel_fee">Consultation Fee</label>
                   <select
@@ -245,7 +215,6 @@ const Doctors = () => {
                     <option value="200">$200+</option>
                   </select>
                 </div>
-
                 <div className="findDoctors_filterGroup" name="findDoctors_filterGroup_sort">
                   <label className="findDoctors_filterLabel" name="findDoctors_filterLabel_sort">Sort By</label>
                   <select
@@ -263,7 +232,6 @@ const Doctors = () => {
                   </select>
                 </div>
               </div>
-
               {hasActiveFilters && (
                 <div className="findDoctors_filterActions" name="findDoctors_filterActions">
                   <button 
@@ -271,7 +239,6 @@ const Doctors = () => {
                     className="findDoctors_clearButton"
                     name="findDoctors_clearButton"
                   >
-                    {/* Professional SVG icon for clear */}
                     <span name="findDoctors_clearIcon">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="6" width="18" height="13" rx="2"/>
@@ -287,8 +254,6 @@ const Doctors = () => {
                 </div>
               )}
             </div>
-
-            {/* Results Summary */}
             <div className="findDoctors_resultsInfo" name="findDoctors_resultsInfo">
               <div className="findDoctors_resultsSummary" name="findDoctors_resultsSummary">
                 <h3 name="findDoctors_resultsTitle">Search Results</h3>
@@ -306,15 +271,13 @@ const Doctors = () => {
                 </p>
               </div>
             </div>
-            
             {filteredDoctors.length > 0 ? (
               <div className="findDoctors_cardsGrid" name="findDoctors_cardsGrid">
                 {filteredDoctors.map((ele) => {
-                  // Only render if userId exists and has _id
                   if (!ele.userId || !ele.userId._id) return null;
                   const doctorCardData = {
                     ...ele,
-                    _id: ele.userId._id, // Always use User's _id
+                    _id: ele.userId._id,
                   };
                   return (
                     <DoctorCard
@@ -340,7 +303,6 @@ const Doctors = () => {
                     className="findDoctors_clearButton findDoctors_clearButtonLarge"
                     name="findDoctors_clearButtonLarge"
                   >
-                    {/* Professional SVG icon for clear */}
                     <span name="findDoctors_clearIconLarge">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="6" width="18" height="13" rx="2"/>

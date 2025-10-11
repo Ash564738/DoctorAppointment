@@ -20,14 +20,11 @@
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: #333;
-  text-align: center;
-  margin-bottom: var(--spacing-md);
 }
 
 /* Filter Section */
 .doctorAppointments_filterContainer {
   display: flex;
-  justify-content: center;
 }
 
 .doctorAppointments_statusFilter {
@@ -57,21 +54,19 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: var(--spacing-lg);
-  margin-top: var(--spacing-lg);
 }
 
 /* Appointment Cards */
 .doctorAppointments_card {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
-  border: 1px solid #e9ecef;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
   animation: fadeInUp 0.5s ease-out;
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
 }
 
 .doctorAppointments_card:hover {
@@ -112,21 +107,18 @@
 }
 
 .doctorAppointments_statusBadge--confirmed {
-  background: #e6f7ff;
-  color: #1890ff;
-  border-color: #1890ff;
+  background: var(--info-color-light);
+  color: var(--info-color);
 }
 
 .doctorAppointments_statusBadge--completed {
-  background: #f6ffed;
-  color: #52c41a;
-  border-color: #52c41a;
+  background: var(--success-color-light);
+  color: var(--success-color);
 }
 
 .doctorAppointments_statusBadge--cancelled {
-  background: #fff1f0;
-  color: #ff4d4f;
-  border-color: #ff4d4f;
+  background: var(--danger-color-light);
+  color: var(--danger-color);
 }
 
 /* Card Details */
@@ -332,4 +324,191 @@
   min-height: 400px;
   color: #6c757d;
   font-size: 1.1rem;
+}
+
+/* Refund Modal Styles */
+.doctorAppointments_modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.doctorAppointments_modal {
+  background: white;
+  border-radius: 8px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.doctorAppointments_modalHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f9fafb;
+  border-radius: 8px 8px 0 0;
+}
+
+.doctorAppointments_modalHeader h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.doctorAppointments_modalClose {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+}
+
+.doctorAppointments_modalClose:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.doctorAppointments_modalContent {
+  padding: 24px;
+}
+
+.doctorAppointments_refundDetails {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border-left: 4px solid #007bff;
+}
+
+.doctorAppointments_refundDetails p {
+  margin: 8px 0;
+  color: #495057;
+}
+
+.doctorAppointments_limitWarning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border: 1px solid #ffeaa7;
+}
+
+.doctorAppointments_formGroup {
+  margin-bottom: 20px;
+}
+
+.doctorAppointments_formGroup label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.doctorAppointments_input,
+.doctorAppointments_select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #374151;
+  background-color: white;
+}
+
+.doctorAppointments_input:focus,
+.doctorAppointments_select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.doctorAppointments_error {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+}
+
+.doctorAppointments_modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.doctorAppointments_btnCancel {
+  padding: 10px 20px;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.doctorAppointments_btnCancel:hover {
+  background-color: #e5e7eb;
+}
+
+.doctorAppointments_btnProcess {
+  padding: 10px 20px;
+  background-color: #ffc107;
+  color: #212529;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.doctorAppointments_btnProcess:hover:not(:disabled) {
+  background-color: #e0a800;
+  border-color: #d39e00;
+}
+
+.doctorAppointments_btnProcess:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.doctorAppointments_actionBtn--refund {
+  background-color: #ffc107;
+  color: #212529;
+  border: 1px solid #ffc107;
+}
+
+.doctorAppointments_actionBtn--refund:hover:not(:disabled) {
+  background-color: #e0a800;
+  border-color: #d39e00;
+  color: #212529;
+}
+
+.doctorAppointments_actionBtn--refund:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

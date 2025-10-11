@@ -17,6 +17,7 @@ import "./AdminDashboard.css";
 import NavbarWrapper from "../../../components/Common/NavbarWrapper/NavbarWrapper";
 import Footer from "../../../components/Common/Footer/Footer";
 import { apiCall } from "../../../helper/apiCall";
+import PageHeader from "../../../components/Common/PageHeader/PageHeader";
 
 const AdminDashboard = () => {
   const { userInfo } = useSelector(state => state.root);
@@ -98,7 +99,7 @@ const AdminDashboard = () => {
         title: 'Total Patients',
         value: analytics.overview.totalPatients || 0,
         icon: <FaUsers />,
-        color: '#17a2b8',
+        color: '#3b82f6',
         description: 'Registered patients',
         percentage: analytics.overview.totalUsers > 0 ? `${((analytics.overview.totalPatients / analytics.overview.totalUsers) * 100).toFixed(1)}% of users` : null,
         path: '/admin/users'
@@ -336,10 +337,11 @@ const AdminDashboard = () => {
     <div className="adminDashboard_page">
       <NavbarWrapper />
       <div className="adminDashboard_container">
-        <div className="adminDashboard_header">
-          <h1 className="adminDashboard_title">Admin Dashboard</h1>
-          <p className="adminDashboard_subtitle">Welcome back, {adminDetails?.firstname || 'Admin'}! Here's what's happening today.</p>
-        </div>
+        <PageHeader 
+          title="Admin Dashboard" 
+          subtitle={`Welcome back, ${adminDetails?.firstname || 'Admin'}! Here's what's happening today.`}
+          className="adminDashboard_header"
+        />
         <div className="adminDashboard_periodSelector">
           <label htmlFor="adminDashboard_periodSelect" className="adminDashboard_periodLabel">Analytics Period: </label>
           <select 

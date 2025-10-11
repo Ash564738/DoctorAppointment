@@ -1,24 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { 
-  FaUserMd, 
-  FaCalendarAlt, 
-  FaClipboardList, 
-  FaFileAlt, 
-  FaStar, 
-  FaUsers,
-  FaChartBar,
-  FaClock,
-  FaCheckCircle,
-  FaHeartbeat,
-  FaFileMedical
-} from 'react-icons/fa';
+import { FaUserMd, FaStar, FaUsers,FaChartBar,FaClock,FaCheckCircle,FaFileMedical} from 'react-icons/fa';
 import NavbarWrapper from '../../../components/Common/NavbarWrapper/NavbarWrapper';
 import Footer from '../../../components/Common/Footer/Footer';
 import { apiCall } from '../../../helper/apiCall';
 import './PatientDashboard.css';
-
+import PageHeader from '../../../components/Common/PageHeader/PageHeader';
 function PatientDashboard() {
   const navigate = useNavigate();
   const { userInfo } = useSelector(state => state.root);
@@ -38,8 +26,6 @@ function PatientDashboard() {
       try {
         const appointmentsData = await apiCall.get('/appointment/patient-stats');
         const doctorsData = await apiCall.get('/doctor/getalldoctors');
-        console.log('Appointments Data:', appointmentsData);
-        console.log('Doctors Data:', doctorsData);
         setStats({
           totalAppointments: appointmentsData.totalAppointments || 0,
           upcomingAppointments: appointmentsData.upcomingAppointments || 0,
@@ -59,9 +45,14 @@ function PatientDashboard() {
         if (medicalRecordsData && medicalRecordsData.medicalRecords) {
           setMedicalRecordCount(medicalRecordsData.medicalRecords.length);
         }
-        const familyData = await apiCall.get('/family-member/get-all');
-        if (Array.isArray(familyData)) {
-          setFamilyCount(familyData.length);
+        // Use correct family members endpoint and response shape
+        const familyResp = await apiCall.get('/family-members');
+        const familyMembers = familyResp?.data?.familyMembers;
+        if (Array.isArray(familyMembers)) {
+          setFamilyCount(familyMembers.length);
+        } else if (Array.isArray(familyResp)) {
+          // Fallback in case API returns a list directly
+          setFamilyCount(familyResp.length);
         }
         const ratingsData = await apiCall.get('/ratings/my-ratings');
         if (ratingsData && ratingsData.data && Array.isArray(ratingsData.data.ratings)) {
@@ -76,8 +67,9 @@ function PatientDashboard() {
       fetchCounts();
     }
   }, [userInfo]);
+  const now = new Date();
   const nextAppointment = recentAppointments
-    .filter(a => a.status && ['pending', 'confirmed'].includes(a.status.toLowerCase()))
+    .filter(a => a.status && a.status.toLowerCase() === 'confirmed' && new Date(a.date) >= now)
     .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
   const doctorVisitCounts = {};
   recentAppointments.forEach(a => {
@@ -86,11 +78,6 @@ function PatientDashboard() {
       doctorVisitCounts[docId] = (doctorVisitCounts[docId] || 0) + 1;
     }
   });
-  const mostVisitedDoctorId = Object.keys(doctorVisitCounts).sort((a, b) => doctorVisitCounts[b] - doctorVisitCounts[a])[0];
-  const mostVisitedDoctor = recentAppointments.find(a => (a.doctorId?._id || a.doctorId?.id) === mostVisitedDoctorId)?.doctorId;
-  const lastCompleted = recentAppointments
-    .filter(a => a.status && a.status.toLowerCase() === 'completed')
-    .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
   const statCards = [
     {
       label: 'Total Appointments',
@@ -110,7 +97,7 @@ function PatientDashboard() {
       label: 'Completed',
       value: stats.completedAppointments,
       icon: <FaCheckCircle />,
-      color: '#f59e0b',
+      color: '#ff9900ff',
       path: '/patient/appointments'
     },
     {
@@ -118,28 +105,27 @@ function PatientDashboard() {
       value: stats.totalDoctors,
       icon: <FaUserMd />,
       color: '#8b5cf6',
-      path: '/doctors'
+      path: '/patient/book'
     },
     {
       label: 'Medical Records',
       value: medicalRecordCount,
       icon: <FaFileMedical />,
-      color: '#3b82f6',
+      color: '#ec4899',
       path: '/patient/medical-records'
     },
     {
       label: 'Family Profiles',
       value: familyCount,
       icon: <FaUsers />,
-      color: '#8b5cf6',
+      color: '#06b6d4',
       path: '/patient/family'
     },
     {
       label: 'Ratings',
       value: ratingsCount,
       icon: <FaStar />,
-      color: '#ffc107',
-      iconColor: '#212529',
+      color: '#fbbf24',
       path: '/patient/ratings'
     }
   ];
@@ -152,14 +138,11 @@ function PatientDashboard() {
               <p>Not logged in. Please <Link to="/login" className="patientDashboard_loginLink">login</Link> to access full features.</p>
             </div>
           )}
-          <div className="patientDashboard_header">
-            <h1 className="patientDashboard_heading">
-              Welcome back, {userInfo?.firstname || 'Guest'}!
-            </h1>
-            <p className="patientDashboard_subheading">
-              Manage your health and appointments
-            </p>
-          </div>
+          <PageHeader
+            title={`Welcome back, ${userInfo?.firstname || 'Guest'}!`}
+            subtitle="Manage your health and appointments"
+            className="patientDashboard_header"
+          />
           <div className="patientDashboard_stats">
             {statCards.map((card, idx) => (
               <div
@@ -172,7 +155,6 @@ function PatientDashboard() {
                   className="patientDashboard_statIcon"
                   style={{
                     backgroundColor: card.color,
-                    color: card.iconColor || 'white'
                   }}
                 >
                   {card.icon}
@@ -211,7 +193,7 @@ function PatientDashboard() {
                 <p>No upcoming appointments scheduled.</p>
                 <button
                   className="patientDashboard_ctaButton"
-                  onClick={() => navigate('/patient/doctors')}
+                  onClick={() => navigate('/patient/book')}
                 >
                   Book Appointment
                 </button>

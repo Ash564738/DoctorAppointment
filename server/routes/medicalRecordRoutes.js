@@ -9,6 +9,7 @@ const {
   addVoiceNote,
   addAttachment,
   getPatientSummary,
+  downloadMedicalRecord,
 } = require("../controllers/medicalRecordController");
 const router = express.Router();
 const medicalRecordValidation = [
@@ -51,6 +52,7 @@ router.post("/create", auth, medicalRecordValidation, createMedicalRecord);
 router.get("/patient", auth, getPatientMedicalRecords);
 router.get("/patient/:patientId", auth, getPatientMedicalRecords);
 router.get("/:recordId", auth, getMedicalRecord);
+router.get("/:recordId/download", auth, downloadMedicalRecord);
 router.put("/:recordId", auth, updateMedicalRecord);
 router.post("/:recordId/attachment",auth,
   [

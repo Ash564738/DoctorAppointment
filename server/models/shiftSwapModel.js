@@ -15,7 +15,25 @@ const shiftSwapSchema = mongoose.Schema({
   requestedShiftId: {
     type: mongoose.SchemaTypes.ObjectId,
     ref: 'Shift',
-    required: true
+    required: false
+  },
+  swapType: {
+    type: String,
+    enum: ['trade', 'cover'],
+    default: 'trade',
+    index: true
+  },
+  swapDate: {
+    type: Date,
+    index: true
+  },
+  swapStartDate: {
+    type: Date,
+    index: true
+  },
+  swapEndDate: {
+    type: Date,
+    index: true
   },
   swapWithId: {
     type: mongoose.SchemaTypes.ObjectId,
@@ -35,6 +53,13 @@ const shiftSwapSchema = mongoose.Schema({
     type: String,
     maxlength: 500
   },
+  partnerDecision: {
+    type: String,
+    enum: ['pending', 'accepted', 'declined'],
+    default: 'pending',
+    index: true
+  },
+  partnerDecisionAt: Date,
   requestedAt: {
     type: Date,
     default: Date.now

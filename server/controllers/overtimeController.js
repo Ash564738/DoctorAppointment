@@ -1,6 +1,8 @@
 const Overtime = require('../models/overtimeModel');
 const User = require('../models/userModel');
 const Notification = require('../models/notificationModel');
+const Shift = require('../models/shiftModel');
+const TimeSlot = require('../models/timeSlotModel');
 
 // Create overtime request
 const createOvertime = async (req, res) => {
@@ -70,6 +72,36 @@ const updateOvertimeStatus = async (req, res) => {
       overtime.adminComment = adminComment || '';
       overtime.decisionAt = new Date();
       await overtime.save();
+
+      if (status === 'approved') {
+        // Generate additional slots from shift.endTime onward for the approved hours on that date
+        const shift = await Shift.findById(overtime.shiftId).lean();
+        if (shift) {
+          const targetDate = new Date(overtime.date);
+          const [eh, em] = shift.endTime.split(':').map(Number);
+          const startMinutes = eh * 60 + em;
+          const endMinutes = Math.min(startMinutes + Math.round(Number(overtime.hours) * 60), 24 * 60);
+          const slotDuration = shift.slotDuration || 30;
+          for (let m = startMinutes; m < endMinutes; m += slotDuration) {
+            const slotEnd = Math.min(m + slotDuration, endMinutes);
+            const sh = String(Math.floor(m / 60)).padStart(2, '0');
+            const sm = String(m % 60).padStart(2, '0');
+            const ehh = String(Math.floor(slotEnd / 60)).padStart(2, '0');
+            const emm = String(slotEnd % 60).padStart(2, '0');
+            await TimeSlot.create({
+              shiftId: overtime.shiftId,
+              doctorId: overtime.doctorId,
+              date: targetDate,
+              startTime: `${sh}:${sm}`,
+              endTime: `${ehh}:${emm}`,
+              maxPatients: shift.maxPatientsPerHour,
+              bookedPatients: 0,
+              isAvailable: true,
+              isBlocked: false
+            });
+          }
+        }
+      }
 
       // --- Notification: Notify the doctor about overtime approval/rejection ---
       await Notification.create({

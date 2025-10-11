@@ -15,13 +15,6 @@
 }
 
 .doctorRecords_header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-md);
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .doctorRecords_title {
@@ -42,10 +35,6 @@
 }
 
 .doctorRecords_sectionTitle {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-medium);
-  color: #333;
-  margin-bottom: var(--spacing-md);
 }
 
 .doctorRecords_loading {
@@ -77,77 +66,286 @@
 }
 
 .doctorRecords_appointmentCard {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
   transition: all 0.3s ease;
-  border: 1px solid #e9ecef;
   animation: fadeInUp 0.5s ease-out;
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .doctorRecords_appointmentCard:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
 }
 
-.doctorRecords_patientInfo {
-  margin-bottom: var(--spacing-md);
+/* Card Header */
+.doctorRecords_cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  gap: 16px;
+}
+
+.doctorRecords_headerLeft {
+  flex: 1;
 }
 
 .doctorRecords_patientName {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  color: #333;
-  margin: 0 0 var(--spacing-xs) 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
 }
 
-.doctorRecords_appointmentDate {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  color: #495057;
-  margin: 0 0 var(--spacing-sm) 0;
-}
-
-.doctorRecords_symptoms {
-  font-size: 0.95rem;
-  line-height: 1.5;
+.doctorRecords_appointmentDateTime {
+  font-size: 14px;
   color: #6c757d;
   margin: 0;
-  padding: var(--spacing-sm);
-  background: #f8fafc;
-  border-radius: var(--border-radius-md);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
 }
 
-.doctorRecords_cardActions {
+.doctorRecords_headerRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.doctorRecords_statusBadge {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 16px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid transparent;
+}
+
+.doctorRecords_status--completed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.doctorRecords_status--confirmed {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.doctorRecords_status--cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Card Body */
+.doctorRecords_cardBody {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+/* Quick Info Section */
+.doctorRecords_quickInfo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.doctorRecords_infoItem {
+  display: flex;
+  align-items: center;
+  padding: 14px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.doctorRecords_infoItem:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+  border-left-color: var(--primary-color);
+}
+
+.doctorRecords_infoContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+}
+
+.doctorRecords_infoLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.doctorRecords_infoValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doctorRecords_priorityBadge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.doctorRecords_priority--low {
+  background: #e7f3ff;
+  color: #0066cc;
+}
+
+.doctorRecords_priority--normal {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.doctorRecords_priority--high {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.doctorRecords_priority--urgent {
+  background: #ffebee;
+  color: #c62828;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* Symptoms Section */
+.doctorRecords_symptomsSection {
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.doctorRecords_sectionHeader {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.doctorRecords_symptomsText {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Contact Section */
+.doctorRecords_contactSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.doctorRecords_contactItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #495057;
+}
+
+.doctorRecords_contactLabel {
+  font-weight: 600;
+  color: #6c757d;
+  min-width: 50px;
+}
+
+.doctorRecords_contactValue {
+  font-weight: 500;
+  color: #343a40;
+}
+
+/* Card Footer */
+.doctorRecords_cardFooter {
+  padding: 16px 24px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
   display: flex;
   gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
 }
 
 .doctorRecords_actionButton {
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: none;
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all 0.3s ease;
   flex: 1;
-  max-width: 140px;
-  min-width: 100px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.doctorRecords_actionButton:hover:not(:disabled) {
+.doctorRecords_actionButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.doctorRecords_actionButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
+.doctorRecords_actionButton:active {
+  transform: translateY(0);
+}
+
+.doctorRecords_actionButton--create {
+  background: var(--primary-color);
+  color: white;
+}
+
+.doctorRecords_actionButton--create:hover {
+  background: var(--primary-color-dark);
+}
+
+.doctorRecords_actionButton--view {
+  background: var(--primary-color);
+  color: white;
+}
+
+.doctorRecords_actionButton--view:hover {
+  background: var(--primary-color-dark);
+}
+
+.doctorRecords_actionButton--history {
+  background: white;
+  color: #495057;
+}
+
+.doctorRecords_actionButton--history:hover {
+
 }
 
 .doctorRecords_actionButton--primary {
@@ -157,24 +355,6 @@
 
 .doctorRecords_actionButton--primary:hover:not(:disabled) {
   background: var(--primary-color-dark);
-}
-
-.doctorRecords_actionButton--secondary {
-  background: #6c757d;
-  color: white;
-}
-
-.doctorRecords_actionButton--secondary:hover:not(:disabled) {
-  background: #545b62;
-}
-
-.doctorRecords_actionButton--info {
-  background: #17a2b8;
-  color: white;
-}
-
-.doctorRecords_actionButton--info:hover:not(:disabled) {
-  background: #138496;
 }
 
 .doctorRecords_recordFormContainer {
@@ -226,7 +406,7 @@
 }
 
 .doctorRecords_medicalRecordForm {
-  padding: var(--spacing-lg);
+  padding: 0 var(--spacing-lg);
 }
 
 .doctorRecords_formSection {
@@ -234,7 +414,6 @@
   padding: var(--spacing-md);
   background: #f8fafc;
   border-radius: var(--border-radius-lg);
-  border: 1px solid #e9ecef;
 }
 
 .doctorRecords_sectionHeading {
@@ -323,10 +502,8 @@
 
 .doctorRecords_formActions {
   display: flex;
-  /* gap: var(--spacing-md); */
   justify-content: flex-end;
   padding: var(--spacing-lg);
-  border-top: 2px solid #e9ecef;
 }
 
 .doctorRecords_prescriptionsNote {
@@ -428,7 +605,6 @@
   margin-bottom: 16px;
   background: #f8fafc;
   border-radius: 12px;
-  border-left: 4px solid #28a745;
   transition: all 0.3s ease;
 }
 
@@ -465,82 +641,6 @@
 .doctorRecords_recordDetail strong {
   font-weight: var(--font-weight-medium);
   color: #495057;
-}
-
-.doctorRecords_recordViewOverlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(30, 41, 59, 0.18);
-  padding: var(--spacing-lg);
-  z-index: 1000;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  overflow-x: scroll;
-}
-
-.doctorRecords_recordViewPopup {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
-  padding: 32px 28px 20px 28px;
-  width: 100%;
-  max-width: 540px;
-  min-width: 320px;
-  position: relative;
-  animation: fadeInScale 0.18s cubic-bezier(.4,0,.2,1);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-@keyframes fadeInScale {
-  from { opacity: 0; transform: scale(0.97);}
-  to { opacity: 1; transform: scale(1);}
-}
-
-.doctorRecords_recordDetails {
-  margin-top: 8px;
-  margin-bottom: 8px;
-  font-size: 1.05em;
-  color: #22223b;
-  line-height: 1.7;
-}
-
-.doctorRecords_detailRow {
-  margin-bottom: 8px;
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 4px;
-}
-
-.doctorRecords_recordViewActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.doctorRecords_recordViewPopup .doctorRecords_closeButton {
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  font-size: 1.6em;
-  color: #64748b;
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: color 0.18s;
-}
-.doctorRecords_recordViewPopup .doctorRecords_closeButton:hover {
-  color: #ef4444;
-}
-
-.doctorRecords_vitalSignsList,
-.doctorRecords_prescriptionsList {
-  margin: 0;
-  padding-left: 18px;
-  color: #495057;
-  font-size: 0.98em;
 }
 
 @media (max-width: 1300px) {
@@ -583,12 +683,6 @@
     grid-template-columns: 1fr;
   }
   .doctorRecords_formActions {
-    flex-direction: column;
-  }
-  .doctorRecords_actionButton {
-    max-width: none;
-  }
-  .doctorRecords_cardActions {
     flex-direction: column;
   }
   .doctorRecords_recordItem {

@@ -14,8 +14,6 @@
   gap: var(--spacing-md);
 }
 
-.userManagement_header {
-}
 
 .userManagement_title {
   font-size: var(--font-size-xl);
@@ -33,7 +31,6 @@
 
 /* Search Container */
 .userManagement_searchContainer {
-  margin-top: var(--spacing-sm);
 }
 
 .userManagement_searchInput {
@@ -166,6 +163,7 @@
 /* Table */
 .userManagement_tableContainer {
   overflow-x: auto;
+  padding: 0 var(--spacing-lg) 0 var(--spacing-lg);
 }
 
 .userManagement_table {
@@ -237,22 +235,22 @@
 }
 
 .userManagement_rolePatient {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: var(--info-color-light);
+  color: var(--info-color);
 }
 
 .userManagement_roleDoctor {
-  background: #e8f5e8;
-  color: #2e7d32;
+  background: var(--success-color-light);
+  color: var(--success-color);
 }
 
 .userManagement_roleAdmin {
-  background: #fff3e0;
-  color: #f57c00;
+  background: var(--warning-color-light);
+  color: var(--warning-color);
 }
 
 .userManagement_statusActive {
-  color: #28a745;
+  color: var(--primary-color);
   font-weight: var(--font-weight-medium);
 }
 
@@ -276,12 +274,13 @@
 }
 
 .userManagement_editButton {
-  background: #007bff;
+  background: var(--info-color);
   color: white;
   border: none;
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--border-radius-sm);
   font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -291,12 +290,13 @@
 }
 
 .userManagement_deleteButton {
-  background: #dc3545;
+  background: var(--danger-color);
   color: white;
   border: none;
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--border-radius-sm);
   font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
   cursor: pointer;
   transition: background-color 0.2s;
 }

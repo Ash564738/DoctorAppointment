@@ -16,7 +16,6 @@ function Login() {
     password: "",
   });
   const navigate = useNavigate();
-
   const inputChange = (e) => {
     const { name, value } = e.target;
 
@@ -28,16 +27,13 @@ function Login() {
   const formSubmit = async (e) => {
     try {
       e.preventDefault();
-      
       const { email, password } = formDetails;
-
       logger.info('login_attempt', {
         email,
         hasEmail: !!email,
         hasPassword: !!password,
         passwordLength: password?.length || 0
       });
-
       if (!email || !password) {
         logger.form('login', 'validation_failed', {
           reason: 'missing_fields',
@@ -46,13 +42,8 @@ function Login() {
         });
         return toast.error("Email and password are required");
       }
-
       const response = await toast.promise(
-        apiCall.post("/user/login", {
-          email,
-          password,
-        }),
-
+        apiCall.post("/user/login", { email, password }),
         {
           pending: "Logging in...",
           success: "Login successfully",
@@ -60,20 +51,20 @@ function Login() {
           loading: "Logging user...",
         }
       );
-
+      if (!response?.token) {
+        toast.error(response?.message || "Unable to login user");
+        return;
+      }
       localStorage.setItem("token", response.token);
       const decodedToken = jwtDecode(response.token);
       dispatch(setUserInfo(decodedToken.userId));
       const userRole = decodedToken.role;
       getUser(decodedToken.userId, userRole);
-
     } catch (error) {
       logger.error('Login failed', error);
       return error;
     }
   };
-  
-
   const getUser = async (id, role) => {
     try {
       const temp = await fetchData(`/user/getuser/${id}`);
@@ -91,7 +82,6 @@ function Login() {
       return error;
     }
   };
-
   return (
     <ErrorBoundary componentName="Login">
       <NavbarWrapper  />

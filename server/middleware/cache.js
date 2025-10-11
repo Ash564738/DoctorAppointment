@@ -52,7 +52,7 @@ const invalidateCache = (pattern) => {
     cache.del(key);
   });
   
-  console.log(`Invalidated ${keysToDelete.length} cache entries matching: ${pattern}`);
+  // cache invalidated for matching pattern
 };
 
 const invalidateUserCache = (userId) => {
@@ -74,13 +74,13 @@ const invalidateAppointmentCache = (userId, doctorId) => {
 // Clear specific cache key
 const clearCacheKey = (key) => {
   cache.del(key);
-  console.log(`Cache cleared for key: ${key}`);
+  // cache key cleared
 };
 
 // Clear all cache
 const clearCache = () => {
   cache.flushAll();
-  console.log('All cache cleared');
+  // all cache cleared
 };
 
 // Get cache statistics

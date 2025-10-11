@@ -76,29 +76,39 @@
 .billingReports_button {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
-  border-radius: var(--border-radius-sm);
-  padding: 8px 18px;
-  border: none;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.billingReports_filterButton {
+/* Consistent buttons inside the filters toolbar */
+.billingReports_filters .billingReports_button {
+  border-radius: var(--border-radius-md);
+}
+
+/* Primary buttons (Apply, Refresh) */
+.billingReports_filters .billingReports_filterButton{
   background: var(--primary-color);
   color: var(--white);
+  border-color: var(--primary-color);
 }
-
-.billingReports_filterButton:hover {
+.billingReports_filters .billingReports_filterButton:hover{
   background: var(--primary-color-dark);
+  border-color: var(--primary-color-dark);
 }
 
-.billingReports_clearFiltersButton {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
+/* Secondary button (Clear) */
+.billingReports_filters .billingReports_clearFiltersButton {
+  background: var(--secondary-color);
+  color: var(--text-color);
+  border-color: #d1d5db;
 }
-
-.billingReports_clearFiltersButton:hover {
+.billingReports_filters .billingReports_clearFiltersButton:hover {
   background: #e5e7eb;
 }
 
@@ -126,47 +136,6 @@
 @keyframes billingReportsSpinner {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
-}
-
-.billingReports_errorContainer {
-  background: var(--white);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-lg);
-  text-align: center;
-  box-shadow: var(--shadow-sm);
-}
-
-.billingReports_errorMessage {
-  color: var(--danger-color);
-  font-weight: var(--font-weight-medium);
-}
-
-.billingReports_errorTitle {
-  margin: 0 0 0.5rem 0;
-  color: var(--danger-color);
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-}
-
-.billingReports_errorText {
-  margin: 0 0 1rem 0;
-  color: var(--text-color-light);
-  line-height: 1.5;
-}
-
-.billingReports_retryButton {
-  background: var(--primary-color);
-  color: var(--white);
-  border: none;
-  border-radius: var(--border-radius-sm);
-  padding: 8px 18px;
-  font-size: var(--font-size-base);
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.billingReports_retryButton:hover:not(:disabled) {
-  background: var(--primary-color-dark);
 }
 
 .billingReports_summaryGrid {
@@ -222,47 +191,7 @@
   overflow: hidden;
 }
 
-.billingReports_tableHeader {
-  border-bottom: 1px solid #e9ecef;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #f9fafb;
-}
-
-.billingReports_tableTitle {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  color: var(--text-color);
-}
-
-.billingReports_tableActions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.billingReports_refreshButton {
-  background: var(--primary-color);
-  color: var(--white);
-  border: none;
-  border-radius: var(--border-radius-sm);
-  padding: 8px 18px;
-  font-size: var(--font-size-base);
-  cursor: pointer;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.billingReports_refreshButton:hover:not(:disabled) {
-  background: var(--primary-color-dark);
-}
-
-.billingReports_refreshButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+.billingReports_tableContainer { overflow-x: auto; }
 
 .billingReports_table {
   width: 100%;
@@ -270,44 +199,32 @@
   background: var(--white);
 }
 
-.billingReports_tableHead {
-  background: var(--background-color);
-}
+.billingReports_tableHead { background: var(--table-header-bg); }
 
 .billingReports_tableHeaderCell {
-  padding: var(--spacing-md) var(--spacing-sm);
+  padding: var(--spacing-md);
   text-align: left;
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-sm);
-  color: var(--text-color);
+  color: #333;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 2px solid var(--table-border-color);
+  background: var(--table-header-bg);
 }
 
 .billingReports_tableBody {
   background: var(--white);
 }
 
-.billingReports_tableRow {
-  border-bottom: 1px solid #f1f3f4;
-  transition: background-color 0.2s ease;
-}
-
-.billingReports_tableRow:hover {
-  background-color: var(--background-color);
-}
+.billingReports_tableRow { border-bottom: 1px solid #e9ecef; transition: background-color 0.2s; }
+.billingReports_tableRow:hover { background: var(--table-row-hover); }
 
 .billingReports_tableRow:last-child {
   border-bottom: none;
 }
 
-.billingReports_tableCell {
-  padding: var(--spacing-sm) var(--spacing-md);
-  color: var(--text-color);
-  font-size: var(--font-size-base);
-  vertical-align: middle;
-}
+.billingReports_tableCell { padding: var(--spacing-md); color: #333; font-size: var(--font-size-base); vertical-align: middle; }
 
 .billingReports_invoiceNumber {
   font-family: 'Courier New', monospace;
@@ -325,11 +242,7 @@
   font-weight: var(--font-weight-medium);
 }
 
-.billingReports_amount {
-  font-weight: var(--font-weight-bold);
-  color: var(--accent-color);
-  font-size: 1.1rem;
-}
+.billingReports_amount { font-weight: var(--font-weight-bold); color: var(--text-color); font-size: 1.05rem; }
 
 .billingReports_status {
   padding: var(--spacing-xs) var(--spacing-sm);
@@ -340,10 +253,20 @@
   display: inline-block;
 }
 
+/* Match AppointmentManagement paid pill */
 .billingReports_statusPaid {
   background-color: #d4edda;
   color: #155724;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
 }
+
+/* Status icon used before label (mirrors AppointmentManagement) */
+.billingReports_paymentStatusIcon { margin-right: 4px; vertical-align: middle; }
 
 .billingReports_statusPending {
   background-color: #fff3cd;
@@ -364,69 +287,14 @@
   font-size: var(--font-size-sm);
 }
 
-.billingReports_noDataContainer {
-  background: var(--white);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-xl);
-  text-align: center;
-  box-shadow: var(--shadow-sm);
-}
+/* no-data styles consolidated later; removing duplicates */
 
-.billingReports_noDataMessage {
-  color: var(--text-color-light);
-}
-
-.billingReports_noDataTitle {
-  margin: 0 0 0.5rem 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  color: var(--text-color);
-}
-
-.billingReports_noDataText {
-  margin: 0 0 1.5rem 0;
-  color: var(--text-color-light);
-  font-size: var(--font-size-base);
-  line-height: 1.5;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.billingReports_pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: var(--spacing-md);
-  gap: 10px;
-}
-
-.billingReports_paginationButton {
-  background: var(--primary-color);
-  color: var(--white);
-  border: none;
-  border-radius: var(--border-radius-sm);
-  padding: 8px 18px;
-  font-size: var(--font-size-base);
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.billingReports_paginationButton:hover {
-  background: var(--primary-color-dark);
-}
-
-.billingReports_paginationButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.billingReports_paginationInfo {
-  display: flex;
-  flex-direction: column;
-  text-align: center;
-  gap: 0.25rem;
-}
+.billingReports_pagination { display: flex; justify-content: center; align-items: center; gap: 4px; margin: 16px 0; }
+.billingReports_paginationNumbers { display: inline-flex; gap: 4px; }
+.billingReports_paginationButton { background: #f8fafc; border: 1px solid #e2e8f0; color: #333; padding: 6px 12px; border-radius: 4px; font-size: var(--font-size-sm); cursor: pointer; transition: background 0.2s, color 0.2s; }
+.billingReports_paginationButton.active,
+.billingReports_paginationButton:focus { background: var(--primary-color); color: #fff; border-color: var(--primary-color); outline: none; }
+.billingReports_paginationButton:disabled { background: #e9ecef; color: #aaa; cursor: not-allowed; }
 
 .billingReports_totalCount {
   font-size: var(--font-size-sm);
@@ -466,14 +334,7 @@
     padding: var(--spacing-lg);
   }
 }
-.billingReports_refreshButton:hover:not(:disabled) {
-  background: #2563eb;
-}
-
-.billingReports_refreshButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+/* hover/disabled covered by toolbar rules */
 
 /* Enhanced pagination */
 .billingReports_paginationInfo {
@@ -578,17 +439,112 @@
   margin-right: auto;
 }
 
-.billingReports_clearFiltersButton {
-  background: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
+/* Refund Analytics Styles */
+.billingReports_refundSection {
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
 }
 
-.billingReports_clearFiltersButton:hover {
-  background: #e5e7eb;
+.billingReports_sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
 }
+
+.billingReports_refundStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.billingReports_refundStat {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.billingReports_refundStatLabel {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.billingReports_refundStatValue {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.billingReports_recentRefunds h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+}
+
+.billingReports_refundList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.billingReports_refundItem {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.billingReports_refundInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.billingReports_refundPatient {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.billingReports_refundDate {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.billingReports_refundAmount {
+  font-weight: 600;
+  color: #dc3545;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.billingReports_refundReason {
+  font-size: 0.875rem;
+  color: #374151;
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .billingReports_refundItem {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  
+  .billingReports_refundStats {
+    grid-template-columns: 1fr;
+  }
+}
+

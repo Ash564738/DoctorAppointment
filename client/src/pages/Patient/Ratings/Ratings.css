@@ -16,8 +16,15 @@
   gap: var(--spacing-md);
 }
 
-.ratings_header {
-  text-align: center;
+.ratings_contentWrapper {
+  background: var(--white);
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+  gap: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
 }
 
 .ratings_title {
@@ -33,24 +40,29 @@
 
 .ratings_filterTabs {
   display: flex;
-  border-bottom: 2px solid #e9ecef;
+  gap: var(--spacing-xs);
+  background: white;
 }
 
 .ratings_filterTab {
-  background: none;
-  border: none;
-  padding: var(--spacing-md) var(--spacing-xl);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  color: #666;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: var(--border-radius-md);
   cursor: pointer;
-  border-bottom: 3px solid transparent;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  color: #374151;
+}
+
+.ratings_filterTab:hover {
 }
 
 .ratings_filterTabActive {
-  color: var(--primary-color);
-  border-bottom-color: var(--primary-color);
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
 }
 
 .ratings_loading {
@@ -59,6 +71,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--spacing-xl);
+  background: white;
 }
 
 .ratings_spinner {
@@ -82,13 +95,6 @@
 }
 
 .ratings_section {
-  margin-bottom: var(--spacing-xl);
-}
-
-.ratings_sectionTitle {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-medium);
-  color: #333;
 }
 
 .ratings_appointmentsGrid {
@@ -98,12 +104,12 @@
 }
 
 .ratings_appointmentCard {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-lg);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e9ecef;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: #f8fafc;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
 }
 
 .ratings_appointmentCard:hover {
@@ -123,7 +129,7 @@
 
 .ratings_doctorIcon {
   font-size: var(--font-size-lg);
-  color: #007bff;
+  color: var(--primary-color);
 }
 
 .ratings_doctorName {
@@ -140,11 +146,10 @@
 
 .ratings_appointmentDetails {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
   padding: var(--spacing-md);
-  background: #f8fafc;
   border-radius: var(--border-radius-md);
 }
 
@@ -165,18 +170,25 @@
   color: #333;
 }
 
+.ratings_priority {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: var(--font-size-sm);
+  text-transform: capitalize;
+  display: inline-block;
+}
+
 .ratings_cardActions {
   display: flex;
   justify-content: flex-end;
 }
 
 .ratings_rateButton {
-  background: #ffc107;
-  color: #212529;
+  background: var(--primary-color);
+  color: white;
   border: none;
-  padding: var(--spacing-md) var(--spacing-xl);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--border-radius-md);
-  font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -186,7 +198,7 @@
 }
 
 .ratings_rateButton:hover {
-  background: #e0a800;
+  background: var(--primary-color-dark);
   transform: translateY(-1px);
 }
 
@@ -197,11 +209,11 @@
 }
 
 .ratings_reviewCard {
-  background: white;
+  background: var(--white);
+  border: 1px solid rgba(0,0,0,0.05);
   border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
   padding: var(--spacing-lg);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e9ecef;
 }
 
 .ratings_reviewHeader {
@@ -240,10 +252,31 @@
 }
 
 .ratings_reviewText {
-  color: #555;
-  line-height: 1.6;
+  display: flex;
+  gap: var(--spacing-lg);
   margin-bottom: var(--spacing-md);
-  font-style: italic;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: #f8fafc;
+  border-radius: var(--border-radius-md);
+  flex-wrap: wrap;
+}
+
+.ratings_reviewDetailItem {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.ratings_reviewDetailLabel {
+  font-size: var(--font-size-sm);
+  color: #666;
+  font-weight: var(--font-weight-medium);
+}
+
+.ratings_reviewDetailValue {
+  font-size: var(--font-size-sm);
+  color: #333;
+  font-weight: var(--font-weight-medium);
 }
 
 .ratings_reviewMeta {
@@ -278,11 +311,9 @@
 }
 
 .ratings_emptyState {
-  text-align: center;
   padding: var(--spacing-xl);
-  background: white;
+  background:  #f8fafc;
   border-radius: var(--border-radius-lg);
-  border: 2px dashed #ddd;
 }
 
 .ratings_emptyIcon {
@@ -360,15 +391,15 @@
   background: #f8fafc;
   border-radius: var(--border-radius-md);
   margin-bottom: var(--spacing-xl);
+  font-size: var(--font-size-base);
 }
 
 .ratings_summaryIcon {
   font-size: var(--font-size-xl);
-  color: #007bff;
+  color: var(--primary-color);
 }
 
 .ratings_summaryName {
-  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-medium);
   color: #333;
   margin: 0 0 var(--spacing-xs) 0;
@@ -377,7 +408,6 @@
 .ratings_summarySpecialty,
 .ratings_summaryDate {
   color: #666;
-  margin: var(--spacing-xs) 0;
 }
 
 .ratings_ratingSection {
@@ -403,10 +433,6 @@
   font-weight: var(--font-weight-medium);
   color: #666;
   margin: 0;
-}
-
-.ratings_reviewSection {
-  margin-bottom: var(--spacing-xl);
 }
 
 .ratings_reviewLabel {
@@ -445,13 +471,14 @@
   gap: var(--spacing-md);
   padding: var(--spacing-lg);
   border-top: 1px solid #e9ecef;
+  font-size: var(--font-size-base);
 }
 
 .ratings_cancelButton {
   background: #6c757d;
   color: white;
   border: none;
-  padding: var(--spacing-md) var(--spacing-xl);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--border-radius-md);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
@@ -463,10 +490,10 @@
 }
 
 .ratings_submitButton {
-  background: #28a745;
+  background: var(--primary-color);
   color: white;
   border: none;
-  padding: var(--spacing-md) var(--spacing-xl);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--border-radius-md);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
@@ -553,16 +580,6 @@
     gap: var(--spacing-xs);
   }
 }
-  .ratings_appointmentCard,
-  .ratings_reviewCard {
-    padding: 1rem;
-  }
-  
-  .ratings_modalHeader,
-  .ratings_modalBody,
-  .ratings_modalActions {
-    padding: 1rem;
-  }
   
   .ratings_doctorInfo {
     flex-direction: column;

@@ -1,8 +1,8 @@
-# Doctor Appointment System API Documentation
+# HealthCare Platform API Documentation
 
 ## Overview
 
-This comprehensive API documentation covers all endpoints for the Doctor Appointment System - a full-stack healthcare management platform built with Node.js, Express.js, and MongoDB. The API provides complete functionality for appointment management, telemedicine, payment processing, medical records, and real-time communication.
+This API documentation covers all endpoints for the HealthCare platform - a comprehensive healthcare management and telemedicine system built with Node.js, Express.js, and MongoDB. The API provides functionality for appointment management, telemedicine, payment processing, medical records, and real-time communication.
 
 **Base URL:** `http://localhost:5015/api`  
 **Production URL:** `https://your-domain.com/api`
@@ -21,9 +21,6 @@ This comprehensive API documentation covers all endpoints for the Doctor Appoint
 10. [Waitlist Management](#waitlist-endpoints)
 11. [Shift & Leave Management](#shift-leave-endpoints)
 12. [Admin Functions](#admin-endpoints)
-13. [Error Handling](#error-responses)
-14. [Rate Limiting](#rate-limiting)
-15. [Security](#security-features)
 
 ## Authentication
 
@@ -194,8 +191,8 @@ Authorization: Bearer <your_jwt_token>
 ```
 
 ### Get All Users (Admin)
-- **GET** `/user/getAllUsers`
-- **Description:** Get all users with pagination and filtering
+- **GET** `/user/getallusers`
+- **Description:** Get all users
 - **Access:** Admin only
 - **Headers:** `Authorization: Bearer <token>`
 - **Query Parameters:**
@@ -223,67 +220,48 @@ Authorization: Bearer <your_jwt_token>
 - **POST** `/appointment/bookappointment`
 - **Description:** Book a new appointment
 - **Headers:** `Authorization: Bearer <token>`
-- **Body:**
-```json
-{
-  "doctorId": "doctor_id",
-  "date": "2024-01-15",
-  "time": "10:00",
-  "age": 30,
-  "gender": "male",
-  "number": "+1234567890",
-  "bloodGroup": "O+",
-  "familyDiseases": "None"
-}
-```
 
-### Get User Appointments
-- **GET** `/appointment/getappointments`
-- **Description:** Get all appointments for the authenticated user
+### Get All Appointments
+- **GET** `/appointment/getallappointments`
+- **Description:** Get all appointments (Admin/Doctor)
 - **Headers:** `Authorization: Bearer <token>`
 
 ### Get Doctor Appointments
-- **GET** `/appointment/getdoctorappointments`
-- **Description:** Get all appointments for a doctor
+- **GET** `/appointment/doctor`
+- **Description:** Get appointments for authenticated doctor
 - **Headers:** `Authorization: Bearer <token>`
 
-### Update Appointment Status
-- **PUT** `/appointment/updatestatus/:id`
-- **Description:** Update appointment status (Doctor/Admin only)
+### Get Patient Appointments
+- **GET** `/appointment/patient`
+- **Description:** Get appointments for authenticated patient
 - **Headers:** `Authorization: Bearer <token>`
-- **Body:**
-```json
-{
-  "status": "Confirmed"
-}
-```
 
-### Get Doctor Dashboard Statistics
-- **GET** `/appointment/doctor-stats`
-- **Description:** Get comprehensive statistics for a doctor's dashboard
-- **Headers:** `Authorization: Bearer <token>` (doctor access only)
-- **Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "stats": {
-      "totalAppointments": 150,
-      "todayAppointments": 8,
-      "pendingAppointments": 12,
-      "completedAppointments": 136,
-      "canceledAppointments": 2,
-      "monthlyAppointments": 45,
-      "totalPatients": 85
-    },
-    "monthlyTrend": [
-      { "month": "Jan", "count": 20 },
-      { "month": "Feb", "count": 25 },
-      { "month": "Mar", "count": 30 },
-      { "month": "Apr", "count": 22 },
-      { "month": "May", "count": 28 },
-      { "month": "Jun", "count": 45 }
-    ],
+### Get Patient Statistics
+- **GET** `/appointment/patient-stats`
+- **Description:** Get statistics for authenticated patient
+- **Headers:** `Authorization: Bearer <token>`
+
+### Get Upcoming Appointments
+- **GET** `/appointment/upcoming`
+- **Description:** Get upcoming appointments
+- **Headers:** `Authorization: Bearer <token>`
+
+### Mark Appointment Completed
+- **PUT** `/appointment/completed`
+- **Description:** Mark appointment as completed
+- **Headers:** `Authorization: Bearer <token>`
+
+### Update Appointment
+- **PUT** `/appointment/update/:appointmentId`
+- **Description:** Update appointment details
+- **Headers:** `Authorization: Bearer <token>`
+
+### Walk-in Queue
+- **GET** `/appointment/walkin-queue`
+- **Description:** Get walk-in queue status
+
+- **POST** `/appointment/walkin-queue`
+- **Description:** Add to walk-in queue
 ## Medical Records Endpoints
 
 ### Create Medical Record
@@ -481,185 +459,75 @@ Authorization: Bearer <your_jwt_token>
 ## Doctor Endpoints
 
 ### Apply for Doctor
-- **POST** `/doctor/apply`
+- **POST** `/doctor/applyfordoctor`
 - **Description:** Apply to become a verified doctor
 - **Access:** Protected (Patient role)
 - **Headers:** `Authorization: Bearer <token>`
-- **Body:**
-```json
-{
-  "specialization": "Cardiology",
-  "experience": 5,
-  "fees": 150,
-  "qualification": "MD, MBBS",
-  "bio": "Experienced cardiologist with 5 years of practice",
-  "licenseNumber": "MD123456",
-  "hospitalAffiliation": "City General Hospital",
-  "education": [
-    {
-      "degree": "MBBS",
-      "institution": "Medical University",
-      "year": "2018"
-    }
-  ],
-  "certifications": [
-    {
-      "name": "Board Certified Cardiologist",
-      "authority": "Medical Board",
-      "year": "2020"
-    }
-  ]
-}
-```
 
 ### Get All Doctors
 - **GET** `/doctor/getalldoctors`
 - **Description:** Get list of all approved doctors
 - **Access:** Public
-- **Query Parameters:**
-  - `page` (default: 1) - Page number
-  - `limit` (default: 10) - Items per page
-  - `specialization` (optional) - Filter by specialization
-  - `search` (optional) - Search by name
-  - `minFees` (optional) - Minimum consultation fees
-  - `maxFees` (optional) - Maximum consultation fees
-- **Response:**
-```json
-{
-  "success": true,
-  "doctors": [
-    {
-      "id": "64f123abc456def789",
-      "userId": {
-        "firstname": "Dr. Jane",
-        "lastname": "Smith",
-        "email": "jane.smith@hospital.com",
-        "profilePicture": "https://example.com/profile.jpg"
-      },
-      "specialization": "Cardiology",
-      "experience": 5,
-      "fees": 150,
-      "rating": 4.5,
-      "totalRatings": 45,
-      "bio": "Experienced cardiologist...",
-      "isApproved": true,
-      "isAvailable": true,
-      "nextAvailableSlot": "2024-08-10T10:00:00.000Z"
-    }
-  ],
-  "pagination": {
-    "total": 25,
-    "page": 1,
-    "limit": 10,
-    "totalPages": 3
-  }
-}
-```
 
-### Get Doctor Profile
-- **GET** `/doctor/profile/:doctorId`
-- **Description:** Get detailed doctor profile
-- **Access:** Public
-- **Response:**
-```json
-{
-  "success": true,
-  "doctor": {
-    "id": "64f123abc456def789",
-    "personalInfo": {
-      "firstname": "Dr. Jane",
-      "lastname": "Smith",
-      "email": "jane.smith@hospital.com",
-      "mobile": "+1234567890"
-    },
-    "professionalInfo": {
-      "specialization": "Cardiology",
-      "experience": 5,
-      "fees": 150,
-      "licenseNumber": "MD123456",
-      "qualification": "MD, MBBS",
-      "bio": "Experienced cardiologist..."
-    },
-    "ratings": {
-      "average": 4.5,
-      "total": 45,
-      "distribution": {
-        "5": 30,
-        "4": 10,
-        "3": 3,
-        "2": 1,
-        "1": 1
-      }
-    },
-    "availability": {
-      "isAvailable": true,
-      "nextSlot": "2024-08-10T10:00:00.000Z",
-      "workingHours": {
-        "monday": { "start": "09:00", "end": "17:00" },
-        "tuesday": { "start": "09:00", "end": "17:00" }
-      }
-    }
-  }
-}
-```
-
-### Update Doctor Profile
-- **PUT** `/doctor/updateprofile`
-- **Description:** Update doctor profile (Doctor only)
+### Get Colleagues
+- **GET** `/doctor/colleagues`
+- **Description:** Get colleague doctors
 - **Access:** Protected (Doctor role)
 - **Headers:** `Authorization: Bearer <token>`
-- **Body:**
-```json
-{
-  "specialization": "Cardiology",
-  "experience": 6,
-  "fees": 175,
-  "bio": "Updated bio...",
-  "isAvailable": true
-}
-```
 
-### Get Doctor Applications (Admin)
-- **GET** `/doctor/applications`
-- **Description:** Get pending doctor applications
-- **Access:** Admin only
+### Get Available Doctors
+- **GET** `/doctor/available`
+- **Description:** Get available doctors
+- **Access:** Protected
 - **Headers:** `Authorization: Bearer <token>`
-- **Query Parameters:**
-  - `status` (optional) - pending, approved, rejected
-- **Response:**
-```json
-{
-  "success": true,
-  "applications": [
-    {
-      "id": "64f123abc456def789",
-      "userId": {
-        "firstname": "John",
-        "lastname": "Doctor",
-        "email": "john@example.com"
-      },
-      "specialization": "Neurology",
-      "experience": 3,
-      "qualification": "MD",
-      "status": "pending",
-      "appliedAt": "2024-08-01T10:00:00.000Z"
-    }
-  ]
-}
-```
 
-### Approve/Reject Doctor Application (Admin)
-- **PUT** `/doctor/application/:applicationId`
-- **Description:** Approve or reject doctor application
-- **Access:** Admin only
+### Get Non-Doctors
+- **GET** `/doctor/getnotdoctors`
+- **Description:** Get users who are not doctors (Admin only)
+- **Access:** Protected (Admin role)
 - **Headers:** `Authorization: Bearer <token>`
-- **Body:**
-```json
-{
-  "status": "approved", // or "rejected"
-  "rejectionReason": "Incomplete documentation" // required if rejected
-}
-```
+
+### Delete Doctor
+- **PUT** `/doctor/deletedoctor`
+- **Description:** Delete doctor account
+- **Access:** Protected (Admin role)
+- **Headers:** `Authorization: Bearer <token>`
+
+### Accept Doctor Application
+- **PUT** `/doctor/acceptdoctor`
+- **Description:** Accept doctor application
+- **Access:** Protected (Admin role)
+- **Headers:** `Authorization: Bearer <token>`
+
+### Reject Doctor Application
+- **PUT** `/doctor/rejectdoctor`
+- **Description:** Reject doctor application
+- **Access:** Protected (Admin role)
+- **Headers:** `Authorization: Bearer <token>`
+
+### Admin Update Doctor
+- **PUT** `/doctor/admin-update/:id`
+- **Description:** Admin update doctor profile
+- **Access:** Protected (Admin role)
+- **Headers:** `Authorization: Bearer <token>`
+
+### Get My Patients
+- **GET** `/doctor/my-patients`
+- **Description:** Get doctor's patients
+- **Access:** Protected (Doctor role)
+- **Headers:** `Authorization: Bearer <token>`
+
+### Get Doctor Analytics
+- **GET** `/doctor/analytics`
+- **Description:** Get doctor analytics data
+- **Access:** Protected (Doctor role)
+- **Headers:** `Authorization: Bearer <token>`
+
+### Get Recent Activity
+- **GET** `/doctor/recent-activity`
+- **Description:** Get doctor's recent activity
+- **Access:** Protected (Doctor role)
+- **Headers:** `Authorization: Bearer <token>`
 
 ## Payment Endpoints
 
@@ -1714,92 +1582,7 @@ Retry-After: 900
 }
 ```
 
-## Security Features
-
-### Authentication & Authorization
-- **JWT Tokens**: Stateless authentication with configurable expiration
-- **Role-based Access Control**: Patient, Doctor, Admin roles with specific permissions
-- **Token Refresh**: Automatic token renewal for active sessions
-- **Password Security**: bcrypt hashing with configurable salt rounds
-
-### Data Protection
-- **Input Sanitization**: All inputs sanitized against XSS and injection attacks
-- **MongoDB Injection Prevention**: Parameterized queries and input validation
-- **File Upload Security**: File type validation, size limits, virus scanning
-- **Encryption**: Sensitive data encrypted at rest and in transit
-
-### Network Security
-- **HTTPS Enforcement**: All production traffic over HTTPS
-- **CORS Configuration**: Specific origin allowlists for cross-origin requests
-- **Security Headers**: Comprehensive security headers via Helmet.js
-  - `Content-Security-Policy`
-  - `X-Frame-Options`
-  - `X-Content-Type-Options`
-  - `Referrer-Policy`
-  - `Permissions-Policy`
-
-### API Security
-- **Rate Limiting**: Multiple layers of rate limiting
-- **Request Logging**: Comprehensive request/response logging
-- **Error Handling**: Secure error responses (no sensitive data leakage)
-- **Health Checks**: Regular security health monitoring
-
-### Compliance & Privacy
-- **HIPAA Considerations**: Healthcare data handling best practices
-- **GDPR Compliance**: Data privacy and user rights protection
-- **Audit Trails**: Complete activity logging for security audits
-- **Data Anonymization**: Personal data anonymization for analytics
-
-## API Testing
-
-### Postman Collection
-Import our comprehensive Postman collection for testing:
-```bash
-# Download collection
-curl -o DoctorAppointment.postman_collection.json \
-  https://api.yourapp.com/docs/postman-collection
-
-# Import environment
-curl -o DoctorAppointment.postman_environment.json \
-  https://api.yourapp.com/docs/postman-environment
-```
-
-### Testing Environments
-- **Development**: `http://localhost:5015/api`
-- **Staging**: `https://staging-api.yourapp.com/api`
-- **Production**: `https://api.yourapp.com/api`
-
-### Authentication for Testing
-```javascript
-// Set authorization token in Postman
-pm.test("Login successful", function () {
-    var jsonData = pm.response.json();
-    pm.environment.set("authToken", jsonData.token);
-});
-```
-
-## Support & Resources
-
-### Documentation Resources
-- **API Reference**: Complete endpoint documentation
-- **SDKs**: Available for JavaScript, Python, PHP
-- **Code Examples**: Sample implementations in multiple languages
-- **Tutorials**: Step-by-step integration guides
-
-### Support Channels
-- **Email**: api-support@yourapp.com
-- **Documentation**: https://docs.yourapp.com
-- **GitHub Issues**: https://github.com/Ash564738/DoctorAppointment/issues
-- **Community Forum**: https://community.yourapp.com
-
-### API Status
-- **Status Page**: https://status.yourapp.com
-- **Uptime**: 99.9% SLA
-- **Monitoring**: Real-time performance monitoring
-
 ---
 
-**Last Updated**: January 2025  
-**API Version**: v1.0  
-**Documentation Version**: 2.0  
-**Maintained By**: Doctor Appointment System Team
+**HealthCare Platform API Documentation**  
+**Base URL**: `http://localhost:5015/api`

@@ -15,38 +15,69 @@ const DoctorCard = ({ ele }) => {
   useEffect(() => {
     if (ele?._id) {
       fetchDoctorCardStats();
+      fetchDoctorStatus();
     }
   }, [ele?._id]);
+
+  const fetchDoctorStatus = async () => {
+    try {
+      const statusResponse = await apiCall.get(`/doctor/${ele._id}/status`);
+      if (statusResponse && statusResponse.success) {
+        if (statusResponse.available) {
+          setDoctorCard_isAvailable(true);
+        } else {
+          const hasUpcoming = await hasUpcomingAvailability(ele._id, 7);
+          setDoctorCard_isAvailable(hasUpcoming);
+        }
+      }
+    } catch (error) {
+      // On error, be optimistic if doctor has any upcoming availability
+      const hasUpcoming = await hasUpcomingAvailability(ele._id, 7);
+      setDoctorCard_isAvailable(hasUpcoming);
+    }
+  };
+
+  const hasUpcomingAvailability = async (doctorId, daysAhead = 7) => {
+    try {
+      const today = new Date();
+      for (let i = 0; i <= daysAhead; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        const ymd = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const res = await apiCall.get(`/doctor/${doctorId}/availability?date=${ymd}`);
+        if (res?.success && res.available && Array.isArray(res.availableSlots) && res.availableSlots.length > 0) {
+          return true;
+        }
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  };
 
   const fetchDoctorCardStats = async () => {
     try {
       setDoctorCard_loading(true);
-
-      const ratingResponse = await apiCall.get(`/ratings/doctors/${ele._id}/ratings`);
-      if (ratingResponse && ratingResponse.success) {
-        setDoctorCard_rating(ratingResponse.data);
+      const ratingResponse = await apiCall.get(`/ratings/doctors/${ele._id}`);
+      if (ratingResponse && ratingResponse.success && ratingResponse.data) {
+        setDoctorCard_rating({
+          averageRating: ratingResponse.data.statistics?.averageRating || 0,
+          totalRatings: ratingResponse.data.statistics?.totalRatings || 0
+        });
       }
-
-      const patientCountResponse = await apiCall.get(`/appointment/doctor-appointments?status=Completed&doctorId=${ele._id}`);
+      const patientCountResponse = await apiCall.get(`/appointment/getallappointments`);
       let treatedCount = 0;
       if (patientCountResponse && patientCountResponse.success && Array.isArray(patientCountResponse.appointments)) {
-        treatedCount = patientCountResponse.appointments.length;
+        treatedCount = patientCountResponse.appointments.filter(apt => {
+          const doctorIdStr = typeof apt.doctorId === 'object' ? apt.doctorId._id : apt.doctorId;
+          return doctorIdStr === ele._id && apt.status === 'Completed';
+        }).length;
+        
+        console.log(`Doctor ${ele.firstname} ${ele.lastname}: Found ${treatedCount} completed appointments`);
       }
       setDoctorCard_totalPatients(treatedCount);
 
-      const currentHour = new Date().getHours();
-      const doctorTiming = ele?.timing;
-      let available = true;
-      if (doctorTiming === 'morning' && (currentHour < 8 || currentHour > 12)) {
-        available = false;
-      } else if (doctorTiming === 'afternoon' && (currentHour < 12 || currentHour > 17)) {
-        available = false;
-      } else if (doctorTiming === 'evening' && (currentHour < 17 || currentHour > 21)) {
-        available = false;
-      } else if (doctorTiming === 'night' && (currentHour < 21 && currentHour > 6)) {
-        available = false;
-      }
-      setDoctorCard_isAvailable(available);
+      // Status is now fetched separately via fetchDoctorStatus()
     } catch (error) {
       setDoctorCard_rating({ averageRating: 0, totalRatings: 0 });
       setDoctorCard_totalPatients(0);
@@ -161,47 +192,38 @@ const DoctorCard = ({ ele }) => {
         <div className="doctorCard_details" name="doctorCard_details">
           <div className="doctorCard_detailItem" name="doctorCard_detailItem_experience">
             <span className="doctorCard_icon" name="doctorCard_icon_experience">
-              {/* Professional SVG icon: User/Doctor */}
               <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#64748b"><path d="M12 14c-4.418 0-8 1.79-8 4v2h16v-2c0-2.21-3.582-4-8-4z"/><circle cx="12" cy="7" r="4"/></svg>
             </span>
             <div name="doctorCard_detailText_experience">
               <strong>Experience:</strong> {ele?.experience} years
             </div>
           </div>
-
           <div className="doctorCard_detailItem" name="doctorCard_detailItem_fees">
             <span className="doctorCard_icon" name="doctorCard_icon_fees">
-              {/* Professional SVG icon: Money */}
               <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#64748b"><rect x="2" y="7" width="20" height="10" rx="2"/><path d="M16 11.37a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></svg>
             </span>
             <div name="doctorCard_detailText_fees">
               <strong>Consultation Fee:</strong> ${ele?.fees}
             </div>
           </div>
-
           <div className="doctorCard_detailItem" name="doctorCard_detailItem_timing">
             <span className="doctorCard_icon" name="doctorCard_icon_timing">
-              {/* Professional SVG icon: Clock */}
               <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#64748b"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
             </span>
             <div name="doctorCard_detailText_timing">
               <strong>Available:</strong> {doctorCard_formatTiming(ele?.timing)}
             </div>
           </div>
-
           <div className="doctorCard_detailItem" name="doctorCard_detailItem_phone">
             <span className="doctorCard_icon" name="doctorCard_icon_phone">
-              {/* Professional SVG icon: Phone */}
               <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#64748b"><path d="M2 8.5A6.5 6.5 0 0 1 8.5 2h7A6.5 6.5 0 0 1 22 8.5v7A6.5 6.5 0 0 1 15.5 22h-7A6.5 6.5 0 0 1 2 15.5v-7z"/><path d="M15 9h.01M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
             </span>
             <div name="doctorCard_detailText_phone">
               <strong>Phone:</strong> {ele?.userId?.mobile}
             </div>
           </div>
-
           <div className="doctorCard_detailItem" name="doctorCard_detailItem_patients">
             <span className="doctorCard_icon" name="doctorCard_icon_patients">
-              {/* Professional SVG icon: Users */}
               <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#64748b"><path d="M17 20h5v-2a8 8 0 1 0-16 0v2h5"/><circle cx="12" cy="7" r="4"/></svg>
             </span>
             <div name="doctorCard_detailText_patients">
@@ -209,7 +231,6 @@ const DoctorCard = ({ ele }) => {
             </div>
           </div>
         </div>
-
         <div className="doctorCard_actions" name="doctorCard_actions">
           <button
             className={`doctorCard_bookButton${!doctorCard_isAvailable ? ' doctorCard_bookButtonUnavailable' : ''}`}
@@ -221,7 +242,6 @@ const DoctorCard = ({ ele }) => {
           </button>
         </div>
       </div>
-
       {modalOpen && (
         <BookAppointment
           modalOpen={modalOpen}

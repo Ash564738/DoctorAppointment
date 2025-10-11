@@ -4,9 +4,6 @@ import "./Register.css";
 import NavbarWrapper from "../../../components/Common/NavbarWrapper/NavbarWrapper";
 import toast from "react-hot-toast";
 import { apiCall } from "../../../helper/apiCall";
-import axios from "axios";
-
-axios.defaults.baseURL = process.env.REACT_APP_SERVER_DOMAIN;
 
 function Register() {
   const [file, setFile] = useState("");
@@ -19,7 +16,6 @@ function Register() {
     password: "",
     confpassword: "",
     role: "",
-    // Doctor-specific fields
     specialization: "",
     experience: "",
     fees: "",
@@ -175,7 +171,6 @@ function Register() {
         role: selectedRole,
       };
 
-      // Add doctor-specific fields if registering as doctor
       if (selectedRole === "Doctor") {
         registrationData.doctorInfo = {
           specialization,
@@ -186,7 +181,7 @@ function Register() {
       }
 
       await toast.promise(
-        axios.post("/user/register", registrationData),
+        apiCall.post("/user/register", registrationData),
         {
           pending: "Registering user...",
           success: "User registered successfully",

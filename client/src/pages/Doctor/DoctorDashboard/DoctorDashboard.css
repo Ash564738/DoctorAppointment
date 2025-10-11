@@ -16,17 +16,6 @@
   gap: var(--spacing-md);
 }
 
-/* Header Section */
-.doctorDashboard_header {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .doctorDashboard_welcome h1 {
   margin: 0 0 var(--spacing-xs) 0;
   color: #333;
@@ -67,7 +56,6 @@
 .doctorDashboard_tabs {
   display: flex;
   gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
 }
 
 .doctorDashboard_tab {
@@ -97,10 +85,6 @@
   min-height: 400px;
 }
 
-.doctorDashboard_emptyState {
-  text-align: center;
-  padding: var(--spacing-xl) var(--spacing-md);
-}
 
 .doctorDashboard_emptyState p {
   color: #6c757d;
@@ -108,10 +92,7 @@
   margin: 0;
 }
 
-.doctorDashboard_chartsSection {
-  margin-bottom: var(--spacing-xl);
-  margin-top: 32px;
-}
+/* Charts section container handled by surrounding layout; no specific wrapper styles needed. */
 .doctorDashboard_chartsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -119,25 +100,22 @@
   margin-bottom: var(--spacing-lg);
 }
 .doctorDashboard_chartCard {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   overflow: hidden;
-  padding: var(--spacing-lg);
   min-height: 350px;
   display: flex;
   flex-direction: column;
+  background: var(--white);
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
 }
 .doctorDashboard_chartCard:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
-.doctorDashboard_chartHeader {
-  padding: 0;
-  border-bottom: none;
-  background: none;
-}
+
 .doctorDashboard_chartTitle {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
@@ -153,7 +131,6 @@
 }
 .doctorDashboard_tab:hover {
   background: #e9ecef;
-  color: #495057;
 }
 
 .doctorDashboard_tab--active {
@@ -185,16 +162,16 @@
 }
 
 .doctorDashboard_statCard {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-lg);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   border-left: 4px solid #007bff;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
 }
 
 .doctorDashboard_statCard:hover {
@@ -245,7 +222,7 @@
 }
 
 .doctorDashboard_statNumber {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   margin: 0 0 var(--spacing-xs) 0;
   color: #1e293b;
@@ -415,21 +392,15 @@
 }
 
 /* --- Analytics/Performance/Charts Section (from DoctorAnalytics) --- */
-.doctorDashboard_statsSection {
-  margin-bottom: var(--spacing-xl);
-}
+/* Stats section wrapper intentionally inherits defaults. */
 
 .doctorDashboard_sectionTitle {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-medium);
   color: #333;
-  margin-bottom: var(--spacing-lg);
-  padding-left: var(--spacing-sm);
 }
 
-.doctorDashboard_performanceSection {
-  margin-bottom: var(--spacing-xl);
-}
+/* Performance section wrapper intentionally inherits defaults. */
 
 .doctorDashboard_progressGrid {
   display: grid;
@@ -438,11 +409,11 @@
 }
 
 .doctorDashboard_progressCard {
-  background: white;
+  background: var(--white);
+  border: 1px solid rgba(0,0,0,0.05);
   border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
   padding: var(--spacing-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
 }
 
 .doctorDashboard_progressCard:hover {
@@ -509,10 +480,6 @@
   font-style: italic;
 }
 
-.doctorDashboard_chartsSection {
-  margin-bottom: var(--spacing-xl);
-}
-
 .doctorDashboard_chartsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -520,25 +487,9 @@
   margin-bottom: var(--spacing-lg);
 }
 
-.doctorDashboard_fullWidthChart {
-  width: 100%;
-}
-
-.doctorDashboard_chartCard {
-  background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
-.doctorDashboard_chartCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
 .doctorDashboard_chartHeader {
   padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid #e9ecef;
-  background: #f8fafc;
 }
 .doctorDashboard_chartTitle {
   font-size: var(--font-size-base);
@@ -587,11 +538,6 @@
 }
 
 @media (max-width: 768px) {
-  .doctorDashboard_header {
-    flex-direction: column;
-    gap: var(--spacing-lg);
-    text-align: center;
-  }
   .doctorDashboard_headerStats {
     gap: var(--spacing-md);
   }
@@ -625,9 +571,6 @@
 }
 
 @media (max-width: 480px) {
-  .doctorDashboard_header {
-    padding: var(--spacing-lg);
-  }
   .doctorDashboard_welcome h1 {
     font-size: var(--font-size-lg);
   }

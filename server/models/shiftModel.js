@@ -46,7 +46,7 @@ const shiftSchema = mongoose.Schema(
       max: [20, 'Cannot exceed 20 patients per hour']
     },
     slotDuration: {
-      type: Number, // in minutes
+      type: Number,
       default: 15,
       enum: [15, 30, 45, 60],
       required: true
@@ -54,6 +54,20 @@ const shiftSchema = mongoose.Schema(
     department: {
       type: String,
       default: 'General'
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'approved',
+      index: true
+    },
+    requestedBy: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: 'User'
+    },
+    adminComment: {
+      type: String,
+      maxlength: [500, 'Admin comment too long']
     },
     isActive: {
       type: Boolean,
@@ -89,10 +103,7 @@ const shiftSchema = mongoose.Schema(
   }
 );
 
-// Index for efficient queries
 shiftSchema.index({ doctorId: 1, daysOfWeek: 1, isActive: 1 });
-
-// Validation to ensure end time is after start time
 shiftSchema.pre('save', function(next) {
   const startHour = parseInt(this.startTime.split(':')[0]);
   const startMinute = parseInt(this.startTime.split(':')[1]);
@@ -103,13 +114,11 @@ shiftSchema.pre('save', function(next) {
   const endTotal = endHour * 60 + endMinute;
   
   if (endTotal <= startTotal) {
-    next(new Error('End time must be after start time'));
+    return next(new Error('End time must be after start time'));
   }
   
   next();
 });
-
 const Shift = mongoose.model("Shift", shiftSchema);
 
-module.exports = Shift;
 module.exports = Shift;

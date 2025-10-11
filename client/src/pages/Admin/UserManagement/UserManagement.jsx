@@ -3,6 +3,7 @@ import NavbarWrapper from '../../../components/Common/NavbarWrapper/NavbarWrappe
 import Footer from '../../../components/Common/Footer/Footer';
 import { apiCall } from '../../../helper/apiCall';
 import './UserManagement.css';
+import PageHeader from '../../../components/Common/PageHeader/PageHeader';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -124,17 +125,24 @@ const UserManagement = () => {
       age: user.age || '',
       mobile: user.mobile || '',
       address: user.address || '',
-      gender: user.gender || ''
+      // Normalize gender to lowercase to satisfy backend enum [male,female,other]
+      gender: (user.gender || '').toLowerCase()
     });
     setShowEditModal(true);
   };
 
   const handleSaveEdit = async () => {
     try {
-      await apiCall.put(`/user/admin-update/${editingUser._id}`, editFormData);
+      // Prepare payload with normalized fields expected by backend
+      const payload = {
+        ...editFormData,
+        gender: editFormData.gender ? String(editFormData.gender).toLowerCase() : undefined,
+        // role and status are already aligned with backend enums
+      };
+      await apiCall.put(`/user/admin-update/${editingUser._id}`, payload);
             setUsers(users.map(user => 
         user._id === editingUser._id 
-          ? { ...user, ...editFormData }
+          ? { ...user, ...payload }
           : user
       ));
       
@@ -144,27 +152,8 @@ const UserManagement = () => {
       alert('User updated successfully');
     } catch (err) {
       console.error('Edit user error:', err);
-      alert('Failed to update user. Using profile update endpoint...');
-        try {
-        const limitedData = {
-          firstname: editFormData.firstname,
-          lastname: editFormData.lastname,
-          age: editFormData.age,
-          mobile: editFormData.mobile,
-          address: editFormData.address,
-          gender: editFormData.gender
-        };
-        await apiCall.put('/user/updateprofile', limitedData);
-        alert('User updated successfully (limited fields due to security)');
-        const usersData = await apiCall.get('/user/getallusers');
-        setUsers(usersData || []);
-        
-        setShowEditModal(false);
-        setEditingUser(null);
-        setEditFormData({});
-      } catch (fallbackErr) {
-        alert('Failed to update user');
-      }
+      // Surface a clear validation message and keep the modal open for correction
+      alert('Failed to update user. Please ensure fields are valid (e.g., gender must be male/female/other).');
     }
   };
 
@@ -208,21 +197,20 @@ const UserManagement = () => {
     <div className="userManagement_page">
       <NavbarWrapper />
       <div className="userManagement_container">
-        <div className="userManagement_header">
-          <h1 className="userManagement_title">User Management</h1>
-          <p className="userManagement_description">
-            Manage users, approve doctor applications, and edit/delete user accounts.
-          </p>
-          
-          <div className="userManagement_searchContainer">
-            <input
-              type="text"
-              placeholder="Search users by name, email, or role..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="userManagement_searchInput"
-            />
-          </div>
+        <PageHeader
+          title="User Management"
+          subtitle="Manage users, approve doctor applications, and edit/delete user accounts."
+          className="userManagement_header"
+        />
+
+        <div className="userManagement_searchContainer">
+          <input
+            type="text"
+            placeholder="Search users by name, email, or role..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="userManagement_searchInput"
+          />
         </div>
 
         {doctorApplications.length > 0 && (
@@ -517,9 +505,9 @@ const UserManagement = () => {
                       className="userManagement_formSelect"
                     >
                       <option value="">Select Gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
                     </select>
                   </div>
                 </div>

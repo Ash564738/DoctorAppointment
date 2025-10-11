@@ -3,9 +3,9 @@ import NavbarWrapper from '../../../components/Common/NavbarWrapper/NavbarWrappe
 import Footer from '../../../components/Common/Footer/Footer';
 import { apiCall } from '../../../helper/apiCall';
 import toast from 'react-hot-toast';
-import { jwtDecode } from 'jwt-decode';
 import { FaStar, FaUserMd } from 'react-icons/fa';
 import './Ratings.css';
+import PageHeader from '../../../components/Common/PageHeader/PageHeader';
 
 const Ratings = () => {
   const [completedAppointments, setCompletedAppointments] = useState([]);
@@ -18,14 +18,11 @@ const Ratings = () => {
   const [review, setReview] = useState('');
   const [filter, setFilter] = useState('pending');
 
-  const { userId } = jwtDecode(localStorage.getItem("token"));
-
   useEffect(() => {
     fetchCompletedAppointments();
     fetchUserRatings();
   }, []);
 
-  // Fetch all patient appointments and filter completed ones
   const fetchCompletedAppointments = async () => {
     try {
       setLoading(true);
@@ -33,7 +30,6 @@ const Ratings = () => {
       const ratingsRes = await apiCall.get('/ratings/my-ratings');
       const ratedAppointmentIds = (ratingsRes?.data?.ratings || []).map(r => r.appointmentId?.toString());
       if (response && response.success && Array.isArray(response.appointments)) {
-        // Only completed appointments
         const completed = response.appointments.filter(
           (apt) => apt.status && apt.status.toLowerCase() === 'completed'
         ).map(apt => ({
@@ -52,7 +48,6 @@ const Ratings = () => {
     }
   };
 
-  // Fetch ratings submitted by the patient
   const fetchUserRatings = async () => {
     try {
       setLoading(true);
@@ -82,7 +77,6 @@ const Ratings = () => {
     }
   };
 
-  // Submit a new rating for an appointment
   const handleSubmitRating = async () => {
     if (!selectedAppointment || rating === 0) {
       toast.error('Please provide a rating');
@@ -141,47 +135,42 @@ const Ratings = () => {
   };
 
   const pendingAppointments = completedAppointments.filter(apt => !apt.hasRating);
-  const filteredAppointments = filter === 'pending' ? pendingAppointments : completedAppointments.filter(apt => apt.hasRating);
 
   return (
-    <>
+    <div className="ratings_page">
       <NavbarWrapper />
-      <div className="ratings_page">
         <div className="ratings_container">
-          <div className="ratings_header">
-            <h1 className="ratings_title">Doctor Ratings & Reviews</h1>
-            <p className="ratings_description">
-              Rate your completed appointments and help other patients make informed decisions.
-            </p>
-          </div>
-
-          {/* Filter Tabs */}
-          <div className="ratings_filterTabs">
-            <button 
-              className={`ratings_filterTab ${filter === 'pending' ? 'ratings_filterTabActive' : ''}`}
-              onClick={() => setFilter('pending')}
-            >
-              Pending Ratings ({pendingAppointments.length})
-            </button>
-            <button 
-              className={`ratings_filterTab ${filter === 'completed' ? 'ratings_filterTabActive' : ''}`}
-              onClick={() => setFilter('completed')}
-            >
-              My Reviews ({userRatings.length})
-            </button>
-          </div>
-
-          {loading ? (
-            <div className="ratings_loading">
-              <div className="ratings_spinner"></div>
-              <p className="ratings_loadingText">Loading appointments...</p>
+          <PageHeader
+            title="Doctor Ratings & Reviews"
+            subtitle="Rate your completed appointments and help other patients make informed decisions."
+            className="ratings_header"
+          />
+          
+          <div className="ratings_contentWrapper">
+            <div className="ratings_filterTabs">
+              <button 
+                className={`ratings_filterTab ${filter === 'pending' ? 'ratings_filterTabActive' : ''}`}
+                onClick={() => setFilter('pending')}
+              >
+                Pending Ratings ({pendingAppointments.length})
+              </button>
+              <button 
+                className={`ratings_filterTab ${filter === 'completed' ? 'ratings_filterTabActive' : ''}`}
+                onClick={() => setFilter('completed')}
+              >
+                My Reviews ({userRatings.length})
+              </button>
             </div>
-          ) : (
-            <>
+
+            {loading ? (
+              <div className="ratings_loading">
+                <div className="ratings_spinner"></div>
+                <p className="ratings_loadingText">Loading appointments...</p>
+              </div>
+            ) : (
+              <>
               {filter === 'pending' ? (
-                /* Pending Ratings Section */
                 <div className="ratings_section">
-                  <h2 className="ratings_sectionTitle">Appointments Waiting for Your Review</h2>
                   {pendingAppointments.length > 0 ? (
                     <div className="ratings_appointmentsGrid">
                       {pendingAppointments.map((appointment) => (
@@ -208,6 +197,28 @@ const Ratings = () => {
                               <span className="ratings_label">Time:</span>
                               <span className="ratings_value">{appointment.time}</span>
                             </div>
+                            {appointment.appointmentType && (
+                              <div className="ratings_appointmentInfo">
+                                <span className="ratings_label">Type:</span>
+                                <span className="ratings_value">{appointment.appointmentType}</span>
+                              </div>
+                            )}
+                            {appointment.symptoms && (
+                              <div className="ratings_appointmentInfo">
+                                <span className="ratings_label">Symptoms:</span>
+                                <span className="ratings_value">{appointment.symptoms}</span>
+                              </div>
+                            )}
+                            {appointment.priority && (
+                              <div className="ratings_appointmentInfo">
+                                <span className="ratings_label">Priority:</span>
+                                <span className="ratings_value ratings_priority">{appointment.priority}</span>
+                              </div>
+                            )}
+                            <div className="ratings_appointmentInfo">
+                              <span className="ratings_label">Booked On:</span>
+                              <span className="ratings_value">{formatDate(appointment.createdAt)}</span>
+                            </div>
                           </div>
                           <div className="ratings_cardActions">
                             <button 
@@ -230,7 +241,6 @@ const Ratings = () => {
               ) : (
                 /* Completed Ratings Section */
                 <div className="ratings_section">
-                  <h2 className="ratings_sectionTitle">Your Reviews</h2>
                   {userRatings.length > 0 ? (
                     <div className="ratings_reviewsList">
                       {userRatings.map((rating) => (
@@ -246,7 +256,21 @@ const Ratings = () => {
                             </div>
                           </div>
                           <div className="ratings_reviewContent">
-                            <p className="ratings_reviewText">{rating.review}</p>
+                            {rating.review && <p className="ratings_reviewText">{rating.review}</p>}
+                            <div className="ratings_reviewDetails">
+                              {rating.appointmentId?.appointmentType && (
+                                <div className="ratings_reviewDetailItem">
+                                  <span className="ratings_reviewDetailLabel">Type:</span>
+                                  <span className="ratings_reviewDetailValue">{rating.appointmentId.appointmentType}</span>
+                                </div>
+                              )}
+                              {rating.appointmentId?.time && (
+                                <div className="ratings_reviewDetailItem">
+                                  <span className="ratings_reviewDetailLabel">Time:</span>
+                                  <span className="ratings_reviewDetailValue">{rating.appointmentId.time}</span>
+                                </div>
+                              )}
+                            </div>
                             <div className="ratings_reviewMeta">
                               <span className="ratings_reviewDate">
                                 Appointment: {formatDate(rating.appointmentDate)}
@@ -268,7 +292,8 @@ const Ratings = () => {
                 </div>
               )}
             </>
-          )}
+            )}
+          </div>
 
           {/* Rating Modal */}
           {showRatingModal && selectedAppointment && (
@@ -346,9 +371,8 @@ const Ratings = () => {
             </div>
           )}
         </div>
-      </div>
       <Footer />
-    </>
+    </div>
   );
 };
 

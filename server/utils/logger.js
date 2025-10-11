@@ -30,7 +30,7 @@ const logger = winston.createLogger({
   levels: logLevels,
   defaultMeta: { service: 'doctor-appointment-api' },
   transports: [
-    new winston.transports.Console({ format: consoleFormat, level: 'debug' }),
+    new winston.transports.Console({ format: consoleFormat, level: process.env.LOG_LEVEL || 'info' }),
     new winston.transports.File({ filename: path.join(logsDir, 'error.log'), level: 'error', format: fileFormat, maxsize: 5242880, maxFiles: 5 }),
     new winston.transports.File({ filename: path.join(logsDir, 'combined.log'), format: fileFormat, maxsize: 5242880, maxFiles: 5 }),
   ],

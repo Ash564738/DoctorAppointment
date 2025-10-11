@@ -1,15 +1,18 @@
 /* CSS Variables for consistent theming */
 :root {
-  /* Base Colors */
-
   /* Main Colors */
   --primary-color: #46b4ca;
   --primary-color-dark: #38a0b4;
+  --primary-color-light: #1b739f0d;
   --secondary-color: #f5f8fa;
-  --success-color: #28a745;
-  --info-color: #17a2b8;
+  --success-color: #2e7d32;
+  --success-color-light: #d4edda;
+  --info-color: #1d4ed8;
+  --info-color-light: #dbeafe;
   --danger-color: #dc3545;
-  --warning-color: #ffc107;
+  --danger-color-light: #f0d3d6;
+  --warning-color: #f57c00;
+  --warning-color-light: #fff3e0;
   --card-color: #fff;
   --background-color: #f8f9fa;
   --text-color: #1e375a;
@@ -17,7 +20,6 @@
   --white: #fff;
   --black: #000;
   --light-blue: rgba(27, 115, 159, 0.05);
-
 
   /* Typography */
   --font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -31,7 +33,6 @@
   --font-weight-medium: 500;
   --font-weight-bold: 700;
 
-
   /* Spacing */
   --spacing-xxs: 0.125rem;
   --spacing-xs: 0.25rem;
@@ -39,7 +40,6 @@
   --spacing-md: 1rem;
   --spacing-lg: 1.5rem;
   --spacing-xl: 3rem;
-
 
   /* Border radius */
   --border-radius-xs: 0.125rem;
@@ -54,4 +54,14 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.15);
+
+  /* Tables and controls */
+  --table-border-color: #e5e7eb;
+  --table-header-bg: #f3f4f6;
+  --table-row-hover: #f9fafb;
+  --control-bg: var(--primary-color);
+  --control-bg-danger: var(--danger-color);
+  --control-text: #fff;
+  --pagination-bg: var(--white);
+  --pagination-active-bg: var(--primary-color-light);
 }

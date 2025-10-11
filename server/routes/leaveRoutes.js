@@ -1,10 +1,13 @@
 const express = require("express");
+const upload = require('../middleware/multerConfig');
 const {
   submitLeaveRequest,
   getLeaveRequests,
   processLeaveRequest,
   cancelLeaveRequest,
-  getLeaveStatistics
+  getLeaveStatistics,
+  getMyCoverageRequests,
+  respondCoveringRequest
 } = require("../controllers/leaveController");
 const auth = require("../middleware/auth");
 const { body } = require('express-validator');
@@ -16,8 +19,10 @@ const leaveRequestValidation = [
   body('reason').trim().isLength({ min: 10, max: 500 }).withMessage('Reason must be between 10 and 500 characters'),
   body('isEmergency').optional().isBoolean().withMessage('isEmergency must be a boolean')
 ];
-leaveRouter.post("/request", auth, leaveRequestValidation, submitLeaveRequest);
+leaveRouter.post("/request", auth, upload.array('attachments', 5), leaveRequestValidation, submitLeaveRequest);
 leaveRouter.get("/", auth, getLeaveRequests);
+leaveRouter.get("/my-coverage-requests", auth, getMyCoverageRequests);
+leaveRouter.post("/:requestId/cover/respond", auth, respondCoveringRequest);
 leaveRouter.patch("/:requestId/process", auth, [
   body('status').isIn(['approved', 'rejected']).withMessage('Status must be approved or rejected'),
   body('rejectionReason').optional().trim().isLength({ max: 300 }).withMessage('Rejection reason too long')

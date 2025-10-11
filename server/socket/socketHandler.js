@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const { ChatRoom, Message } = require('../models/chatModel');
 const User = require('../models/userModel');
 const { socketLogger } = require('../middleware/requestLogger');
-const { info, error: logError, chat, socket: logSocket } = require('../utils/logger');
+const { info, error: logError, debug } = require('../utils/logger');
 const activeUsers = new Map();
 const authenticateSocket = async (socket, next) => {
   const startTime = Date.now();
@@ -10,7 +10,7 @@ const authenticateSocket = async (socket, next) => {
     const token = socket.handshake.auth.token;
     const ip = socket.handshake.address;
     const userAgent = socket.handshake.headers['user-agent'];
-    logSocket('authentication_attempt', {
+    debug('authentication_attempt', {
       socketId: socket.id,
       ip,
       userAgent,
@@ -40,7 +40,6 @@ const authenticateSocket = async (socket, next) => {
     socket.userName = `${user.firstname} ${user.lastname}`;
     socket.user = user;
     socket.connectedAt = Date.now();
-
     const authTime = Date.now() - startTime;
     info('Socket authentication successful', {
       socketId: socket.id,
@@ -50,7 +49,6 @@ const authenticateSocket = async (socket, next) => {
       ip,
       authTime: `${authTime}ms`
     });
-
     next();
   } catch (error) {
     const authTime = Date.now() - startTime;
@@ -67,7 +65,6 @@ const authenticateSocket = async (socket, next) => {
 const handleConnection = (io) => {
   return async (socket) => {
     const connectionTime = Date.now();
-
     info('User connected to socket', {
       socketId: socket.id,
       userId: socket.userId,
@@ -85,7 +82,6 @@ const handleConnection = (io) => {
       lastSeen: new Date(),
       connectedAt: connectionTime
     });
-
     try {
       await updateUserOnlineStatus(socket.userId, true);
       await joinUserChatRooms(socket);
@@ -102,20 +98,16 @@ const handleConnection = (io) => {
         setupTime: `${Date.now() - connectionTime}ms`
       });
     }
-
-    // Handle joining a specific chat room (appointment-based)
     socket.on('join-chat', async (data) => {
       const startTime = Date.now();
-      logSocket('join-chat', {
+      debug('join-chat', {
         socketId: socket.id,
         userId: socket.userId,
         data: data
       });
-
       try {
         const { appointmentId } = data;
         await handleJoinChat(socket, appointmentId);
-
         info('Successfully joined appointment chat', {
           socketId: socket.id,
           userId: socket.userId,
@@ -136,7 +128,7 @@ const handleConnection = (io) => {
     // Handle joining a direct chat room (by chatRoomId)
     socket.on('join-chat-room', async (data) => {
       const startTime = Date.now();
-      logSocket('join-chat-room', {
+      debug('join-chat-room', {
         socketId: socket.id,
         userId: socket.userId,
         data: data
@@ -166,7 +158,7 @@ const handleConnection = (io) => {
     // Handle sending messages
     socket.on('send-message', async (data) => {
       const startTime = Date.now();
-      logSocket('send-message', {
+      debug('send-message', {
         socketId: socket.id,
         userId: socket.userId,
         messageType: data.messageType,
@@ -177,7 +169,9 @@ const handleConnection = (io) => {
       try {
         await handleSendMessage(socket, data, io);
 
-        chat('message_sent', data.chatRoomId, socket.userId, {
+        info(`Chat: message_sent in room ${data.chatRoomId}`, {
+          userId: socket.userId,
+          chatRoomId: data.chatRoomId,
           messageType: data.messageType,
           contentLength: data.content?.length,
           processingTime: `${Date.now() - startTime}ms`
@@ -198,7 +192,7 @@ const handleConnection = (io) => {
     socket.on('typing-start', async (data) => {
       const { chatRoomId } = data;
 
-      logSocket('typing-start', {
+      debug('typing-start', {
         socketId: socket.id,
         userId: socket.userId,
         chatRoomId
@@ -214,7 +208,7 @@ const handleConnection = (io) => {
     socket.on('typing-stop', async (data) => {
       const { chatRoomId } = data;
 
-      logSocket('typing-stop', {
+      debug('typing-stop', {
         socketId: socket.id,
         userId: socket.userId,
         chatRoomId
@@ -232,6 +226,7 @@ const handleConnection = (io) => {
       try {
         await handleMarkMessagesRead(socket, data, io);
       } catch (error) {
+        console.error('❌ Error in mark-messages-read handler:', error);
         socket.emit('error', { message: 'Failed to mark messages as read' });
       }
     });
@@ -435,35 +430,41 @@ const handleSendMessage = async (socket, data, io) => {
   });
 
   await message.save();
-
-  // Populate sender info including avatar
   await message.populate('senderId', 'firstname lastname role pic');
   if (replyTo) {
     await message.populate('replyTo');
   }
-
-  // Update chat room last message time
   chatRoom.lastMessageAt = new Date();
   
-  // Update unread counts
-  if (socket.userRole === 'Patient') {
+  // Increment unread count for the recipient (not the sender)
+  // Determine if sender is patient or doctor in this chat room
+  const isSenderPatient = chatRoom.patientId.toString() === socket.userId;
+  const isSenderDoctor = chatRoom.doctorId.toString() === socket.userId;
+  
+  if (isSenderPatient) {
+    // Patient sent message → increment Doctor's unread count
     chatRoom.unreadCountDoctor += 1;
-  } else {
+  } else if (isSenderDoctor) {
+    // Doctor sent message → increment Patient's unread count
     chatRoom.unreadCountPatient += 1;
+  } else {
+    // Sender is neither patient nor doctor in this room (shouldn't happen, but log it)
+    console.warn(`⚠️ Message sender ${socket.userId} (${socket.userRole}) is not a participant in chatRoom ${chatRoomId}`);
   }
   
   await chatRoom.save();
-
-  // Emit message to all users in the chat room
   io.to(`chat-${chatRoomId}`).emit('new-message', {
     message: {
+      _id: message._id,
       id: message._id,
       content: message.content,
       messageType: message.messageType,
       sender: message.senderId,
       senderRole: message.senderRole,
       createdAt: message.createdAt,
-      replyTo: message.replyTo
+      replyTo: message.replyTo,
+      isRead: message.isRead,
+      readAt: message.readAt
     },
     chatRoomId
   });
@@ -509,13 +510,20 @@ const handleMarkMessagesRead = async (socket, data, io) => {
       ? { unreadCountPatient: 0 }
       : { unreadCountDoctor: 0 };
 
-    await ChatRoom.findByIdAndUpdate(chatRoomId, updateField, { new: true });
+    await ChatRoom.findByIdAndUpdate(chatRoomId, updateField);
 
     // Notify other users that messages were read
     socket.to(`chat-${chatRoomId}`).emit('messages-read', {
       readBy: socket.userId,
       readByName: socket.userName,
       readAt: new Date()
+    });
+    
+    socket.emit('messages-read', {
+      readBy: socket.userId,
+      readByName: socket.userName,
+      readAt: new Date(),
+      chatRoomId: chatRoomId
     });
 
   } catch (error) {
@@ -586,20 +594,12 @@ const updateUserOnlineStatus = async (userId, isOnline) => {
     console.error('Error updating online status:', error);
   }
 };
-
-// Send message notification to offline users
 const sendMessageNotification = async (chatRoom, message, senderId) => {
-  try {
-    // Determine recipient
-    const recipientId = chatRoom.patientId.toString() === senderId 
+  try {    const recipientId = chatRoom.patientId.toString() === senderId 
       ? chatRoom.doctorId 
       : chatRoom.patientId;
-
-    // Check if recipient is online
     if (!activeUsers.has(recipientId.toString())) {
-      // Send push notification (implement based on your notification system)
-      // This could be email, SMS, or push notification
-      console.log(`Sending notification to offline user: ${recipientId}`);
+      // Recipient is offline - notification handling would go here
     }
   } catch (error) {
     console.error('Error sending message notification:', error);
@@ -611,3 +611,4 @@ module.exports = {
   handleConnection,
   activeUsers
 };
+

@@ -8,9 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Loading from "../../../components/Common/Loading/Loading";
 import fetchData, { apiCall } from "../../../helper/apiCall";
 import { jwtDecode } from "jwt-decode";
-import axios from "axios";
-
-axios.defaults.baseURL = process.env.REACT_APP_SERVER_DOMAIN;
+// Use the shared apiCall helper for all HTTP requests to ensure the correct /api base URL is used
 
 function Profile() {
   const { userId } = jwtDecode(localStorage.getItem("token"));
@@ -216,16 +214,9 @@ function Profile() {
         };
       }
 
+      // Use apiCall.put which already sets Authorization header and prefixes /api
       await toast.promise(
-        axios.put(
-          "/user/updateprofile",
-          updateData,
-          {
-            headers: {
-              authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        ),
+        apiCall.put("/user/updateprofile", updateData),
         {
           pending: "Updating profile...",
           success: "Profile updated successfully",

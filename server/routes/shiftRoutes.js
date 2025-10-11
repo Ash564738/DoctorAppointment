@@ -10,7 +10,9 @@ const {
   toggleSlotAvailability,
   getSchedulesByWeek,
   adminCreateShift,
-  adminDeleteShift
+  adminDeleteShift,
+  listPendingShiftRequests,
+  processShiftRequest
 } = require("../controllers/shiftController");
 const auth = require("../middleware/auth");
 const { body } = require('express-validator');
@@ -37,5 +39,7 @@ shiftRouter.get("/", getSchedulesByWeek);
 shiftRouter.patch("/slot/:slotId/toggle", auth,[body('isBlocked').isBoolean().withMessage('isBlocked must be a boolean'),body('blockReason').optional().trim().isLength({ max: 200 }).withMessage('Block reason too long')],toggleSlotAvailability);
 shiftRouter.post("/admin-create/:doctorId", auth, adminOnly, shiftValidation, adminCreateShift);
 shiftRouter.delete("/admin-delete/:shiftId", auth, adminOnly, adminDeleteShift);
+shiftRouter.get("/pending", auth, adminOnly, listPendingShiftRequests);
+shiftRouter.patch("/request/:id", auth, adminOnly, processShiftRequest);
 
 module.exports = shiftRouter;

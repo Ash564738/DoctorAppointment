@@ -1,17 +1,12 @@
-
-import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  SearchOutlined, 
   UserOutlined, 
   EyeOutlined,
   FileTextOutlined,
   CalendarOutlined,
-  EditOutlined,
   MedicineBoxOutlined,
   DownloadOutlined,
-  UploadOutlined,
-  PlusOutlined
+  UploadOutlined
 } from '../../../components/Common/Icons/Icons';
 import NavbarWrapper from '../../../components/Common/NavbarWrapper/NavbarWrapper';
 import Footer from '../../../components/Common/Footer/Footer';
@@ -20,26 +15,14 @@ import Empty from '../../../components/Common/Empty/Empty';
 import { apiCall } from '../../../helper/apiCall';
 import toast from 'react-hot-toast';
 import './PatientRecords.css';
+import PageHeader from '../../../components/Common/PageHeader/PageHeader';
 
 const PatientRecords = () => {
   const [records, setRecords] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);
-  const [refillLoading, setRefillLoading] = useState(null);
-  const handleRefillRequest = async (recordId, prescription) => {
-    if (!window.confirm("Request a refill for this prescription?")) return;
-    setRefillLoading(recordId + (prescription?._id || ''));
-    try {
-      const res = await apiCall.post(`/prescription/refill`, { recordId, prescriptionId: prescription?._id });
-      if (res.success) toast.success("Refill request sent");
-      else toast.error(res.message || "Failed to request refill");
-    } catch (e) {
-      toast.error("Failed to request refill");
-    } finally {
-      setRefillLoading(null);
-    }
-  };
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -52,14 +35,39 @@ const PatientRecords = () => {
     totalPrescriptions: 0,
     totalDiagnoses: 0
   });
-  const { userInfo } = useSelector((state) => state.root);
-  useEffect(() => {
-    fetchMedicalRecords();
+  const getDiagnosisArray = useCallback((diagnosis) => {
+    if (!diagnosis) return [];
+    if (Array.isArray(diagnosis)) {
+      return diagnosis
+        .map(d => (typeof d === 'string' ? d : d?.description || ''))
+        .filter(Boolean);
+    }
+    if (typeof diagnosis === 'string') {
+      return diagnosis.split(',').map(s => s.trim()).filter(Boolean);
+    }
+    return [];
   }, []);
-  useEffect(() => {
-    filterRecords();
-  }, [searchTerm, dateFilter, records]);
-  const fetchMedicalRecords = async () => {
+  const calculateStats = useCallback((recordsData) => {
+    const now = new Date();
+    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    const recentRecords = recordsData.filter(record => 
+      new Date(record.createdAt) >= oneMonthAgo
+    ).length;
+    const totalPrescriptions = recordsData.reduce((total, record) => {
+      const rx = Array.isArray(record.prescriptionIds) ? record.prescriptionIds : [];
+      const withMeds = rx.filter(p => Array.isArray(p?.medications) && p.medications.length > 0);
+      return total + withMeds.length;
+    }, 0);
+    const allDx = recordsData.flatMap(r => getDiagnosisArray(r.diagnosis));
+    const uniqueDiagnoses = new Set(allDx).size;
+    setStats({
+      totalRecords: recordsData.length,
+      recentRecords,
+      totalPrescriptions,
+      totalDiagnoses: uniqueDiagnoses
+    });
+  }, [getDiagnosisArray]);
+  const fetchMedicalRecords = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiCall.get('/medical-record/patient');
@@ -77,25 +85,8 @@ const PatientRecords = () => {
     } finally {
       setLoading(false);
     }
-  };
-  const calculateStats = (recordsData) => {
-    const now = new Date();
-    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-    const recentRecords = recordsData.filter(record => 
-      new Date(record.createdAt) >= oneMonthAgo
-    ).length;
-    const totalPrescriptions = recordsData.reduce((total, record) => 
-      total + (record.prescriptionIds ? record.prescriptionIds.length : 0), 0
-    );
-    const uniqueDiagnoses = new Set(recordsData.map(record => record.diagnosis)).size;
-    setStats({
-      totalRecords: recordsData.length,
-      recentRecords,
-      totalPrescriptions,
-      totalDiagnoses: uniqueDiagnoses
-    });
-  };
-  const filterRecords = () => {
+  }, [calculateStats]);
+  const filterRecords = useCallback(() => {
     let filtered = records;
     if (searchTerm) {
       filtered = filtered.filter(record => {
@@ -140,16 +131,47 @@ const PatientRecords = () => {
     }
     
     setFilteredRecords(filtered);
-  };
+  }, [records, searchTerm, dateFilter]);
+  useEffect(() => {
+    fetchMedicalRecords();
+  }, [fetchMedicalRecords]);
+  useEffect(() => {
+    filterRecords();
+  }, [filterRecords]);
 
-  const handleViewRecord = (record) => {
+  const handleViewRecord = async (record) => {
+    // Optimistically show basic details, then fetch full populated record
     setSelectedRecord(record);
     setIsModalVisible(true);
+    try {
+      setDetailLoading(true);
+      const res = await apiCall.get(`/medical-record/${record._id}`);
+      if (res?.success && res?.medicalRecord) {
+        setSelectedRecord(res.medicalRecord);
+      }
+    } catch (e) {
+      // Keep the basic record; toast is optional to avoid noise
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   const handleDownloadRecord = async (recordId) => {
     try {
-      toast.success('Download functionality would be implemented here');
+      const blob = await apiCall.get(`/medical-record/${recordId}/download`, { responseType: 'blob' });
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `medical-record-${recordId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        toast.success('Medical record download started');
+      } else {
+        toast.error('Failed to download medical record');
+      }
     } catch (error) {
       console.error('Error downloading record:', error);
       toast.error('Failed to download record');
@@ -194,39 +216,32 @@ const PatientRecords = () => {
     });
   };
 
-  // When displaying a record, show all required prescription and health metric fields
-  const renderPrescription = (presc) => (
-    <div className="patientRecords_prescriptionCard">
-      <div><strong>Medication:</strong> {presc.medication || presc.name}</div>
-      <div><strong>Dosage:</strong> {presc.dosage}</div>
-      <div><strong>Frequency:</strong> {presc.frequency}</div>
-      <div><strong>Duration:</strong> {presc.duration}</div>
-      <div><strong>Quantity:</strong> {presc.quantity}</div>
-      <div><strong>Instructions:</strong> {presc.instructions}</div>
-      <div><strong>Diagnosis:</strong> {presc.diagnosis}</div>
-      <div><strong>Symptoms:</strong> {presc.symptoms}</div>
-      <div><strong>Is Urgent:</strong> {presc.isUrgent ? 'Yes' : 'No'}</div>
-      <div><strong>Follow Up Date:</strong> {presc.followUpDate ? new Date(presc.followUpDate).toLocaleDateString() : '-'}</div>
-      <div><strong>Notes:</strong> {presc.notes}</div>
-    </div>
-  );
-
-  const renderHealthMetrics = (hm) => (
-    <div className="patientRecords_healthMetricsCard">
-      <div><strong>Blood Pressure:</strong> {hm.bloodPressure?.systolic || '-'} / {hm.bloodPressure?.diastolic || '-'} mmHg</div>
-      <div><strong>Heart Rate:</strong> {hm.heartRate || '-'}</div>
-      <div><strong>Temperature:</strong> {hm.temperature?.value || '-'}°{hm.temperature?.unit || 'C'}</div>
-      <div><strong>Weight:</strong> {hm.weight || '-'} kg</div>
-      <div><strong>Height:</strong> {hm.height || '-'} cm</div>
-      <div><strong>O2 Saturation:</strong> {hm.oxygenSaturation || '-'}%</div>
-      <div><strong>Respiratory Rate:</strong> {hm.respiratoryRate || '-'}</div>
-      <div><strong>Blood Sugar:</strong> {hm.bloodSugar?.value || '-'} {hm.bloodSugar?.unit || 'mg/dl'} ({hm.bloodSugar?.testType || '-'})</div>
-      <div><strong>Notes:</strong> {hm.notes}</div>
-      <div><strong>Recorded By:</strong> {hm.recordedBy}</div>
-      <div><strong>Recorded At:</strong> {hm.recordedAt ? new Date(hm.recordedAt).toLocaleString() : '-'}</div>
-    </div>
-  );
-
+  const statCards = [
+    {
+      label: 'Total Records',
+      value: stats.totalRecords,
+      icon: <FileTextOutlined />,
+      color: '#1d4ed8',
+    },
+    {
+      label: 'Recent Records',
+      value: stats.recentRecords,
+      icon: <CalendarOutlined />,
+      color: '#10b981'
+    },
+    {
+      label: 'Prescriptions',
+      value: stats.totalPrescriptions,
+      icon: <MedicineBoxOutlined />,
+      color: '#f57c00'
+    },
+    {
+      label: 'Unique Diagnoses',
+      value: stats.totalDiagnoses,
+      icon: <UserOutlined />,
+      color: '#8b5cf6'
+    }
+  ];
   return (
     <div className="patientRecords_page">
       <NavbarWrapper />
@@ -234,55 +249,33 @@ const PatientRecords = () => {
         <Loading />
       ) : (
         <div className="patientRecords_container">
-          <div className="patientRecords_header">
-            <h2 className="patientRecords_title">My Medical Records</h2>
-            <p className="patientRecords_subtitle">
-              Access and manage your medical history, prescriptions, and health documents
-            </p>
-          </div>
-
+          <PageHeader
+            title="My Medical Records"
+            subtitle="Access and manage your medical history, prescriptions, and health documents"
+            className="patientRecords_header"
+          />
           <div className="patientRecords_statsGrid">
-            <div className="patientRecords_statCard patientRecords_statCard--total">
-              <div className="patientRecords_statIcon">
-                <FileTextOutlined />
+            {statCards.map((card, idx) => (
+            <div
+                key={idx}
+                className="patientRecords_statCard"
+                style={{ borderLeftColor: card.color, cursor: 'pointer' }}
+              >
+                <div
+                  className="patientRecords_statIcon"
+                  style={{
+                    backgroundColor: card.color,
+                  }}
+                >
+                  {card.icon}
+                </div>
+                <div className="patientRecords_statContent">
+                  <h3 className="patientRecords_statNumber">{card.value}</h3>
+                  <p className="patientRecords_statLabel">{card.label}</p>
+                </div>
               </div>
-              <div className="patientRecords_statContent">
-                <h3 className="patientRecords_statNumber">{stats.totalRecords}</h3>
-                <p className="patientRecords_statLabel">Total Records</p>
-              </div>
-            </div>
-            
-            <div className="patientRecords_statCard patientRecords_statCard--recent">
-              <div className="patientRecords_statIcon">
-                <CalendarOutlined />
-              </div>
-              <div className="patientRecords_statContent">
-                <h3 className="patientRecords_statNumber">{stats.recentRecords}</h3>
-                <p className="patientRecords_statLabel">Recent (30 days)</p>
-              </div>
-            </div>
-            
-            <div className="patientRecords_statCard patientRecords_statCard--prescriptions">
-              <div className="patientRecords_statIcon">
-                <MedicineBoxOutlined />
-              </div>
-              <div className="patientRecords_statContent">
-                <h3 className="patientRecords_statNumber">{stats.totalPrescriptions}</h3>
-                <p className="patientRecords_statLabel">Prescriptions</p>
-              </div>
-            </div>
-            
-            <div className="patientRecords_statCard patientRecords_statCard--diagnoses">
-              <div className="patientRecords_statIcon">
-                <UserOutlined />
-              </div>
-              <div className="patientRecords_statContent">
-                <h3 className="patientRecords_statNumber">{stats.totalDiagnoses}</h3>
-                <p className="patientRecords_statLabel">Unique Diagnoses</p>
-              </div>
-            </div>
+            ))}
           </div>
-
           <div className="patientRecords_controls">
             <div className="patientRecords_searchGroup">
               <div className="patientRecords_searchContainer">
@@ -294,7 +287,6 @@ const PatientRecords = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              
               <select
                 className="patientRecords_filterSelect"
                 value={dateFilter}
@@ -331,10 +323,10 @@ const PatientRecords = () => {
                       <div className="patientRecords_cardTitle">
                         <FileTextOutlined className="patientRecords_cardIcon" />
                         <h3 className="patientRecords_cardHeading">
-                          {record.diagnosis && record.diagnosis.length > 0 
-                            ? record.diagnosis[0].description 
-                            : record.chiefComplaint || 'Medical Record'
-                          }
+                          {(() => {
+                            const dxArr = getDiagnosisArray(record.diagnosis);
+                            return dxArr[0] || record.chiefComplaint || 'Medical Record';
+                          })()}
                         </h3>
                       </div>
                       <div className="patientRecords_cardActions">
@@ -378,18 +370,26 @@ const PatientRecords = () => {
                       
                       <div className="patientRecords_cardDetails">
                         <span className="patientRecords_cardSymptoms">
-                          <strong>Symptoms:</strong> {record.chiefComplaint || record.symptoms || 'No symptoms recorded'}
+                          <strong>Summary:</strong> {record.symptoms || record.chiefComplaint || 'No information recorded'}
                         </span>
                         {record.prescriptionIds && record.prescriptionIds.length > 0 && (
                           <div className="patientRecords_prescriptions">
                             <strong>Prescriptions:</strong>
                             <div className="patientRecords_prescriptionTags">
-                              {record.prescriptionIds.slice(0, 2).map((prescriptionId, index) => (
-                                <span key={index} className="patientRecords_prescriptionTag">
-                                  Prescription #{index + 1}
-                                </span>
-                              ))}
-                              {record.prescriptionIds.length > 2 && (
+                              {(() => {
+                                const rx = Array.isArray(record.prescriptionIds) ? record.prescriptionIds : [];
+                                const withMeds = rx.filter(p => Array.isArray(p?.medications) && p.medications.length > 0);
+                                return withMeds.slice(0, 2).map((p, index) => {
+                                  const med = p.medications[0] || {};
+                                  const label = [med.name, med.dosage].filter(Boolean).join(' ');
+                                  return (
+                                    <span key={index} className="patientRecords_prescriptionTag">
+                                      {label || `Prescription #${index + 1}`}
+                                    </span>
+                                  );
+                                });
+                              })()}
+                              {Array.isArray(record.prescriptionIds) && record.prescriptionIds.length > 2 && (
                                 <span className="patientRecords_prescriptionTag patientRecords_prescriptionTag--more">
                                   +{record.prescriptionIds.length - 2} more
                                 </span>
@@ -415,7 +415,7 @@ const PatientRecords = () => {
         <div className="patientRecords_modal patientRecords_modal--visible">
           <div className="patientRecords_modalContent">
             <div className="patientRecords_modalHeader">
-              <h3 className="patientRecords_modalTitle">Medical Record Details</h3>
+              <h3 className="patientRecords_modalTitle">Medical Record Details {detailLoading ? '· Loading…' : ''}</h3>
               <button
                 className="patientRecords_closeBtn"
                 onClick={() => setIsModalVisible(false)}
@@ -431,12 +431,18 @@ const PatientRecords = () => {
                   <div className="patientRecords_detailGrid">
                     <div className="patientRecords_detailItem">
                       <label>Diagnosis:</label>
-                      <span>
-                        {selectedRecord.diagnosis && selectedRecord.diagnosis.length > 0
-                          ? selectedRecord.diagnosis.map(d => d.description).join(', ')
-                          : selectedRecord.chiefComplaint || 'No diagnosis recorded'
-                        }
-                      </span>
+                      <div className="patientRecords_badgeList">
+                        {(() => {
+                          const dxArr = getDiagnosisArray(selectedRecord.diagnosis);
+                          return dxArr.length > 0 ? (
+                            dxArr.map((dx, i) => (
+                              <span key={i} className="patientRecords_badge">{dx}</span>
+                            ))
+                          ) : (
+                            <span className="patientRecords_muted">No diagnosis recorded</span>
+                          );
+                        })()}
+                      </div>
                     </div>
                     <div className="patientRecords_detailItem">
                       <label>Date:</label>
@@ -452,34 +458,135 @@ const PatientRecords = () => {
                 </div>
                 
                 <div className="patientRecords_detailSection">
-                  <h4 className="patientRecords_sectionTitle">Symptoms</h4>
-                  <span className="patientRecords_detailText">{selectedRecord.chiefComplaint || selectedRecord.symptoms || 'No symptoms recorded'}</span>
+                  <h4 className="patientRecords_sectionTitle">Clinical Summary</h4>
+                  <div className="patientRecords_detailText">
+                    {selectedRecord.symptoms && (
+                      <div><strong>Symptoms:</strong> {selectedRecord.symptoms}</div>
+                    )}
+                    {selectedRecord.chiefComplaint && (
+                      <div><strong>Chief Complaint:</strong> {selectedRecord.chiefComplaint}</div>
+                    )}
+                    {!selectedRecord.symptoms && !selectedRecord.chiefComplaint && (
+                      <span className="patientRecords_muted">No clinical summary provided</span>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="patientRecords_detailSection">
                   <h4 className="patientRecords_sectionTitle">Treatment</h4>
-                  <span className="patientRecords_detailText">{selectedRecord.treatment}</span>
+                  <span className="patientRecords_detailText patientRecords_textWrap">{selectedRecord.treatment || 'No treatment recorded'}</span>
                 </div>
                 
-                {selectedRecord.prescriptionIds && selectedRecord.prescriptionIds.length > 0 && (
-                  <div className="patientRecords_detailSection">
-                    <h4 className="patientRecords_sectionTitle">Prescriptions</h4>
-                    <div className="patientRecords_prescriptionList">
-                      {selectedRecord.prescriptionIds.map((prescriptionId, index) => (
-                        <div key={index} className="patientRecords_prescriptionItem">
-                          <div className="patientRecords_prescriptionDetails">
-                            <span className="patientRecords_medicationName">
-                              Prescription #{index + 1}
-                            </span>
+                <div className="patientRecords_detailSection">
+                  <h4 className="patientRecords_sectionTitle">Prescriptions</h4>
+                  {(() => {
+                    const rx = Array.isArray(selectedRecord.prescriptionIds) ? selectedRecord.prescriptionIds : [];
+                    const withMeds = rx.filter(p => Array.isArray(p?.medications) && p.medications.length > 0);
+                    if (withMeds.length === 0) {
+                      return <span className="patientRecords_muted">No prescriptions recorded</span>;
+                    }
+                    return (
+                      <div className="patientRecords_prescriptionList">
+                        {withMeds.map((p, idx) => (
+                          <div key={p._id || idx} className="patientRecords_prescriptionItem">
+                            <div className="patientRecords_prescriptionDetails">
+                              <span className="patientRecords_medicationName">Prescription {idx + 1}</span>
+                              <div>
+                                {(p.medications || []).map((m, mi) => (
+                                  <div key={mi}>
+                                    <strong>{[m.name, m.dosage].filter(Boolean).join(' ')}</strong>
+                                    {m.frequency ? ` · ${m.frequency}` : ''}
+                                    {m.duration ? ` · ${m.duration}` : ''}
+                                    {m.quantity ? ` · #${m.quantity}` : ''}
+                                    {m.instructions ? (
+                                      <div className="patientRecords_muted">{m.instructions}</div>
+                                    ) : null}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
                           </div>
-                          <button
-                            className="patientRecords_actionBtn patientRecords_actionBtn--refill"
-                            style={{marginTop: 8}}
-                            onClick={() => handleRefillRequest(selectedRecord._id, { _id: prescriptionId })}
-                            disabled={refillLoading === selectedRecord._id + (prescriptionId || '')}
-                          >
-                            {refillLoading === selectedRecord._id + (prescriptionId || '') ? 'Requesting...' : 'Request Refill'}
-                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <div className="patientRecords_detailSection">
+                  <h4 className="patientRecords_sectionTitle">Assessment</h4>
+                  <span className="patientRecords_detailText patientRecords_textWrap">{selectedRecord.assessment || 'No assessment provided'}</span>
+                </div>
+
+                {selectedRecord.physicalExamination && (
+                  <div className="patientRecords_detailSection">
+                    <h4 className="patientRecords_sectionTitle">Physical Examination</h4>
+                    <div className="patientRecords_detailGrid">
+                      {Object.entries(selectedRecord.physicalExamination).filter(([,v]) => v).map(([k, v]) => (
+                        <div key={k} className="patientRecords_detailItem">
+                          <label>{k.charAt(0).toUpperCase() + k.slice(1)}:</label>
+                          <span>{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {Array.isArray(selectedRecord.healthMetricsIds) && selectedRecord.healthMetricsIds.length > 0 && (
+                  <div className="patientRecords_detailSection">
+                    <h4 className="patientRecords_sectionTitle">Vitals & Metrics</h4>
+                    <div className="patientRecords_detailGrid">
+                      {(() => {
+                        const hm = selectedRecord.healthMetricsIds[0];
+                        const rows = [];
+                        if (hm?.weight) rows.push(['Weight', `${hm.weight} kg`]);
+                        if (hm?.height) rows.push(['Height', `${hm.height} cm`]);
+                        if (hm?.bmi) rows.push(['BMI', `${hm.bmi}${hm.bmiCategory ? ` (${hm.bmiCategory})` : ''}`]);
+                        if (hm?.bloodPressure?.formatted || (hm?.bloodPressure?.systolic && hm?.bloodPressure?.diastolic)) {
+                          const bp = hm.bloodPressure.formatted || `${hm.bloodPressure.systolic}/${hm.bloodPressure.diastolic}`;
+                          rows.push(['Blood Pressure', `${bp}${hm.bloodPressureCategory ? ` (${hm.bloodPressureCategory})` : ''}`]);
+                        }
+                        if (hm?.heartRate) rows.push(['Heart Rate', `${hm.heartRate} bpm`]);
+                        if (hm?.temperature?.value) rows.push(['Temperature', `${hm.temperature.value}° ${hm.temperature.unit === 'fahrenheit' ? 'F' : 'C'}`]);
+                        if (hm?.oxygenSaturation) rows.push(['SpO2', `${hm.oxygenSaturation}%`]);
+                        if (hm?.respiratoryRate) rows.push(['Respiratory Rate', `${hm.respiratoryRate}/min`]);
+                        return rows.map(([label, val]) => (
+                          <div key={label} className="patientRecords_detailItem">
+                            <label>{label}:</label>
+                            <span>{val}</span>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {(selectedRecord.followUp_required || selectedRecord.followUp_timeframe || selectedRecord.followUp_instructions) && (
+                  <div className="patientRecords_detailSection">
+                    <h4 className="patientRecords_sectionTitle">Follow-up</h4>
+                    <div className="patientRecords_detailGrid">
+                      {selectedRecord.followUp_required !== undefined && (
+                        <div className="patientRecords_detailItem"><label>Required:</label><span>{selectedRecord.followUp_required ? 'Yes' : 'No'}</span></div>
+                      )}
+                      {selectedRecord.followUp_timeframe && (
+                        <div className="patientRecords_detailItem"><label>Timeframe:</label><span>{selectedRecord.followUp_timeframe}</span></div>
+                      )}
+                      {selectedRecord.followUp_instructions && (
+                        <div className="patientRecords_detailItem"><label>Instructions:</label><span className="patientRecords_textWrap">{selectedRecord.followUp_instructions}</span></div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {Array.isArray(selectedRecord.attachments) && selectedRecord.attachments.length > 0 && (
+                  <div className="patientRecords_detailSection">
+                    <h4 className="patientRecords_sectionTitle">Attachments</h4>
+                    <div className="patientRecords_detailGrid">
+                      {selectedRecord.attachments.map((a, i) => (
+                        <div key={i} className="patientRecords_detailItem">
+                          <label>{a.type ? a.type.replace('_', ' ') : 'Document'}:</label>
+                          <span>
+                            <a href={a.url} target="_blank" rel="noreferrer">{a.filename || a.url}</a>
+                          </span>
                         </div>
                       ))}
                     </div>

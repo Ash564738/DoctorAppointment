@@ -59,11 +59,11 @@ const medicalRecordSchema = mongoose.Schema(
         details: String
       },
     },
-      symptoms: {
-        type: String,
-        required: false,
-        maxlength: [1000, 'Symptoms description too long']
-      },
+    symptoms: {
+      type: String,
+      required: false,
+      maxlength: [1000, 'Symptoms description too long']
+    },
     allergies: [{
       allergen: String,
       reaction: String,
@@ -107,11 +107,6 @@ const medicalRecordSchema = mongoose.Schema(
       type: mongoose.SchemaTypes.ObjectId,
       ref: "Prescription"
     }],
-    followUp: {
-      required: Boolean,
-      timeframe: String,
-      instructions: String
-    },
     attachments: [{
       filename: String,
       url: String,

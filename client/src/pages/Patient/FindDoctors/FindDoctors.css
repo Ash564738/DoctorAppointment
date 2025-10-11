@@ -15,29 +15,16 @@
   gap: var(--spacing-md);
 }
 
-.findDoctors_content {
-
-}
-
-.findDoctors_heading {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  text-align: center;
-  color: #1f2937;
-  position: relative;
-  margin-bottom: var(--spacing-lg);
-}
-
-.findDoctors_heading::after {
+.findDoctors_header {
 }
 
 /* Enhanced Filters Section */
 .findDoctors_filtersSection {
-  background: #ffffff;
+  background: var(--white);
+  border: 1px solid rgba(0,0,0,0.05);
   border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
   padding: var(--spacing-lg);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
 }
 
 .findDoctors_searchWrapper {
@@ -161,15 +148,13 @@
   font-weight: var(--font-weight-medium);
 }
 
-/* Enhanced Results Section */
-.findDoctors_resultsInfo {
-}
 
 .findDoctors_resultsSummary {
-  background: #ffffff;
+  background: var(--white);
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
   padding: var(--spacing-lg);
-  border-radius: var(--border-radius-md);
-  border: 1px solid #e5e7eb;
 }
 
 .findDoctors_resultsSummary h3 {
@@ -405,18 +390,7 @@
     grid-template-columns: 1fr;
     gap: var(--spacing-md);
   }
-  .findDoctors_content {
-    padding: var(--spacing-lg) 0;
-  }
   .findDoctors_filtersSection {
     padding: var(--spacing-md);
   }
 }
-
-  .findDoctors_content {
-    padding: 2rem 0;
-  }
-
-  .findDoctors_filtersSection {
-    padding: 1rem;
-  }

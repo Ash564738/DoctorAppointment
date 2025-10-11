@@ -1,9 +1,5 @@
 /* Doctor Card Component Styles */
 .doctorCard_card {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
-  padding: 0;
   transition: all 0.3s ease;
   border: 1px solid #e2e8f0;
   width: 100%;
@@ -11,6 +7,18 @@
   margin: 0 auto;
   overflow: hidden;
   position: relative;
+
+
+
+
+  background: var(--white);
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+  gap: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
 }
 
 .doctorCard_card:hover {
@@ -24,7 +32,6 @@
 }
 
 .doctorCard_header {
-  padding: 20px;
   text-align: center;
   position: relative;
   background: white;
@@ -91,7 +98,6 @@
 }
 
 .doctorCard_content {
-  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -110,7 +116,7 @@
   color: var(--primary-color);
   font-weight: 600;
   text-align: center;
-  background: var(--light-blue);
+  background: var(--primary-color-light);
   padding: 0.5rem;
   border-radius: 8px;
 }
@@ -119,7 +125,6 @@
 .doctorCard_rating {
   text-align: center;
   border-radius: 10px;
-  margin-bottom: 0.5rem;
 }
 
 .doctorCard_ratingStars {
@@ -161,7 +166,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 10px 0;
+  padding: 10px;
   border-radius: 10px;
   transition: background-color 0.2s;
 }

@@ -1,55 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import NavbarWrapper from '../../../components/Common/NavbarWrapper/NavbarWrapper';
 import Footer from '../../../components/Common/Footer/Footer';
 import { apiCall } from '../../../helper/apiCall';
 import useAdminDoctorRequests from '../../../hooks/useAdminDoctorRequests';
 import './DoctorScheduling.css';
 
-const DEFAULT_SHIFT_CONFIG = {
-  day: {
-    startTime: "08:00",
-    endTime: "16:00",
-    breakStart: "12:00",
-    breakEnd: "13:00",
-    slotDuration: 30,
-    maxPatientsPerHour: 4,
-  },
-  night: {
-    startTime: "16:00",
-    endTime: "00:00",
-    breakStart: "20:00",
-    breakEnd: "21:00",
-    slotDuration: 30,
-    maxPatientsPerHour: 4,
-  }
-};
-
-function calculateSlotAndMaxPatients(startTime, endTime, breakStart, breakEnd) {
-  const toMinutes = t => {
-    const [h, m] = t.split(":").map(Number);
-    return h * 60 + m;
-  };
-  let start = toMinutes(startTime);
-  let end = toMinutes(endTime);
-  if (end <= start) end += 24 * 60;
-  let total = end - start;
-  if (breakStart && breakEnd) {
-    let bStart = toMinutes(breakStart);
-    let bEnd = toMinutes(breakEnd);
-    if (bEnd <= bStart) bEnd += 24 * 60;
-    total -= (bEnd - bStart);
-  }
-  const slotDuration = 30;
-  const maxPatientsPerHour = 4;
-  return { slotDuration, maxPatientsPerHour };
-}
+import { getCurrentWeek, getWeekDays } from './schedulingUtils';
+import FiltersBar from './FiltersBar';
+import TabsHeader from './TabsHeader';
+import ScheduleMatrix from './ScheduleMatrix';
+import LeaveRequestsTable from './LeaveRequestsTable';
+import OvertimeRequestsTable from './OvertimeRequestsTable';
+import SwapRequestsTable from './SwapRequestsTable';
+import ShiftRequestsTable from './ShiftRequestsTable';
+import CreateShiftModal from './CreateShiftModal';
+import PageHeader from '../../../components/Common/PageHeader/PageHeader';
 
 const DoctorScheduling = () => {
   const [doctors, setDoctors] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedDoctor, setSelectedDoctor] = useState('');
+  const [selectedDoctor, setSelectedDoctor] = useState(getCurrentWeek() && '');
   const [selectedWeek, setSelectedWeek] = useState(getCurrentWeek());
   const [showScheduleForm, setShowScheduleForm] = useState(false);
   const [scheduleForm, setScheduleForm] = useState({
@@ -69,7 +41,10 @@ const DoctorScheduling = () => {
   const [shiftType, setShiftType] = useState("");
   const [manualOverride, setManualOverride] = useState(false);
   const [activeTab, setActiveTab] = useState('schedule');
-
+  const [shiftRequests, setShiftRequests] = useState([]);
+  const [shiftReqLoading, setShiftReqLoading] = useState(false);
+  const [shiftReqError, setShiftReqError] = useState(null);
+  
   const {
     leaveRequests,
     overtimeRequests,
@@ -78,6 +53,8 @@ const DoctorScheduling = () => {
     error: requestsError,
     refetch: refetchRequests
   } = useAdminDoctorRequests();
+
+  const weekDays = useMemo(() => getWeekDays(selectedWeek), [selectedWeek]);
 
   useEffect(() => {
     fetchDoctors();
@@ -92,69 +69,17 @@ const DoctorScheduling = () => {
   }, [doctors]);
 
   useEffect(() => {
-    if (selectedDoctor) {
-      fetchSchedules();
-    }
+    fetchSchedules();
   }, [selectedDoctor, selectedWeek]);
-  useEffect(() => {
-    if (!showScheduleForm) return;
-    if (scheduleForm.doctorId && doctors.length > 0) {
-      const doc = doctors.find(d => d._id === scheduleForm.doctorId);
-      if (doc && doc.department && scheduleForm.department !== doc.department) {
-        setScheduleForm(prev => ({ ...prev, department: doc.department }));
-      }
-    }
-  }, [scheduleForm.doctorId, doctors, showScheduleForm]);
-  useEffect(() => {
-    if (!showScheduleForm || manualOverride) return;
-    if (shiftType === "day" || shiftType === "night") {
-      const config = DEFAULT_SHIFT_CONFIG[shiftType];
-      setScheduleForm(prev => ({
-        ...prev,
-        startTime: config.startTime,
-        endTime: config.endTime,
-        breakStart: config.breakStart,
-        breakEnd: config.breakEnd,
-        slotDuration: config.slotDuration,
-        maxPatientsPerHour: config.maxPatientsPerHour,
-      }));
-    } else if (shiftType === "both") {
-      setScheduleForm(prev => ({
-        ...prev,
-        startTime: DEFAULT_SHIFT_CONFIG.day.startTime,
-        endTime: DEFAULT_SHIFT_CONFIG.night.endTime,
-        breakStart: DEFAULT_SHIFT_CONFIG.day.breakStart,
-        breakEnd: DEFAULT_SHIFT_CONFIG.day.breakEnd,
-        slotDuration: DEFAULT_SHIFT_CONFIG.day.slotDuration,
-        maxPatientsPerHour: DEFAULT_SHIFT_CONFIG.day.maxPatientsPerHour,
-      }));
-    } else if (shiftType === "custom") {
-    }
-  }, [shiftType, manualOverride, showScheduleForm]);
-  useEffect(() => {
-    if (!showScheduleForm || manualOverride) return;
-    if (scheduleForm.startTime && scheduleForm.endTime) {
-      const { slotDuration, maxPatientsPerHour } = calculateSlotAndMaxPatients(
-        scheduleForm.startTime,
-        scheduleForm.endTime,
-        scheduleForm.breakStart,
-        scheduleForm.breakEnd
-      );
-      setScheduleForm(prev => ({
-        ...prev,
-        slotDuration,
-        maxPatientsPerHour,
-      }));
-    }
-  }, [scheduleForm.startTime, scheduleForm.endTime, scheduleForm.breakStart, scheduleForm.breakEnd, manualOverride, showScheduleForm]);
 
-  function getCurrentWeek() {
-    const today = new Date();
-    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
-    const result = startOfWeek.toISOString().split('T')[0];
-    console.log('📅 Current week start:', result);
-    return result;
-  }
+  useEffect(() => {
+    if (activeTab === 'leave' || activeTab === 'overtime' || activeTab === 'swap') {
+      refetchRequests();
+    }
+    if (activeTab === 'shiftRequests') {
+      fetchShiftRequests();
+    }
+  }, [activeTab]);
 
   const fetchDoctors = async () => {
     try {
@@ -175,18 +100,12 @@ const DoctorScheduling = () => {
   const fetchSchedules = async () => {
     try {
       setLoading(true);
-      let url = '/shift/all';
-      
-      const data = await apiCall.get(url);
-      console.log('🔍 API Response:', data);
-      
-      if (Array.isArray(data)) {
-        setSchedules(data);
-      } else if (data && Array.isArray(data.shifts)) {
-        setSchedules(data.shifts);
-      } else {
-        setSchedules([]);
-      }
+      const params = new URLSearchParams();
+      if (selectedWeek) params.set('weekStart', selectedWeek);
+      if (selectedDoctor) params.set('doctorId', selectedDoctor);
+      const data = await apiCall.get(`/shift?${params.toString()}`);
+      const list = Array.isArray(data?.schedules) ? data.schedules : [];
+      setSchedules(list);
     } catch (err) {
       setError('Failed to fetch schedules');
       console.error('Fetch schedules error:', err);
@@ -196,13 +115,28 @@ const DoctorScheduling = () => {
     }
   };
 
+  const fetchShiftRequests = async () => {
+    try {
+      setShiftReqLoading(true);
+      const res = await apiCall.get('/shift/pending');
+      setShiftRequests(Array.isArray(res?.shifts) ? res.shifts : []);
+      setShiftReqError(null);
+    } catch (e) {
+      console.error('Fetch shift requests error:', e);
+      setShiftRequests([]);
+      setShiftReqError('Failed to fetch shift requests');
+    } finally {
+      setShiftReqLoading(false);
+    }
+  };
+
   const handleAddSchedule = async () => {
     try {
       if (!scheduleForm.doctorId || !scheduleForm.title || !scheduleForm.startTime || !scheduleForm.endTime || scheduleForm.daysOfWeek.length === 0) {
         alert('Please fill in all required fields');
         return;
       }
-      const shiftData = {
+      const basePayload = {
         title: scheduleForm.title,
         startTime: scheduleForm.startTime,
         endTime: scheduleForm.endTime,
@@ -211,16 +145,50 @@ const DoctorScheduling = () => {
         slotDuration: scheduleForm.slotDuration,
         department: scheduleForm.department,
         specialNotes: scheduleForm.specialNotes,
-        breakTime: {
-          start: scheduleForm.breakStart,
-          end: scheduleForm.breakEnd
-        }
+        breakTime: (scheduleForm.breakStart && scheduleForm.breakEnd) ? { start: scheduleForm.breakStart, end: scheduleForm.breakEnd } : undefined,
       };
 
-      const response = await apiCall.post(`/shift/admin-create/${scheduleForm.doctorId}`, shiftData);
-      
+      const toMin = (t) => { const [h,m] = t.split(':').map(Number); return h*60+m; };
+      const startM = toMin(scheduleForm.startTime);
+      const endM = toMin(scheduleForm.endTime);
+
+      if (endM <= startM) {
+        const nextDayMap = {
+          Monday: 'Tuesday',
+          Tuesday: 'Wednesday',
+          Wednesday: 'Thursday',
+          Thursday: 'Friday',
+          Friday: 'Saturday',
+          Saturday: 'Sunday',
+          Sunday: 'Monday',
+        };
+        const nextDays = (basePayload.daysOfWeek || []).map(d => nextDayMap[d]).filter(Boolean);
+
+        const firstSegment = { ...basePayload, endTime: '23:59' };
+        if (basePayload.breakTime) {
+          const bS = toMin(basePayload.breakTime.start);
+          const bE = toMin(basePayload.breakTime.end);
+          const breakInFirst = bS >= startM && bE > bS; // same-day window
+          firstSegment.breakTime = breakInFirst ? basePayload.breakTime : undefined;
+        }
+        const createSecond = endM !== 0 && nextDays.length > 0;
+        const secondSegment = createSecond ? { ...basePayload, startTime: '00:00', endTime: basePayload.endTime, daysOfWeek: nextDays } : null;
+        if (secondSegment && basePayload.breakTime) {
+          const bS = toMin(basePayload.breakTime.start);
+          const bE = toMin(basePayload.breakTime.end);
+          const breakLikelySecond = bS < startM || bS === 0;
+          secondSegment.breakTime = breakLikelySecond ? basePayload.breakTime : undefined;
+        }
+
+        await apiCall.post(`/shift/admin-create/${scheduleForm.doctorId}`, firstSegment);
+        if (secondSegment) {
+          await apiCall.post(`/shift/admin-create/${scheduleForm.doctorId}`, secondSegment);
+        }
+      } else {
+        await apiCall.post(`/shift/admin-create/${scheduleForm.doctorId}`, basePayload);
+      }
+
       await fetchSchedules();
-      
       setShowScheduleForm(false);
       resetScheduleForm();
       alert('Schedule added successfully!');
@@ -261,97 +229,81 @@ const DoctorScheduling = () => {
     setManualOverride(false);
   };
 
-  const handleFormChange = (field, value) => {
-    setManualOverride(true);
-    setScheduleForm(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleDayChange = (day, checked) => {
-    setScheduleForm(prev => ({
-      ...prev,
-      daysOfWeek: checked 
-        ? [...prev.daysOfWeek, day]
-        : prev.daysOfWeek.filter(d => d !== day)
-    }));
-  };
-
-  const getWeekDays = (weekStart) => {
-    const days = [];
-    const start = new Date(weekStart);
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(start);
-      day.setDate(start.getDate() + i);
-      days.push(day);
-    }
-    return days;
-  };
-
-  const getScheduleForDay = (date, doctorId) => {
-    const dateStr = date.toISOString().split('T')[0];
-    const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-    console.log(`🗓️ Getting schedules for ${dateStr} (${dayName}), total schedules:`, schedules.length);
-    
-    // Ensure schedules is always an array before filtering
-    if (!Array.isArray(schedules)) {
-      console.log('❌ Schedules is not an array:', schedules);
-      return [];
-    }
-    
-    const filtered = schedules.filter(schedule => {
-      // Check if this schedule applies to the current day
-      const matchesDay = schedule.daysOfWeek && schedule.daysOfWeek.includes(dayName);
-      const matchesDoctor = !doctorId || schedule.doctorId === doctorId;
-      
-      const matches = matchesDay && matchesDoctor;
-      if (matches) {
-        console.log(`✅ Found schedule for ${dateStr} (${dayName}):`, schedule);
-      }
-      return matches;
-    });
-    
-    console.log(`📅 Schedules for ${dateStr}:`, filtered.length);
-    return filtered;
-  };
-
-  const formatTime = (time) => {
-    if (!time) return '';
-    return new Date(`1970-01-01T${time}`).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  // Approve/Reject/Cancel handlers for admin actions
   const handleApproveLeave = async (id) => {
     await apiCall.patch(`/leave/${id}/process`, { status: 'approved' });
     refetchRequests();
+    fetchSchedules();
   };
   const handleRejectLeave = async (id, reason) => {
     await apiCall.patch(`/leave/${id}/process`, { status: 'rejected', rejectionReason: reason });
     refetchRequests();
+    fetchSchedules();
   };
   const handleCancelLeave = async (id) => {
     await apiCall.patch(`/leave/${id}/cancel`, {});
     refetchRequests();
+    fetchSchedules();
   };
   const handleApproveOvertime = async (id) => {
-    await apiCall.patch(`/overtime/${id}/status`, { status: 'approved' });
-    refetchRequests();
+    try {
+      await apiCall.patch(`/overtime/${id}/status`, { status: 'approved' });
+      refetchRequests();
+      fetchSchedules();
+    } catch (e) {
+      console.error('Approve overtime error:', e);
+      alert(`Failed to approve overtime: ${e.response?.data?.message || e.message}`);
+    }
   };
   const handleRejectOvertime = async (id, reason) => {
-    await apiCall.patch(`/overtime/${id}/status`, { status: 'rejected', adminComment: reason });
-    refetchRequests();
+    try {
+      await apiCall.patch(`/overtime/${id}/status`, { status: 'rejected', adminComment: reason || '' });
+      refetchRequests();
+      fetchSchedules();
+    } catch (e) {
+      console.error('Reject overtime error:', e);
+      alert(`Failed to reject overtime: ${e.response?.data?.message || e.message}`);
+    }
   };
   const handleApproveSwap = async (id) => {
-    await apiCall.patch(`/shift-swap/${id}/status`, { status: 'approved' });
-    refetchRequests();
+    try {
+      await apiCall.patch(`/shift-swap/${id}/status`, { status: 'approved' });
+      refetchRequests();
+      fetchSchedules();
+    } catch (e) {
+      console.error('Approve swap error:', e);
+      alert(`Failed to approve swap: ${e.response?.data?.message || e.message}`);
+    }
+  };
+
+  const handleApproveShiftRequest = async (id) => {
+    try {
+      await apiCall.patch(`/shift/request/${id}`, { decision: 'approved' });
+      fetchShiftRequests();
+      fetchSchedules();
+    } catch (e) {
+      console.error('Approve shift request error:', e);
+      alert(`Failed to approve shift request: ${e.response?.data?.message || e.message}`);
+    }
+  };
+
+  const handleRejectShiftRequest = async (id, reason) => {
+    try {
+      await apiCall.patch(`/shift/request/${id}`, { decision: 'rejected', adminComment: reason || '' });
+      fetchShiftRequests();
+    } catch (e) {
+      console.error('Reject shift request error:', e);
+      alert(`Failed to reject shift request: ${e.response?.data?.message || e.message}`);
+    }
   };
   const handleRejectSwap = async (id, reason) => {
-    await apiCall.patch(`/shift-swap/${id}/status`, { status: 'rejected', adminComment: reason });
-    refetchRequests();
+    try {
+      await apiCall.patch(`/shift-swap/${id}/status`, { status: 'rejected', adminComment: reason || '' });
+      refetchRequests();
+      fetchSchedules();
+    } catch (e) {
+      console.error('Reject swap error:', e);
+      alert(`Failed to reject swap: ${e.response?.data?.message || e.message}`);
+    }
   };
 
   if (loading && schedules.length === 0) {
@@ -397,206 +349,95 @@ const DoctorScheduling = () => {
     <div className="doctorScheduling_page">
       <NavbarWrapper />
       <div className="doctorScheduling_container">
-        <div className="doctorScheduling_header">
-          <div>
-            <h1 className="doctorScheduling_title">Doctor Scheduling</h1>
-            <p className="doctorScheduling_description">
-              Manage doctor schedules, availability, and time slots
-            </p>
-          </div>
-          <button 
-            className="doctorScheduling_addButton"
-            onClick={() => {
-              setShowScheduleForm(true);
-              resetScheduleForm();
-            }}
-          >
-            Add Schedule
-          </button>
+        <PageHeader
+          title="Doctor Scheduling"
+          subtitle="Manage doctor schedules, availability, and time slots"
+          className="doctorScheduling_header"
+          actions={(
+            <button 
+              className="doctorScheduling_addButton"
+              onClick={() => {
+                setShowScheduleForm(true);
+                resetScheduleForm();
+              }}
+            >
+              Add Schedule
+            </button>
+          )}
+        />
+
+        <FiltersBar
+          doctors={doctors}
+          selectedDoctor={selectedDoctor}
+          onDoctorChange={setSelectedDoctor}
+          selectedWeek={selectedWeek}
+          onWeekChange={setSelectedWeek}
+        />
+
+        <div className="doctorScheduling_section">
+          <TabsHeader activeTab={activeTab} onChange={setActiveTab} />
+
+          {activeTab === 'schedule' && (
+            <>
+              <ScheduleMatrix
+                doctors={(selectedDoctor ? doctors.filter(d => d.userId?._id === selectedDoctor) : doctors)}
+                leaveRequests={leaveRequests}
+                overtimeRequests={overtimeRequests}
+                swapRequests={swapRequests}
+                weekDays={weekDays}
+                schedules={schedules}
+                onDeleteSchedule={handleDeleteSchedule}
+              />
+            </>
+          )}
+
+          {activeTab === 'leave' && (
+            <>
+              {requestsLoading ? <div className="doctorScheduling_requestsLoading">Loading...</div> : null}
+              {requestsError ? <div className="doctorScheduling_requestsError">{requestsError}</div> : null}
+              <LeaveRequestsTable leaveRequests={leaveRequests} onApprove={handleApproveLeave} onReject={handleRejectLeave} />
+            </>
+          )}
+
+          {activeTab === 'overtime' && (
+            <>
+              {requestsLoading ? <div className="doctorScheduling_requestsLoading">Loading...</div> : null}
+              {requestsError ? <div className="doctorScheduling_requestsError">{requestsError}</div> : null}
+              <OvertimeRequestsTable overtimeRequests={overtimeRequests} onApprove={handleApproveOvertime} onReject={handleRejectOvertime} />
+            </>
+          )}
+
+          {activeTab === 'swap' && (
+            <>
+              {requestsLoading ? <div className="doctorScheduling_requestsLoading">Loading...</div> : null}
+              {requestsError ? <div className="doctorScheduling_requestsError">{requestsError}</div> : null}
+              <SwapRequestsTable swapRequests={swapRequests} onApprove={handleApproveSwap} onReject={handleRejectSwap} />
+            </>
+          )}
+
+          {activeTab === 'shiftRequests' && (
+            <>
+              {shiftReqLoading ? <div className="doctorScheduling_requestsLoading">Loading...</div> : null}
+              {shiftReqError ? <div className="doctorScheduling_requestsError">{shiftReqError}</div> : null}
+              <ShiftRequestsTable requests={shiftRequests} onApprove={handleApproveShiftRequest} onReject={handleRejectShiftRequest} loading={shiftReqLoading} />
+            </>
+          )}
         </div>
-        {/* Tabs for admin management */}
-        <div className="doctorScheduling_tabs">
-          <button className={`doctorScheduling_tabButton${activeTab === 'schedule' ? ' active' : ''}`} onClick={() => setActiveTab('schedule')}>Schedules</button>
-          <button className={`doctorScheduling_tabButton${activeTab === 'leave' ? ' active' : ''}`} onClick={() => setActiveTab('leave')}>Leave Requests</button>
-          <button className={`doctorScheduling_tabButton${activeTab === 'overtime' ? ' active' : ''}`} onClick={() => setActiveTab('overtime')}>Overtime Requests</button>
-          <button className={`doctorScheduling_tabButton${activeTab === 'swap' ? ' active' : ''}`} onClick={() => setActiveTab('swap')}>Shift Swap Requests</button>
-        </div>
-        {/* Tab Content */}
-        {activeTab === 'schedule' && (
-          <>
-            {/* Schedule Calendar */}
-            <div className="doctorScheduling_section">
-              <div className="doctorScheduling_sectionHeader">
-                <h2 className="doctorScheduling_sectionTitle">Weekly Schedule</h2>
-              </div>
-              <div className="doctorScheduling_calendar">
-                <div className="doctorScheduling_calendarHeader">
-                  {getWeekDays(selectedWeek).map((day, index) => (
-                    <div key={index} className="doctorScheduling_dayHeader">
-                      <div className="doctorScheduling_dayName">
-                        {day.toLocaleDateString([], { weekday: 'short' })}
-                      </div>
-                      <div className="doctorScheduling_dayDate">
-                        {day.toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="doctorScheduling_calendarBody">
-                  {getWeekDays(selectedWeek).map((day, dayIndex) => (
-                    <div key={dayIndex} className="doctorScheduling_dayColumn">
-                      {getScheduleForDay(day, selectedDoctor).map((schedule, scheduleIndex) => (
-                        <div key={scheduleIndex} className="doctorScheduling_scheduleCard">
-                          <div className="doctorScheduling_scheduleHeader">
-                            <span className="doctorScheduling_doctorName">
-                              {schedule.doctorId?.firstname && schedule.doctorId?.lastname 
-                                ? `Dr. ${schedule.doctorId.firstname} ${schedule.doctorId.lastname}`
-                                : schedule.doctorName || 'Unknown Doctor'}
-                            </span>
-                            <span className="doctorScheduling_scheduleTitle">
-                              {schedule.title}
-                            </span>
-                          </div>
-                          <div className="doctorScheduling_scheduleTime">
-                            {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
-                          </div>
-                          {schedule.breakStart && schedule.breakEnd && (
-                            <div className="doctorScheduling_breakTime">
-                              Break: {formatTime(schedule.breakStart)} - {formatTime(schedule.breakEnd)}
-                            </div>
-                          )}
-                          <div className="doctorScheduling_scheduleInfo">
-                            <div className="doctorScheduling_infoRow">
-                              Max: {schedule.maxPatientsPerHour || schedule.maxPatients || 'N/A'}/hour
-                            </div>
-                            <div className="doctorScheduling_infoRow">
-                              Slot: {schedule.slotDuration || 30} min
-                            </div>
-                            {schedule.department && (
-                              <div className="doctorScheduling_infoRow">
-                                Dept: {schedule.department}
-                              </div>
-                            )}
-                          </div>
-                          {schedule.specialNotes && (
-                            <div className="doctorScheduling_scheduleNotes">
-                              {schedule.specialNotes}
-                            </div>
-                          )}
-                          <div className="doctorScheduling_scheduleActions">
-                            <button 
-                              className="doctorScheduling_deleteButton"
-                              onClick={() => handleDeleteSchedule(schedule._id, schedule.shiftId)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                      {getScheduleForDay(day, selectedDoctor).length === 0 && (
-                        <div className="doctorScheduling_noSchedule">
-                          No schedules
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-        {activeTab === 'leave' && (
-          <div>
-            {requestsLoading ? <div className="doctorScheduling_requestsLoading">Loading...</div> : null}
-            {requestsError ? <div className="doctorScheduling_requestsError">{requestsError}</div> : null}
-            <table className="doctorScheduling_requestsTable">
-              <thead>
-                <tr>
-                  <th>Doctor</th><th>Type</th><th>From</th><th>To</th><th>Status</th><th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leaveRequests.map(lr => (
-                  <tr key={lr._id}>
-                    <td>{lr.doctorId?.firstname} {lr.doctorId?.lastname}</td>
-                    <td>{lr.leaveType}</td>
-                    <td>{new Date(lr.startDate).toLocaleDateString()}</td>
-                    <td>{new Date(lr.endDate).toLocaleDateString()}</td>
-                    <td>{lr.status}</td>
-                    <td>
-                      {lr.status === 'pending' && <>
-                        <button className="doctorScheduling_actionButton" onClick={() => handleApproveLeave(lr._id)}>Approve</button>
-                        <button className="doctorScheduling_actionButton reject" onClick={() => handleRejectLeave(lr._id, prompt('Rejection reason?'))}>Reject</button>
-                      </>}
-                      {lr.status === 'approved' && <button className="doctorScheduling_actionButton cancel" onClick={() => handleCancelLeave(lr._id)}>Cancel</button>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {activeTab === 'overtime' && (
-          <div>
-            {requestsLoading ? <div className="doctorScheduling_requestsLoading">Loading...</div> : null}
-            {requestsError ? <div className="doctorScheduling_requestsError">{requestsError}</div> : null}
-            <table className="doctorScheduling_requestsTable">
-              <thead>
-                <tr>
-                  <th>Doctor</th><th>Date</th><th>Hours</th><th>Status</th><th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {overtimeRequests.map(ot => (
-                  <tr key={ot._id}>
-                    <td>{ot.doctorId?.firstname} {ot.doctorId?.lastname}</td>
-                    <td>{new Date(ot.date).toLocaleDateString()}</td>
-                    <td>{ot.hours}</td>
-                    <td>{ot.status}</td>
-                    <td>
-                      {ot.status === 'pending' && <>
-                        <button className="doctorScheduling_actionButton" onClick={() => handleApproveOvertime(ot._id)}>Approve</button>
-                        <button className="doctorScheduling_actionButton reject" onClick={() => handleRejectOvertime(ot._id, prompt('Rejection reason?'))}>Reject</button>
-                      </>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {activeTab === 'swap' && (
-          <div>
-            {requestsLoading ? <div className="doctorScheduling_requestsLoading">Loading...</div> : null}
-            {requestsError ? <div className="doctorScheduling_requestsError">{requestsError}</div> : null}
-            <table className="doctorScheduling_requestsTable">
-              <thead>
-                <tr>
-                  <th>Requester</th><th>Swap With</th><th>Original Shift</th><th>Requested Shift</th><th>Status</th><th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {swapRequests.map(sw => (
-                  <tr key={sw._id}>
-                    <td>{sw.requesterId?.firstname} {sw.requesterId?.lastname}</td>
-                    <td>{sw.swapWithId?.firstname} {sw.swapWithId?.lastname}</td>
-                    <td>{sw.originalShiftId?.title}</td>
-                    <td>{sw.requestedShiftId?.title}</td>
-                    <td>{sw.status}</td>
-                    <td>
-                      {sw.status === 'pending' && <>
-                        <button className="doctorScheduling_actionButton" onClick={() => handleApproveSwap(sw._id)}>Approve</button>
-                        <button className="doctorScheduling_actionButton reject" onClick={() => handleRejectSwap(sw._id, prompt('Rejection reason?'))}>Reject</button>
-                      </>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
       <Footer />
+
+      <CreateShiftModal
+        open={showScheduleForm}
+        onClose={() => setShowScheduleForm(false)}
+        doctors={doctors}
+        scheduleForm={scheduleForm}
+        setScheduleForm={setScheduleForm}
+        shiftType={shiftType}
+        setShiftType={setShiftType}
+        manualOverride={manualOverride}
+        setManualOverride={setManualOverride}
+        onCreate={handleAddSchedule}
+      />
     </div>
   );
 };

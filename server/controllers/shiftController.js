@@ -3,6 +3,9 @@ const TimeSlot = require("../models/timeSlotModel");
 const User = require("../models/userModel");
 const Notification = require("../models/notificationModel");
 const Doctor = require("../models/doctorModel");
+const LeaveRequest = require("../models/leaveRequestModel");
+const Overtime = require("../models/overtimeModel");
+const ShiftSwap = require("../models/shiftSwapModel");
 const { validationResult } = require('express-validator');
 
 const isAdmin = user => user && user.role && user.role.toLowerCase() === 'admin';
@@ -92,15 +95,17 @@ const createShift = async (req, res) => {
       slotDuration: slotDuration || 30,
       department: department || 'General',
       specialNotes,
-      breakTime
+      breakTime,
+      status: 'pending',
+      requestedBy: req.user._id
     });
 
     await shift.save();
 
-    // --- Notify doctor about new shift ---
+    // --- Notify doctor about pending shift ---
     await Notification.create({
       userId: req.user._id,
-      content: `A new shift "${shift.title}" has been created for you.`
+      content: `Your shift request "${shift.title}" was submitted and is pending approval.`
     });
 
     res.status(201).json({
@@ -114,6 +119,50 @@ const createShift = async (req, res) => {
       success: false,
       message: error.message || 'Unable to create shift'
     });
+  }
+};
+
+// Admin: list pending shift requests
+const listPendingShiftRequests = async (req, res) => {
+  try {
+    if (!isAdmin(req.user)) return res.status(403).json({ success: false, message: 'Admin only' });
+    const shifts = await Shift.find({ status: 'pending', isActive: true })
+      .populate('doctorId', 'firstname lastname email')
+      .populate('requestedBy', 'firstname lastname email')
+      .sort({ createdAt: -1 })
+      .lean();
+    res.json({ success: true, shifts });
+  } catch (e) {
+    console.error('List pending shift requests error:', e);
+    res.status(500).json({ success: false, message: 'Unable to fetch pending shifts' });
+  }
+};
+
+// Admin: approve/reject pending shift request
+const processShiftRequest = async (req, res) => {
+  try {
+    if (!isAdmin(req.user)) return res.status(403).json({ success: false, message: 'Admin only' });
+    const { id } = req.params;
+    const { decision, adminComment } = req.body; // 'approved' | 'rejected'
+    const shift = await Shift.findById(id);
+    if (!shift) return res.status(404).json({ success: false, message: 'Shift not found' });
+    if (shift.status !== 'pending') return res.status(400).json({ success: false, message: 'Shift is not pending' });
+    if (decision !== 'approved' && decision !== 'rejected') {
+      return res.status(400).json({ success: false, message: 'Invalid decision' });
+    }
+    shift.status = decision;
+    shift.adminComment = adminComment || '';
+    await shift.save();
+    try {
+      await Notification.create({
+        userId: shift.requestedBy || shift.doctorId,
+        content: `Your shift request "${shift.title}" was ${decision}${adminComment ? `: ${adminComment}` : ''}.`
+      });
+    } catch (_) {}
+    res.json({ success: true, message: `Shift ${decision}`, shift });
+  } catch (e) {
+    console.error('Process shift request error:', e);
+    res.status(500).json({ success: false, message: 'Unable to process shift request' });
   }
 };
 
@@ -224,10 +273,15 @@ const getAvailableSlots = async (req, res) => {
     .populate('shiftId', 'title department')
     .sort({ startTime: 1 })
     .lean();
+    const available = slots.filter(slot => {
+      const max = typeof slot.maxPatients === 'number' ? slot.maxPatients : 0;
+      const booked = typeof slot.bookedPatients === 'number' ? slot.bookedPatients : 0;
+      return booked < max;
+    });
 
     res.json({
       success: true,
-      slots: slots.filter(slot => slot.canAcceptBooking())
+      slots: available
     });
   } catch (error) {
     console.error('Get available slots error:', error);
@@ -383,41 +437,132 @@ const toggleSlotAvailability = async (req, res) => {
 };
 
 const getSchedulesByWeek = async (req, res) => {
-  console.log('🔥 getSchedulesByWeek controller called');
-  console.log('📥 Query params:', req.query);
-  
   try {
-    const { week, weekStart, doctorId } = req.query;
-    console.log('📅 Week params:', { week, weekStart, doctorId });
-    
-    const shifts = await Shift.find({ isActive: true })
+  const { week, weekStart, doctorId } = req.query;
+    const toLocalDateString = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${dd}`;
+    };
+    let start = (() => {
+      if (week || weekStart) {
+        const s = (week || weekStart);
+        const [yy, mm, dd] = s.split('-').map(Number);
+        return new Date(yy, (mm || 1) - 1, dd || 1, 0, 0, 0, 0);
+      }
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    })();
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+
+    const shifts = await Shift.find({ isActive: true, $or: [{ status: 'approved' }, { status: { $exists: false } }] })
       .populate('doctorId', 'firstname lastname email')
       .sort({ createdAt: -1 });
-      
-    console.log('📊 Found shifts:', shifts.length);
 
-    // Transform shifts to schedule format for frontend
-    const schedules = [];
-    const startOfWeek = week || weekStart ? new Date(week || weekStart) : new Date();
-    console.log('📅 Using week start:', startOfWeek);
+    // Preload approved leaves within the week
+    const approvedLeaves = await LeaveRequest.find({
+      status: 'approved',
+      startDate: { $lte: end },
+      endDate: { $gte: start }
+    }).select('doctorId startDate endDate').lean();
+    const leaveSet = new Set(); // key: doctorId_dateStr (local)
+    approvedLeaves.forEach(l => {
+      const s = new Date(l.startDate); s.setHours(0,0,0,0);
+      const e = new Date(l.endDate); e.setHours(0,0,0,0);
+      for (let d = new Date(s); d <= e; d.setDate(d.getDate()+1)) {
+        const key = `${l.doctorId.toString()}_${toLocalDateString(d)}`;
+        leaveSet.add(key);
+      }
+    });
+
+    // Preload approved overtime within the week
+    const approvedOvertime = await Overtime.find({
+      status: 'approved',
+      date: { $gte: start, $lte: end }
+    }).select('doctorId shiftId date hours').lean();
+    const overtimeMap = new Map(); // key: shiftId_date_doctorId (local) -> hours
+    approvedOvertime.forEach(ot => {
+      const dateStr = toLocalDateString(new Date(ot.date));
+      overtimeMap.set(`${ot.shiftId.toString()}_${dateStr}_${ot.doctorId.toString()}`, ot.hours);
+    });
+
+    // Preload approved swaps within the week (single date or date range)
+    const approvedSwaps = await ShiftSwap.find({
+      status: 'approved',
+      $or: [
+        { swapDate: { $gte: start, $lte: end } },
+        { swapStartDate: { $lte: end }, swapEndDate: { $gte: start } }
+      ]
+    })
+      .populate('requesterId swapWithId', 'firstname lastname')
+      .select('originalShiftId requestedShiftId requesterId swapWithId swapDate swapStartDate swapEndDate swapType')
+      .lean();
+    const swapMap = new Map(); // key: shiftId_date (local) -> { userId, name }
+    const iterRange = (s, e, fn) => {
+      const startD = new Date(s); startD.setHours(0,0,0,0);
+      const endD = new Date(e); endD.setHours(0,0,0,0);
+      for (let d = new Date(startD); d <= endD; d.setDate(d.getDate()+1)) fn(new Date(d));
+    };
+    approvedSwaps.forEach(sw => {
+      if (sw.swapDate) {
+        const dateStr = toLocalDateString(new Date(sw.swapDate));
+        swapMap.set(`${sw.originalShiftId.toString()}_${dateStr}`, {
+          userId: sw.swapWithId._id ? sw.swapWithId._id.toString() : sw.swapWithId.toString(),
+          name: sw.swapWithId.firstname ? `${sw.swapWithId.firstname} ${sw.swapWithId.lastname}` : ''
+        });
+        if (sw.swapType === 'trade' && sw.requestedShiftId) {
+          swapMap.set(`${sw.requestedShiftId.toString()}_${dateStr}`, {
+            userId: sw.requesterId._id ? sw.requesterId._id.toString() : sw.requesterId.toString(),
+            name: sw.requesterId.firstname ? `${sw.requesterId.firstname} ${sw.requesterId.lastname}` : ''
+          });
+        }
+      } else if (sw.swapStartDate && sw.swapEndDate) {
+        iterRange(sw.swapStartDate, sw.swapEndDate, (d) => {
+          const dateStr = toLocalDateString(d);
+          swapMap.set(`${sw.originalShiftId.toString()}_${dateStr}`, {
+            userId: sw.swapWithId._id ? sw.swapWithId._id.toString() : sw.swapWithId.toString(),
+            name: sw.swapWithId.firstname ? `${sw.swapWithId.firstname} ${sw.swapWithId.lastname}` : ''
+          });
+          if (sw.swapType === 'trade' && sw.requestedShiftId) {
+            swapMap.set(`${sw.requestedShiftId.toString()}_${dateStr}`, {
+              userId: sw.requesterId._id ? sw.requesterId._id.toString() : sw.requesterId.toString(),
+              name: sw.requesterId.firstname ? `${sw.requesterId.firstname} ${sw.requesterId.lastname}` : ''
+            });
+          }
+        });
+      }
+    });
+
+  const schedules = [];
     
-    // Generate 7 days from the start of the week
     for (let i = 0; i < 7; i++) {
-      const currentDate = new Date(startOfWeek);
-      currentDate.setDate(startOfWeek.getDate() + i);
+      const currentDate = new Date(start);
+      currentDate.setDate(start.getDate() + i);
       const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
-      const dateStr = currentDate.toISOString().split('T')[0];
+      const dateStr = toLocalDateString(currentDate);
 
-      // Find shifts that apply to this day
       shifts.forEach(shift => {
         if (shift.daysOfWeek.includes(dayName)) {
-          // Filter by doctor if specified
-          if (!doctorId || shift.doctorId._id.toString() === doctorId) {
+          let effDoctorId = shift.doctorId._id.toString();
+          let effDoctorName = `${shift.doctorId.firstname} ${shift.doctorId.lastname}`;
+          const swapKey = `${shift._id.toString()}_${dateStr}`;
+          if (swapMap.has(swapKey)) {
+            const swUser = swapMap.get(swapKey);
+            effDoctorId = swUser.userId;
+            effDoctorName = swUser.name || effDoctorName;
+          }
+          if (!doctorId || effDoctorId === doctorId) {
+            if (leaveSet.has(`${effDoctorId}_${dateStr}`)) {
+              return;
+            }
             schedules.push({
-              _id: `${shift._id}_${dateStr}`, // Unique ID for this schedule instance
+              _id: `${shift._id}_${dateStr}`,
               shiftId: shift._id,
-              doctorId: shift.doctorId._id.toString(),
-              doctorName: `${shift.doctorId.firstname} ${shift.doctorId.lastname}`,
+              doctorId: effDoctorId,
+              doctorName: effDoctorName,
               date: dateStr,
               dayName: dayName,
               startTime: shift.startTime,
@@ -431,13 +576,40 @@ const getSchedulesByWeek = async (req, res) => {
               specialNotes: shift.specialNotes,
               status: 'available'
             });
+            const otKey = `${shift._id.toString()}_${dateStr}_${effDoctorId}`;
+            if (overtimeMap.has(otKey)) {
+              const hours = overtimeMap.get(otKey);
+              const addMinutes = Math.round(Number(hours) * 60);
+              const [eh, em] = shift.endTime.split(':').map(Number);
+              let endTotal = eh * 60 + em + addMinutes;
+              if (endTotal > 24 * 60) endTotal = 24 * 60; // clamp to end of day
+              const newEndH = String(Math.floor(endTotal / 60)).padStart(2, '0');
+              const newEndM = String(endTotal % 60).padStart(2, '0');
+              const extendedEnd = `${newEndH}:${newEndM === '60' ? '59' : newEndM}`;
+              schedules.push({
+                _id: `${shift._id}_${dateStr}_ot`,
+                shiftId: shift._id,
+                doctorId: effDoctorId,
+                doctorName: effDoctorName,
+                date: dateStr,
+                dayName: dayName,
+                startTime: shift.endTime,
+                endTime: extendedEnd,
+                breakStart: '',
+                breakEnd: '',
+                maxPatients: shift.maxPatientsPerHour,
+                slotDuration: shift.slotDuration,
+                department: shift.department,
+                title: `${shift.title} (Overtime)`,
+                specialNotes: shift.specialNotes,
+                status: 'overtime'
+              });
+            }
           }
         }
       });
     }
 
-    console.log('✅ Generated schedules:', schedules.length);
-    console.log('📝 First schedule sample:', schedules[0]);
     
     res.json({
       success: true,
@@ -452,7 +624,6 @@ const getSchedulesByWeek = async (req, res) => {
   }
 };
 
-// Admin-specific functions
 const adminCreateShift = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -480,7 +651,6 @@ const adminCreateShift = async (req, res) => {
       });
     }
     const userId = doctorDoc.userId;
-
     const {
       title,
       startTime,
@@ -492,7 +662,6 @@ const adminCreateShift = async (req, res) => {
       specialNotes,
       breakTime
     } = req.body;
-
     const user = await User.findById(userId);
     if (!user || user.role !== 'Doctor') {
       return res.status(404).json({
@@ -500,7 +669,6 @@ const adminCreateShift = async (req, res) => {
         message: 'Doctor user not found'
       });
     }
-
     const shift = new Shift({
       doctorId: userId,
       title,
@@ -513,11 +681,8 @@ const adminCreateShift = async (req, res) => {
       specialNotes,
       breakTime
     });
-
     await shift.save();
-
-    const populatedShift = await Shift.findById(shift._id)
-      .populate('doctorId', 'firstname lastname email');
+    const populatedShift = await Shift.findById(shift._id).populate('doctorId', 'firstname lastname email');
 
     res.status(201).json({
       success: true,
@@ -544,7 +709,6 @@ const adminDeleteShift = async (req, res) => {
     }
 
     const { shiftId } = req.params;
-
     const shift = await Shift.findById(shiftId);
     
     if (!shift) {
@@ -592,5 +756,7 @@ module.exports = {
   toggleSlotAvailability,
   getSchedulesByWeek,
   adminCreateShift,
-  adminDeleteShift
+  adminDeleteShift,
+  listPendingShiftRequests,
+  processShiftRequest
 };

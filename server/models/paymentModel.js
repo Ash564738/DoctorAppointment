@@ -67,6 +67,10 @@ const paymentSchema = mongoose.Schema(
     refundDate: {
       type: Date
     },
+    refundProcessedBy: {
+      type: mongoose.SchemaTypes.ObjectId,
+      ref: "User"
+    },
     platformFee: {
       type: Number,
       default: 0,
@@ -122,6 +126,40 @@ paymentSchema.methods.canRefund = function() {
 paymentSchema.methods.calculateRefund = function(refundAmount) {
   const maxRefund = this.amount - this.refundAmount;
   return Math.min(refundAmount, maxRefund);
+};
+
+paymentSchema.methods.processRefund = function(refundAmount, reason, processedBy = null) {
+  if (!this.canRefund()) {
+    throw new Error('Payment is not eligible for refund');
+  }
+  
+  const actualRefundAmount = this.calculateRefund(refundAmount);
+  this.refundAmount = (this.refundAmount || 0) + actualRefundAmount;
+  this.refundReason = reason;
+  this.refundDate = new Date();
+  this.refundProcessedBy = processedBy;
+  
+  // Update status based on refund amount
+  if (this.refundAmount >= this.amount) {
+    this.status = 'Refunded';
+  } else if (this.refundAmount > 0) {
+    this.status = 'Partially_Refunded';
+  }
+  
+  return actualRefundAmount;
+};
+
+paymentSchema.methods.getRefundPercentage = function() {
+  if (this.amount === 0) return 0;
+  return Math.round((this.refundAmount / this.amount) * 100);
+};
+
+paymentSchema.methods.isFullyRefunded = function() {
+  return this.refundAmount >= this.amount;
+};
+
+paymentSchema.methods.isPartiallyRefunded = function() {
+  return this.refundAmount > 0 && this.refundAmount < this.amount;
 };
 
 const Payment = mongoose.model("Payment", paymentSchema);

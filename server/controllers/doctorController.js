@@ -2,6 +2,9 @@ const Doctor = require("../models/doctorModel");
 const User = require("../models/userModel");
 const Notification = require("../models/notificationModel");
 const Appointment = require("../models/appointmentModel");
+// Added for availability/status endpoints moved from doctorAvailabilityController
+const Shift = require("../models/shiftModel");
+const LeaveRequest = require("../models/leaveRequestModel");
 
 const getalldoctors = async (req, res) => {
   try {
@@ -173,8 +176,12 @@ const getDoctorAnalytics = async (req, res) => {
     const totalAppointments = await Appointment.countDocuments({ doctorId });
     // Today's appointments
     const todayAppointments = await Appointment.countDocuments({ doctorId, date: { $gte: today, $lt: tomorrow } });
-    // Pending appointments
-    const pendingAppointments = await Appointment.countDocuments({ doctorId, status: 'Pending' });
+    // Upcoming (previously called "pending") appointments: confirmed and in the future
+    const pendingAppointments = await Appointment.countDocuments({
+      doctorId,
+      status: 'Confirmed',
+      date: { $gte: new Date() }
+    });
     // Total unique patients
     const totalPatients = await Appointment.distinct('userId', { doctorId });
 
@@ -263,12 +270,12 @@ const getDoctorAnalytics = async (req, res) => {
 
 const getRecentActivity = async (req, res) => {
   try {
-    const doctorId = req.user.id;
-        const recentAppointments = await Appointment.find({
+    const doctorId = req.userId;
+    const recentAppointments = await Appointment.find({
       doctorId: doctorId,
       $or: [
         { status: 'Completed', updatedAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
-        { status: 'Pending', date: { $gte: new Date() } }
+        { status: 'Confirmed', date: { $gte: new Date() } }
       ]
     })
     .populate('userId', 'firstname lastname')
@@ -384,6 +391,154 @@ const adminUpdateDoctor = async (req, res) => {
   }
 };
 
+// ====== Availability & Status (migrated) ======
+const getDoctorAvailability = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const { date } = req.query;
+    if (!date) {
+      return res.status(400).json({ success: false, message: 'Date parameter is required' });
+    }
+    const targetDate = new Date(date);
+    const dayName = targetDate.toLocaleDateString('en-US', { weekday: 'long' });
+
+    const isOnLeave = await LeaveRequest.findOne({
+      doctorId,
+      status: 'approved',
+      startDate: { $lte: targetDate },
+      endDate: { $gte: targetDate }
+    });
+    if (isOnLeave) {
+      return res.json({ success: true, available: false, reason: 'Doctor is on leave', availableSlots: [] });
+    }
+
+    const shifts = await Shift.find({
+      doctorId,
+      daysOfWeek: dayName,
+      isActive: true,
+      status: { $in: ['approved', undefined] }
+    }).sort({ startTime: 1 });
+
+    if (shifts.length === 0) {
+      return res.json({ success: true, available: false, reason: 'No scheduled shifts for this day', availableSlots: [] });
+    }
+
+    let allSlots = [];
+    for (const shift of shifts) {
+      allSlots = allSlots.concat(generateSlotsFromShift(shift, targetDate));
+    }
+    const bookedSlots = await getBookedSlots(doctorId, targetDate);
+    const availableSlots = filterAvailableSlots(allSlots, bookedSlots, targetDate);
+    res.json({
+      success: true,
+      available: availableSlots.length > 0,
+      reason: availableSlots.length > 0 ? 'Available slots found' : 'All slots are booked',
+      availableSlots,
+      shifts: shifts.map(s => ({ title: s.title, startTime: s.startTime, endTime: s.endTime, maxPatientsPerHour: s.maxPatientsPerHour, slotDuration: s.slotDuration }))
+    });
+  } catch (error) {
+    console.error('Get doctor availability error:', error);
+    res.status(500).json({ success: false, message: 'Unable to fetch doctor availability' });
+  }
+};
+
+const generateDefaultSlots = () => {
+  const defaultSlots = ['09:00','09:30','10:00','10:30','11:00','11:30','14:00','14:30','15:00','15:30','16:00','16:30'];
+  return defaultSlots.map(time => ({ time, maxPatients: 1, slotDuration: 30 }));
+};
+
+const generateSlotsFromShift = (shift) => {
+  const slots = [];
+  const startMinutes = timeToMinutes(shift.startTime);
+  const endMinutes = timeToMinutes(shift.endTime);
+  const slotDuration = shift.slotDuration;
+  let breakStartMinutes = null;
+  let breakEndMinutes = null;
+  if (shift.breakTime && shift.breakTime.start && shift.breakTime.end) {
+    breakStartMinutes = timeToMinutes(shift.breakTime.start);
+    breakEndMinutes = timeToMinutes(shift.breakTime.end);
+  }
+  for (let current = startMinutes; current < endMinutes; current += slotDuration) {
+    if (breakStartMinutes && breakEndMinutes && current >= breakStartMinutes && current < breakEndMinutes) continue;
+    const slotTime = minutesToTime(current);
+    slots.push({ time: slotTime, maxPatients: shift.maxPatientsPerHour || 1, slotDuration: shift.slotDuration, shiftId: shift._id });
+  }
+  return slots;
+};
+
+const getBookedSlots = async (doctorId, date) => {
+  const startOfDay = new Date(date); startOfDay.setHours(0,0,0,0);
+  const endOfDay = new Date(date); endOfDay.setHours(23,59,59,999);
+  const appointments = await Appointment.find({ doctorId, date: { $gte: startOfDay, $lte: endOfDay }, status: { $in: ['Pending','Confirmed','In Progress'] } }).select('time date status');
+  const booked = {};
+  appointments.forEach(apt => { const key = apt.time; booked[key] = (booked[key] || 0) + 1; });
+  return booked;
+};
+
+const filterAvailableSlots = (allSlots, bookedSlots, targetDate) => {
+  const now = new Date();
+  const isToday = targetDate.toDateString() === now.toDateString();
+  return allSlots.filter(slot => {
+    if (isToday) {
+      const [hh, mm] = slot.time.split(':').map(Number);
+      const slotDateTime = new Date(targetDate); slotDateTime.setHours(hh, mm, 0, 0);
+      if (slotDateTime <= now) return false;
+    }
+    const bookedCount = bookedSlots[slot.time] || 0;
+    const maxPatients = slot.maxPatients || 1;
+    return bookedCount < maxPatients;
+  });
+};
+
+const timeToMinutes = (timeStr) => {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+const minutesToTime = (minutes) => {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+};
+
+const getDoctorCurrentStatus = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const now = new Date();
+    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    const dayName = now.toLocaleDateString('en-US', { weekday: 'long' });
+
+    const isOnLeave = await LeaveRequest.findOne({ doctorId, status: 'approved', startDate: { $lte: now }, endDate: { $gte: now } });
+    if (isOnLeave) {
+      return res.json({ success: true, available: false, status: 'on_leave', message: `Doctor is on ${isOnLeave.leaveType} leave` });
+    }
+
+    const currentShift = await Shift.findOne({ doctorId, daysOfWeek: dayName, isActive: true, status: { $in: ['approved', undefined] } });
+    if (!currentShift) {
+      return res.json({ success: true, available: false, status: 'no_shift', message: 'Doctor has no scheduled shifts today' });
+    }
+
+    const currentMinutes = timeToMinutes(currentTime);
+    const shiftStart = timeToMinutes(currentShift.startTime);
+    const shiftEnd = timeToMinutes(currentShift.endTime);
+    if (currentShift.breakTime && currentShift.breakTime.start && currentShift.breakTime.end) {
+      const breakStart = timeToMinutes(currentShift.breakTime.start);
+      const breakEnd = timeToMinutes(currentShift.breakTime.end);
+      if (currentMinutes >= breakStart && currentMinutes <= breakEnd) {
+        return res.json({ success: true, available: false, status: 'on_break', message: `Doctor is on break until ${currentShift.breakTime.end}` });
+      }
+    }
+    if (currentMinutes >= shiftStart && currentMinutes <= shiftEnd) {
+      return res.json({ success: true, available: true, status: 'working', message: `Doctor is available until ${currentShift.endTime}`, currentShift: { title: currentShift.title, endTime: currentShift.endTime } });
+    } else {
+      return res.json({ success: true, available: false, status: 'off_duty', message: 'Doctor is currently off duty' });
+    }
+  } catch (error) {
+    console.error('Get doctor current status error:', error);
+    res.status(500).json({ success: false, message: 'Unable to fetch doctor status' });
+  }
+};
+
 module.exports = {
   getalldoctors,
   getnotdoctors,
@@ -395,4 +550,7 @@ module.exports = {
   getDoctorAnalytics,
   getRecentActivity,
   adminUpdateDoctor,
+  // Expose merged availability endpoints
+  getDoctorAvailability,
+  getDoctorCurrentStatus,
 };

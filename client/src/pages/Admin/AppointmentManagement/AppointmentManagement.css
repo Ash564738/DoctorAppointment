@@ -15,9 +15,6 @@
   gap: var(--spacing-md);
 }
 
-.appointmentManagement_header {
-  margin-bottom: var(--spacing-sm);
-}
 
 .appointmentManagement_title {
   font-size: var(--font-size-xl);
@@ -43,15 +40,6 @@
   box-shadow: var(--shadow-sm);
 }
 
-.appointmentManagement_errorMessage {
-  color: var(--danger-color);
-  font-weight: 500;
-  text-align: center;
-  padding: 20px;
-  background: #fee;
-  border-radius: var(--border-radius-sm);
-  border: 1px solid var(--danger-color);
-}
 
 .appointmentManagement_noDataMessage {
   text-align: center;
@@ -64,6 +52,7 @@
 
 .appointmentManagement_tableContainer {
   overflow-x: auto;
+  padding: 0 var(--spacing-lg) 0 var(--spacing-lg);
 }
 
 .appointmentManagement_table {
@@ -71,11 +60,7 @@
   border-collapse: collapse;
 }
 
-.appointmentManagement_tableHeader {
-  background: #f8fafc;
-}
-
-.appointmentManagement_tableHeaderCell {
+.appointmentManagement_th {
   padding: var(--spacing-md);
   text-align: left;
   font-weight: var(--font-weight-bold);
@@ -85,60 +70,56 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   background: #f8fafc;
-  position: sticky;
-  top: 0;
-  z-index: 2;
 }
 
-.appointmentManagement_tableBody {
+.appointmentManagement_tbody {
   background: white;
 }
 
-.appointmentManagement_tableRow {
+.appointmentManagement_tbody tr {
   border-bottom: 1px solid #e9ecef;
   transition: background-color 0.2s;
 }
 
-.appointmentManagement_tableRow:hover {
+.appointmentManagement_tbody tr:hover {
   background: #f8fafc;
 }
 
-.appointmentManagement_tableCell {
+.appointmentManagement_td {
   padding: var(--spacing-md);
   color: #333;
   font-size: var(--font-size-base);
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-  vertical-align: middle;
-}
-.appointmentManagement_tableContainer {
-
 }
 .appointmentManagement_pagination {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 4px;
-  margin: 20px;
+  margin: 16px 0 16px 0;
 }
-.appointmentManagement_pagination button {
-  background: #f3f4f6;
-  border: 1px solid #d1d5db;
-  color: #374151;
-  border-radius: 6px;
-  padding: 6px 14px;
-  font-size: 0.95rem;
+
+.appointmentManagement_paginationButton {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #333;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: var(--font-size-sm);
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
-.appointmentManagement_pagination button.active,
-.appointmentManagement_pagination button:focus {
+
+.appointmentManagement_paginationButton.active,
+.appointmentManagement_paginationButton:focus {
   background: var(--primary-color);
   color: #fff;
+  border-color: var(--primary-color);
   outline: none;
 }
-.appointmentManagement_pagination button:disabled {
-  opacity: 0.6;
+
+.appointmentManagement_paginationButton:disabled {
+  background: #e9ecef;
+  color: #aaa;
   cursor: not-allowed;
 }
 
@@ -152,9 +133,6 @@
   font-weight: 500;
 }
 
-.appointmentManagement_appointmentDate {
-}
-
 .appointmentManagement_status {
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--border-radius-sm);
@@ -165,23 +143,21 @@
 }
 
 .appointmentManagement_statusConfirmed {
-  background-color: var(--success-color);
-  color: white;
-}
-
-.appointmentManagement_statusPending {
-  background-color: var(--warning-color);
-  color: var(--dark-color);
+  background-color: var(--info-color-light);
+  color: var(--info-color);
+  font-weight: var(--font-weight-bold);
 }
 
 .appointmentManagement_statusCancelled {
-  background-color: var(--danger-color);
-  color: white;
+  background-color: var(--danger-color-light);
+  color: var(--danger-color);
+  font-weight: var(--font-weight-bold);
 }
 
 .appointmentManagement_statusCompleted {
-  background-color: #28a745;
-  color: white;
+  background-color: var(--success-color-light);
+  color: var(--success-color);
+  font-weight: var(--font-weight-bold);
 }
 
 /* Responsive design */
@@ -194,8 +170,8 @@
   .appointmentManagement_table {
     font-size: var(--font-size-sm);
   }
-  .appointmentManagement_tableHeaderCell,
-  .appointmentManagement_tableCell {
+  .appointmentManagement_th,
+  .appointmentManagement_td {
     padding: var(--spacing-xs) var(--spacing-xs);
   }
   .appointmentManagement_container {
@@ -235,8 +211,7 @@
 }
 
 /* Enhanced header styles */
-.appointmentManagement_titleSection {
-}
+/* title section styles are not required */
 
 .appointmentManagement_description {
   color: #6b7280;
@@ -244,7 +219,12 @@
   margin-top: 0.5rem;
 }
 
-/* Filters section */
+.appointmentManagement_actions { display: flex; gap: var(--spacing-sm); }
+.appointmentManagement_button { background: var(--control-bg); color: var(--control-text); border: 1px solid #e2e8f0; border-radius: var(--border-radius-sm); padding: 0.4rem 0.75rem; font-size: var(--font-size-sm); cursor: pointer; transition: background 0.2s; }
+.appointmentManagement_buttonRefund { background: var(--info-color); color: #fff; border-color: var(--info-color); }
+.appointmentManagement_button:disabled { opacity: 0.6; cursor: not-allowed; }
+.appointmentManagement_paymentStatusIcon { margin-right: 4px; vertical-align: middle; }
+
 .appointmentManagement_filtersSection {
   background: white;
   border-radius: 8px;
@@ -370,14 +350,9 @@
   font-weight: 500;
 }
 
-/* Enhanced error message */
-.appointmentManagement_errorMessage {
-  background: white;
-  border-radius: 8px;
-  padding: 2rem;
-  text-align: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+.appointmentManagement_errorMessage { color: var(--danger-color); font-weight: 500; text-align: center; }
+
+.appointmentManagement_buttonIcon { vertical-align: middle; }
 
 .appointmentManagement_errorIcon {
   font-size: 3rem;
@@ -437,4 +412,202 @@
   color: #6b7280;
   font-size: 0.95rem;
   line-height: 1.5;
+}
+
+/* Refund Modal Styles */
+.appointmentManagement_modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.appointmentManagement_modal {
+  background: white;
+  border-radius: 8px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.appointmentManagement_modalHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f9fafb;
+  border-radius: 8px 8px 0 0;
+}
+
+.appointmentManagement_modalHeader h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.appointmentManagement_modalClose {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+}
+
+.appointmentManagement_modalClose:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.appointmentManagement_modalContent {
+  padding: 24px;
+}
+
+.appointmentManagement_refundDetails {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.appointmentManagement_refundDetails p {
+  margin: 8px 0;
+  color: #495057;
+}
+
+.appointmentManagement_refundButton{
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display:flex;
+  gap: 5px;
+}
+.appointmentManagement_formGroup {
+  margin-bottom: 20px;
+}
+
+.appointmentManagement_formGroup label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.appointmentManagement_input,
+.appointmentManagement_select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #374151;
+  background-color: white;
+}
+
+.appointmentManagement_input:focus,
+.appointmentManagement_select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.appointmentManagement_modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.appointmentManagement_btnCancel {
+  padding: 10px 20px;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.appointmentManagement_btnCancel:hover {
+  background-color: #e5e7eb;
+}
+
+.appointmentManagement_btnProcess {
+  padding: 10px 20px;
+  background-color: #dc3545;
+  color: white;
+  border: 1px solid #dc3545;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.appointmentManagement_btnProcess:hover:not(:disabled) {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.appointmentManagement_btnProcess:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Refund Status Styles */
+.appointmentManagement_refundInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.appointmentManagement_refundStatus {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #dc3545;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.appointmentManagement_refundDetails small {
+  color: #6c757d;
+  font-size: 11px;
+}
+
+.appointmentManagement_refundEligible {
+  color: #28a745;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.appointmentManagement_refundNotEligible {
+  color: #6c757d;
+  font-size: 13px;
 }

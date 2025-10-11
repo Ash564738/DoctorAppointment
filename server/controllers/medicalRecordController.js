@@ -233,7 +233,6 @@ const updateMedicalRecord = async (req, res) => {
       'assessment',
       'diagnosis',
       'treatment',
-      'followUp',
       'attachments'
     ];
     const updates = {};
@@ -366,11 +365,84 @@ const getPatientSummary = async (req, res) => {
   }
 };
 
+const downloadMedicalRecord = async (req, res) => {
+    try {
+      const { recordId } = req.params;
+      const medicalRecord = await MedicalRecord.findById(recordId)
+        .populate('patientId', 'firstname lastname email dateOfBirth gender bloodGroup')
+        .populate('doctorId', 'firstname lastname email')
+        .populate('appointmentId');
+      if (!medicalRecord) {
+        return res.status(404).json({ success: false, message: 'Medical record not found' });
+      }
+      const isPatient = medicalRecord.patientId._id.toString() === req.userId;
+      const isDoctor = medicalRecord.doctorId._id.toString() === req.userId;
+      const isAdmin = req.userRole === 'Admin';
+      if (!isPatient && !isDoctor && !isAdmin) {
+        return res.status(403).json({ success: false, message: 'Unauthorized' });
+      }
+      const PDFDocument = require('pdfkit');
+      const doc = new PDFDocument({ margin: 50 });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=medical-record-${recordId}.pdf`);
+      doc.pipe(res);
+      doc.fontSize(18).text('Medical Record Summary', { align: 'center' });
+      doc.moveDown();
+      doc.fontSize(12).text(`Record ID: ${medicalRecord._id}`);
+      doc.text(`Visit Date: ${medicalRecord.visitDate ? new Date(medicalRecord.visitDate).toLocaleDateString() : '-'}`);
+      doc.moveDown();
+      doc.text(`Patient: ${medicalRecord.patientId?.firstname || ''} ${medicalRecord.patientId?.lastname || ''}`);
+      doc.text(`Gender: ${medicalRecord.patientId?.gender || '-'}`);
+      doc.text(`Blood Group: ${medicalRecord.patientId?.bloodGroup || '-'}`);
+      doc.text(`Email: ${medicalRecord.patientId?.email || '-'}`);
+      doc.moveDown();
+      doc.text(`Doctor: Dr. ${medicalRecord.doctorId?.firstname || ''} ${medicalRecord.doctorId?.lastname || ''}`);
+      doc.text(`Doctor Email: ${medicalRecord.doctorId?.email || '-'}`);
+      doc.moveDown();
+      if (medicalRecord.appointmentId) {
+        doc.text(`Appointment Date: ${medicalRecord.appointmentId.date ? new Date(medicalRecord.appointmentId.date).toLocaleDateString() : '-'}`);
+        doc.text(`Appointment Time: ${medicalRecord.appointmentId.time || '-'}`);
+        doc.moveDown();
+      }
+      const fields = [
+        ['Chief Complaint', medicalRecord.chiefComplaint],
+        ['Symptoms', medicalRecord.symptoms],
+        ['History of Present Illness', medicalRecord.historyOfPresentIllness],
+        ['Past Medical History', medicalRecord.pastMedicalHistory],
+        ['Family History', medicalRecord.familyHistory],
+        ['Physical Examination', medicalRecord.physicalExamination ? JSON.stringify(medicalRecord.physicalExamination) : '-'],
+        ['Assessment', medicalRecord.assessment],
+        ['Treatment', medicalRecord.treatment]
+      ];
+
+      fields.forEach(([label, value]) => {
+        doc.font('Helvetica-Bold').text(`${label}:`);
+        doc.font('Helvetica').text(value ? String(value) : '-', { paragraphGap: 8 });
+        doc.moveDown(0.2);
+      });
+
+      if (Array.isArray(medicalRecord.diagnosis) && medicalRecord.diagnosis.length) {
+        doc.font('Helvetica-Bold').text('Diagnoses:');
+        medicalRecord.diagnosis.forEach((d, idx) => {
+          doc.font('Helvetica').text(`${idx + 1}. ${d?.code ? d.code + ' - ' : ''}${d?.description || '-'}`);
+        });
+        doc.moveDown();
+      }
+
+      doc.text('This document is a summary of your medical record. For detailed attachments, please refer to the portal.', { align: 'center' });
+      doc.end();
+    } catch (error) {
+      console.error('Download medical record error:', error);
+      res.status(500).json({ success: false, message: 'Unable to download medical record' });
+    }
+  };
+
 module.exports = {
   createMedicalRecord,
   getMedicalRecord,
   getPatientMedicalRecords,
   updateMedicalRecord,
   addAttachment,
-  getPatientSummary
+  getPatientSummary,
+  downloadMedicalRecord
 };

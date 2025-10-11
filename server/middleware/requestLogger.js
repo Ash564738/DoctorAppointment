@@ -19,48 +19,26 @@ const requestLogger = (req, res, next) => {
   } catch (err) {
   }
 
-  http(`Incoming ${req.method} ${req.originalUrl}`, {
-    requestId: req.requestId,
-    method: req.method,
-    url: req.originalUrl,
-    userAgent: req.get('User-Agent'),
-    ip: req.ip || req.connection.remoteAddress,
-    userId,
-    userRole,
-    headers: sanitizeHeaders(req.headers),
-    query: req.query,
-    body: sanitizeBody(req.body),
-    timestamp: new Date().toISOString()
-  });
 
   const originalJson = res.json;
   const originalSend = res.send;
   let responseBody = null;
 
-  // Override res.json to capture response data
   res.json = function(data) {
     responseBody = data;
     return originalJson.call(this, data);
   };
-
-  // Override res.send to capture response data
   res.send = function(data) {
     if (!responseBody) {
       responseBody = data;
     }
     return originalSend.call(this, data);
   };
-
-  // Log response when request finishes
   res.on('finish', () => {
     const responseTime = Date.now() - req.startTime;
     const statusCode = res.statusCode;
-    
-    // Determine log level based on status code
-    const logLevel = statusCode >= 500 ? 'error' : 
-                    statusCode >= 400 ? 'warn' : 'info';
+    const logLevel = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
 
-    // Log API response
     api(req.method, req.originalUrl, statusCode, responseTime, {
       requestId: req.requestId,
       userId,
@@ -70,8 +48,6 @@ const requestLogger = (req, res, next) => {
       contentLength: res.get('Content-Length'),
       timestamp: new Date().toISOString()
     });
-
-    // Log slow requests (> 1 second)
     if (responseTime > 1000) {
       logger.warn(`Slow request detected`, {
         requestId: req.requestId,
@@ -83,8 +59,6 @@ const requestLogger = (req, res, next) => {
       });
     }
   });
-
-  // Log request errors
   res.on('error', (err) => {
     logError(`Request error for ${req.method} ${req.originalUrl}`, err, {
       requestId: req.requestId,
@@ -99,11 +73,8 @@ const requestLogger = (req, res, next) => {
   next();
 };
 
-// Error handling middleware
 const errorLogger = (err, req, res, next) => {
   const responseTime = Date.now() - (req.startTime || Date.now());
-  
-  // Extract user info
   let userId = 'anonymous';
   let userRole = 'unknown';
   
@@ -113,10 +84,8 @@ const errorLogger = (err, req, res, next) => {
       userRole = req.user.role || 'unknown';
     }
   } catch (error) {
-    // Ignore user extraction errors
   }
 
-  // Log the error with full context
   logError(`Unhandled error in ${req.method} ${req.originalUrl}`, err, {
     requestId: req.requestId || 'unknown',
     method: req.method,
@@ -131,7 +100,6 @@ const errorLogger = (err, req, res, next) => {
     timestamp: new Date().toISOString()
   });
 
-  // Send error response
   const statusCode = err.statusCode || err.status || 500;
   const message = process.env.NODE_ENV === 'production' 
     ? 'Internal Server Error' 
@@ -146,11 +114,10 @@ const errorLogger = (err, req, res, next) => {
   });
 };
 
-// Database operation logger
 const dbLogger = {
   logQuery: (operation, collection, query, result, context = {}) => {
-    const { database } = require('../utils/logger');
-    database(operation, collection, query, result, context);
+    const { db } = require('../utils/logger');
+    db(operation, collection, query, result, context);
   },
 
   logError: (operation, collection, query, error, context = {}) => {
@@ -163,11 +130,10 @@ const dbLogger = {
   }
 };
 
-// Socket event logger
 const socketLogger = {
   logConnection: (socket) => {
-    const { socket: logSocket } = require('../utils/logger');
-    logSocket('connection', {
+    const { debug } = require('../utils/logger');
+    debug('Socket connection', {
       socketId: socket.id,
       userId: socket.userId || 'anonymous',
       userRole: socket.userRole || 'unknown',
@@ -177,8 +143,8 @@ const socketLogger = {
   },
 
   logDisconnection: (socket, reason) => {
-    const { socket: logSocket } = require('../utils/logger');
-    logSocket('disconnection', {
+    const { debug } = require('../utils/logger');
+    debug('Socket disconnection', {
       socketId: socket.id,
       userId: socket.userId || 'anonymous',
       reason,
@@ -187,8 +153,8 @@ const socketLogger = {
   },
 
   logEvent: (socket, event, data) => {
-    const { socket: logSocket } = require('../utils/logger');
-    logSocket(event, {
+    const { debug } = require('../utils/logger');
+    debug(`Socket event: ${event}`, {
       socketId: socket.id,
       userId: socket.userId || 'anonymous',
       data: sanitizeSocketData(data)
@@ -205,11 +171,8 @@ const socketLogger = {
   }
 };
 
-// Utility functions for sanitizing sensitive data
 function sanitizeHeaders(headers) {
   const sanitized = { ...headers };
-  
-  // Remove sensitive headers
   delete sanitized.authorization;
   delete sanitized.cookie;
   delete sanitized['x-auth-token'];
@@ -221,8 +184,6 @@ function sanitizeBody(body) {
   if (!body || typeof body !== 'object') return body;
   
   const sanitized = JSON.parse(JSON.stringify(body));
-  
-  // Remove sensitive fields
   if (sanitized.password) sanitized.password = '[REDACTED]';
   if (sanitized.token) sanitized.token = '[REDACTED]';
   if (sanitized.creditCard) sanitized.creditCard = '[REDACTED]';
@@ -236,8 +197,6 @@ function sanitizeResponseBody(body) {
   
   try {
     const sanitized = JSON.parse(JSON.stringify(body));
-    
-    // Remove sensitive fields from response
     if (sanitized.token) sanitized.token = '[REDACTED]';
     if (sanitized.password) sanitized.password = '[REDACTED]';
     if (sanitized.user && sanitized.user.password) {

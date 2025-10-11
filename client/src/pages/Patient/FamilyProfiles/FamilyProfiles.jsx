@@ -4,6 +4,7 @@ import Footer from '../../../components/Common/Footer/Footer';
 import { apiCall } from '../../../helper/apiCall';
 import toast from 'react-hot-toast';
 import './FamilyProfiles.css';
+import PageHeader from '../../../components/Common/PageHeader/PageHeader';
 
 const FamilyProfiles = () => {
   const [familyMembers, setFamilyMembers] = useState([]);
@@ -26,10 +27,12 @@ const FamilyProfiles = () => {
   const fetchFamilyMembers = async () => {
     try {
       setLoading(true);
-      const response = await apiCall.get('/family-member/get-all');
-      if (response && Array.isArray(response)) {
-        setFamilyMembers(response);
+      const response = await apiCall.get('/family-members');
+      if (response && response.success) {
+        const list = response.data?.familyMembers || [];
+        setFamilyMembers(list);
       } else {
+        setFamilyMembers([]);
       }
     } catch (error) {
       console.error('Error fetching family members:', error);
@@ -47,11 +50,34 @@ const FamilyProfiles = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Map UI form to backend model
+      const [firstname, ...rest] = (formData.name || '').trim().split(/\s+/);
+      const lastname = rest.join(' ');
+      const relMap = {
+        spouse: 'spouse', husband: 'spouse', wife: 'spouse',
+        son: 'child', daughter: 'child', child: 'child',
+        father: 'parent', mother: 'parent', parent: 'parent',
+        brother: 'sibling', sister: 'sibling', sibling: 'sibling',
+        grandfather: 'grandparent', grandmother: 'grandparent', grandparent: 'grandparent',
+        grandson: 'grandchild', granddaughter: 'grandchild', grandchild: 'grandchild'
+      };
+      const relationship = relMap[(formData.relation || '').toLowerCase()] || (formData.relation || 'other').toLowerCase();
+      const payload = {
+        firstname: firstname || formData.name,
+        lastname: lastname || '',
+        relationship,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        bloodGroup: formData.bloodGroup || undefined,
+        // Store simple conditions/contacts in appropriate arrays if provided
+        ...(formData.medicalConditions ? { medicalHistory: [{ condition: formData.medicalConditions }] } : {}),
+        ...(formData.emergencyContact ? { emergencyContacts: [{ phone: formData.emergencyContact, isPrimary: true }] } : {})
+      };
+
       if (editingMember) {
-        await apiCall.put(`/family-member/update/${editingMember._id}`, formData);
+        await apiCall.put(`/family-members/${editingMember._id}`, payload);
         toast.success('Family member updated successfully');
       } else {
-        await apiCall.post('/family-member/add', formData);
+        await apiCall.post('/family-members', payload);
         toast.success('Family member added successfully');
       }
       setShowAddModal(false);
@@ -86,7 +112,7 @@ const FamilyProfiles = () => {
   const handleDelete = async (memberId) => {
     if (window.confirm('Are you sure you want to delete this family member?')) {
       try {
-        await apiCall.delete(`/family-member/delete/${memberId}`);
+        await apiCall.delete(`/family-members/${memberId}`);
         toast.success('Family member deleted successfully');
         fetchFamilyMembers();
       } catch (error) {
@@ -111,18 +137,19 @@ const FamilyProfiles = () => {
     <div className="familyProfiles_page">
       <NavbarWrapper />
         <div className="familyProfiles_container">
-          <div className="familyProfiles_header">
-            <h1 className="familyProfiles_title">Family Profiles</h1>
-            <p className="familyProfiles_description">
-              Manage your family members and their medical information for easy appointment booking.
-            </p>
-            <button 
-              className="familyProfiles_addButton"
-              onClick={() => setShowAddModal(true)}
-            >
-              Add Family Member
-            </button>
-          </div>
+          <PageHeader
+            title="Family Profiles"
+            subtitle="Manage your family members and their medical information for easy appointment booking."
+            className="familyProfiles_header"
+            actions={(
+              <button
+                className="familyProfiles_addButton"
+                onClick={() => setShowAddModal(true)}
+              >
+                Add Family Member
+              </button>
+            )}
+          />
 
           {loading ? (
             <div className="familyProfiles_loading">
@@ -134,8 +161,8 @@ const FamilyProfiles = () => {
               {familyMembers.map((member) => (
                 <div key={member._id} className="familyProfiles_card">
                   <div className="familyProfiles_cardHeader">
-                    <h3 className="familyProfiles_memberName">{member.name}</h3>
-                    <span className="familyProfiles_relation">{member.relation}</span>
+                    <h3 className="familyProfiles_memberName">{member.fullName || `${member.firstname || ''} ${member.lastname || ''}`.trim()}</h3>
+                    <span className="familyProfiles_relation">{(member.relationship || 'Other').replace(/\b\w/g, c => c.toUpperCase())}</span>
                   </div>
                   <div className="familyProfiles_cardBody">
                     <div className="familyProfiles_info">
@@ -148,11 +175,11 @@ const FamilyProfiles = () => {
                     </div>
                     <div className="familyProfiles_info">
                       <span className="familyProfiles_label">Medical Conditions:</span>
-                      <span className="familyProfiles_value">{member.medicalConditions || 'None'}</span>
+                      <span className="familyProfiles_value">{Array.isArray(member.medicalHistory) && member.medicalHistory.length > 0 ? (member.medicalHistory.map(m => m.condition).join(', ')) : 'None'}</span>
                     </div>
                     <div className="familyProfiles_info">
                       <span className="familyProfiles_label">Emergency Contact:</span>
-                      <span className="familyProfiles_value">{member.emergencyContact || 'Not provided'}</span>
+                      <span className="familyProfiles_value">{Array.isArray(member.emergencyContacts) && member.emergencyContacts[0]?.phone ? member.emergencyContacts[0].phone : 'Not provided'}</span>
                     </div>
                   </div>
                   <div className="familyProfiles_cardActions">
@@ -174,7 +201,6 @@ const FamilyProfiles = () => {
               
               {familyMembers.length === 0 && (
                 <div className="familyProfiles_emptyState">
-                  <div className="familyProfiles_emptyIcon">👨‍👩‍👧‍👦</div>
                   <h3 className="familyProfiles_emptyTitle">No Family Members Added</h3>
                   <p className="familyProfiles_emptyDescription">
                     Add your family members to easily book appointments for them.

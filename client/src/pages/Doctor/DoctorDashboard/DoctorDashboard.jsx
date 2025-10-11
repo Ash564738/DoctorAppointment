@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
 import { 
   FaCalendarAlt, 
   FaUsers, 
@@ -18,6 +17,7 @@ import './DoctorDashboard.css';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, Legend
 } from 'recharts';
+import PageHeader from '../../../components/Common/PageHeader/PageHeader';
 
 const DoctorDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,6 @@ const DoctorDashboard = () => {
     totalPrescriptions: 0,
     activeVideoSessions: 0
   });
-  // Analytics-specific state
   const [completionRate, setCompletionRate] = useState(0);
   const [cancellationRate, setCancellationRate] = useState(0);
   const [monthlyTrend, setMonthlyTrend] = useState([]);
@@ -69,7 +68,7 @@ const DoctorDashboard = () => {
         );
         setTimeSlotPopularity(analytics.timeSlotPopularity || []);
 
-        const appointmentsRes = await apiCall.get('/appointment/doctor-appointments');
+  const appointmentsRes = await apiCall.get('/appointment/doctor');
         setUpcomingAppointments(
           (appointmentsRes.appointments || []).map(a => ({
             id: a._id,
@@ -88,10 +87,16 @@ const DoctorDashboard = () => {
     };
     fetchDashboardData();
   }, []);
-
-  const renderStats = () => (
-    <>
-      <div className="doctorDashboard_statsSection">
+  return (
+    <div className="doctorDashboard_page">
+      <NavbarWrapper />
+      <div className="doctorDashboard_container">
+        <PageHeader
+          title="Doctor Dashboard"
+          subtitle={`Welcome back${userInfo?.firstname ? `, Dr. ${userInfo.firstname}` : ''}. Here’s your activity and analytics.`}
+          className="doctorDashboard_header"
+        />
+        <div className="doctorDashboard_statsSection">
         <h3 className="doctorDashboard_sectionTitle">Key Statistics</h3>
         <div className="doctorDashboard_stats">
           <div className="doctorDashboard_statCard doctorDashboard_statCard--primary">
@@ -132,8 +137,6 @@ const DoctorDashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Performance Section */}
       <div className="doctorDashboard_performanceSection">
         <h3 className="doctorDashboard_sectionTitle">Performance Overview</h3>
         <div className="doctorDashboard_progressGrid">
@@ -163,8 +166,6 @@ const DoctorDashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Charts Section */}
       <div className="doctorDashboard_chartsSection">
         <h3 className="doctorDashboard_sectionTitle">Analytics Charts</h3>
         <div className="doctorDashboard_chartsGrid">
@@ -203,136 +204,7 @@ const DoctorDashboard = () => {
             </div>
           </div>
         </div>
-        <div className="doctorDashboard_fullWidthChart">
-          <div className="doctorDashboard_chartCard">
-            <div className="doctorDashboard_chartHeader">
-              <h4 className="doctorDashboard_chartTitle">Time Slot Popularity</h4>
-            </div>
-            <div className="doctorDashboard_chartContainer">
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={timeSlotPopularity} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="time" />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#4bc0c0" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
       </div>
-    </>
-  );
-
-  // Only two tabs now: Appointments and Recent Activity
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'appointments':
-        return (
-          <div className="doctorDashboard_appointments">
-            <h3>Today's Appointments</h3>
-            {upcomingAppointments.length > 0 ? (
-              <div className="doctorDashboard_appointmentList">
-                {upcomingAppointments.map(appointment => (
-                  <div key={appointment.id} className="doctorDashboard_appointmentItem">
-                    <div className="doctorDashboard_appointmentTime">
-                      {appointment.time}
-                    </div>
-                    <div className="doctorDashboard_appointmentInfo">
-                      <h4>{appointment.patientName}</h4>
-                      <p>{appointment.symptoms || 'General consultation'}</p>
-                    </div>
-                    <div className="doctorDashboard_appointmentActions">
-                      <button className="doctorDashboard_actionBtn doctorDashboard_actionBtn--video">
-                        <FaVideo />
-                        Join Video
-                      </button>
-                      <button className="doctorDashboard_actionBtn doctorDashboard_actionBtn--chat">
-                        <FaComments />
-                        Chat
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="doctorDashboard_emptyState">
-                <p>No appointments scheduled for today</p>
-              </div>
-            )}
-          </div>
-        );
-      case 'activity':
-        return (
-          <div className="doctorDashboard_activity">
-            <h3>Recent Activity</h3>
-            <div className="doctorDashboard_activityList">
-              {recentActivity.map(activity => (
-                <div key={activity.id} className="doctorDashboard_activityItem">
-                  <div className="doctorDashboard_activityIcon">
-                    {activity.icon}
-                  </div>
-                  <div className="doctorDashboard_activityInfo">
-                    <p>{activity.message}</p>
-                    <span className="doctorDashboard_activityTime">{activity.time}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="doctorDashboard_page">
-      <NavbarWrapper />
-      <div className="doctorDashboard_container">
-        <div className="doctorDashboard_header">
-          <div className="doctorDashboard_welcome">
-            <h1>Welcome back, Dr. {userInfo?.firstname}!</h1>
-            <p>Here's your practice overview for today</p>
-          </div>
-          <div className="doctorDashboard_headerStats">
-            <div className="doctorDashboard_headerStat">
-              <span className="doctorDashboard_headerStatValue">{stats.todayAppointments}</span>
-              <span className="doctorDashboard_headerStatLabel">Today's Appointments</span>
-            </div>
-            <div className="doctorDashboard_headerStat">
-              <span className="doctorDashboard_headerStatValue">${stats.monthlyEarnings}</span>
-              <span className="doctorDashboard_headerStatLabel">Monthly Earnings</span>
-            </div>
-          </div>
-        </div>
-
-        {renderStats()}
-
-        <div className="doctorDashboard_mainContent">
-          <div className="doctorDashboard_tabs">
-            <button
-              className={`doctorDashboard_tab ${activeTab === 'appointments' ? 'doctorDashboard_tab--active' : ''}`}
-              onClick={() => setActiveTab('appointments')}
-            >
-              Appointments
-            </button>
-            <button
-              className={`doctorDashboard_tab ${activeTab === 'activity' ? 'doctorDashboard_tab--active' : ''}`}
-              onClick={() => setActiveTab('activity')}
-            >
-              Recent Activity
-            </button>
-          </div>
-          <div className="doctorDashboard_tabContent">
-            {loading ? (
-              <div className="doctorDashboard_loading">Loading dashboard data...</div>
-            ) : (
-              renderTabContent()
-            )}
-          </div>
-        </div>
       </div>
       <Footer />
     </div>

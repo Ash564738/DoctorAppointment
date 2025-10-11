@@ -25,7 +25,6 @@ const addFamilyMember = async (req, res) => {
       notes
     } = req.body;
 
-    // Check if email is already used by another family member or user
     if (email) {
       const existingUser = await User.findOne({ email });
       const existingFamilyMember = await FamilyMember.findOne({ 
@@ -41,7 +40,6 @@ const addFamilyMember = async (req, res) => {
       }
     }
 
-    // Create family member
     const familyMember = new FamilyMember({
       primaryUserId: req.user._id,
       firstname,

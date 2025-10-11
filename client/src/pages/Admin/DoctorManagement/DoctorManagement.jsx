@@ -3,6 +3,7 @@ import NavbarWrapper from '../../../components/Common/NavbarWrapper/NavbarWrappe
 import Footer from '../../../components/Common/Footer/Footer';
 import { apiCall } from '../../../helper/apiCall';
 import './DoctorManagement.css';
+import PageHeader from '../../../components/Common/PageHeader/PageHeader';
 
 const DoctorManagement = () => {
   const [doctors, setDoctors] = useState([]);
@@ -108,11 +109,12 @@ const DoctorManagement = () => {
       mobile: doctor.userId?.mobile || '',
       address: doctor.userId?.address || '',
       age: doctor.userId?.age || '',
-      gender: doctor.userId?.gender || '',
+      // Normalize gender to lowercase as per backend enum
+      gender: (doctor.userId?.gender || '').toLowerCase(),
       // Doctor specific information
       specialization: doctor.specialization || '',
-      experience: doctor.experience || '',
-      fees: doctor.fees || '',
+      experience: doctor.experience ?? '',
+      fees: doctor.fees ?? '',
       department: doctor.department || ''
     });
     setShowEditModal(true);
@@ -128,14 +130,14 @@ const DoctorManagement = () => {
         mobile: editFormData.mobile,
         address: editFormData.address,
         age: editFormData.age,
-        gender: editFormData.gender
+        gender: editFormData.gender ? String(editFormData.gender).toLowerCase() : undefined
       };
 
       // Update doctor specific information
       const doctorUpdateData = {
         specialization: editFormData.specialization,
-        experience: parseInt(editFormData.experience),
-        fees: parseInt(editFormData.fees),
+        experience: editFormData.experience === '' ? undefined : parseInt(editFormData.experience, 10),
+        fees: editFormData.fees === '' ? undefined : parseInt(editFormData.fees, 10),
         department: editFormData.department
       };
 
@@ -143,7 +145,7 @@ const DoctorManagement = () => {
       await apiCall.put(`/user/admin-update/${editingDoctor.userId._id}`, userUpdateData);
       
       // Call doctor info update endpoint
-      await apiCall.put(`/doctor/admin-update/${editingDoctor._id}`, doctorUpdateData);
+  await apiCall.put(`/doctor/admin-update/${editingDoctor._id}`, doctorUpdateData);
 
       // Update local state
       setDoctors(doctors.map(doctor => 
@@ -162,7 +164,7 @@ const DoctorManagement = () => {
       alert('Doctor updated successfully');
     } catch (err) {
       console.error('Edit doctor error:', err);
-      alert('Failed to update doctor. Some changes may have been saved.');
+      alert('Failed to update doctor. Please ensure fields are valid (gender: male/female/other; numeric fields are numbers). Some changes may have been saved.');
     }
   };
 
@@ -170,22 +172,21 @@ const DoctorManagement = () => {
     <div className="doctorManagement_page">
       <NavbarWrapper />
       <div className="doctorManagement_container">
-        <div className="doctorManagement_header">
-          <h1 className="doctorManagement_title">Doctor Management</h1>
-          <p className="doctorManagement_description">
-            Manage doctors, approve applications, and edit/delete doctor profiles.
-          </p>
-          
-          {/* Search functionality */}
-          <div className="doctorManagement_searchContainer">
-            <input
-              type="text"
-              placeholder="Search doctors by name, email, or specialty..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="doctorManagement_searchInput"
-            />
-          </div>
+        <PageHeader
+          title="Doctor Management"
+          subtitle="Manage doctors, approve applications, and edit/delete doctor profiles."
+          className="doctorManagement_header"
+        />
+
+        {/* Search functionality */}
+        <div className="doctorManagement_searchContainer">
+          <input
+            type="text"
+            placeholder="Search doctors by name, email, or specialty..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="doctorManagement_searchInput"
+          />
         </div>
 
         <div className="doctorManagement_section">

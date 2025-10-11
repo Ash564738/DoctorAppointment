@@ -15,7 +15,7 @@ import "../styles/sidebar.css";
 import { NavLink, useNavigate } from "react-router-dom";
 import { MdLogout } from "react-icons/md";
 import { useDispatch } from "react-redux";
-import { setUserInfo } from "../redux/reducers/rootSlice";
+import { setUserInfo } from "../../../redux/reducers/rootSlice";
 
 const Sidebar = () => {
   const dispatch = useDispatch();

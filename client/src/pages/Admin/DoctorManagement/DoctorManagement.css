@@ -16,8 +16,6 @@
   gap: var(--spacing-md);
 }
 
-.doctorManagement_header {
-}
 
 .doctorManagement_title {
   font-size: var(--font-size-xl);
@@ -34,8 +32,6 @@
 }
 
 /* Search Container */
-.doctorManagement_searchContainer {
-}
 
 .doctorManagement_searchInput {
   width: 100%;
@@ -96,6 +92,7 @@
 /* Table */
 .doctorManagement_tableContainer {
   overflow-x: auto;
+  padding: 0 var(--spacing-lg) 0 var(--spacing-lg);
 }
 
 .doctorManagement_table {
@@ -159,8 +156,8 @@
 
 .doctorManagement_specialty {
   color: var(--primary-color);
-  font-weight: var(--font-weight-medium);
-  background: var(--light-blue);
+  background: var(--primary-color-light);
+  font-weight: var(--font-weight-bold);
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--border-radius-sm);
   font-size: var(--font-size-sm);
@@ -197,13 +194,13 @@
 }
 
 .doctorManagement_statusApproved {
-  background: #d4edda;
-  color: #155724;
+  background: var(--success-color-light);
+  color: var(--success-color);
 }
 
 .doctorManagement_statusPending {
-  background: #fff3cd;
-  color: #856404;
+  background: var(--warning-color-light);
+  color: var(--warning-color);
 }
 
 .doctorManagement_actionButtons {
@@ -237,19 +234,15 @@
 }
 
 .doctorManagement_editButton {
-  background: #007bff;
+  background: var(--info-color);
   color: white;
   border: none;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
-.doctorManagement_editButton:hover {
-  background: #0056b3;
-}
-
 .doctorManagement_deleteButton {
-  background: #dc3545;
+  background: var(--danger-color);
   color: white;
   border: none;
   cursor: pointer;
@@ -268,7 +261,7 @@
   padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: var(--border-radius-sm);
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-bold);
 }
 
 /* Loading and Error States */

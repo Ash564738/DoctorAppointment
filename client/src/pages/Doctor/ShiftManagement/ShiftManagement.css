@@ -15,13 +15,7 @@
   gap: var(--spacing-md);
 }
 
-/* Header Styles */
 .shiftManagement_header {
-  background: #ffffff;
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-xl);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
 }
 
 .shiftManagement_title {
@@ -92,7 +86,7 @@
 }
 
 .shiftManagement_sectionHeader {
-  padding: var(--spacing-lg) var(--spacing-xl);
+  padding: var(--spacing-lg);
   border-bottom: 1px solid #e2e8f0;
   display: flex;
   justify-content: space-between;
@@ -136,12 +130,9 @@
 }
 
 .shiftManagement_actionButton--primary {
-  background: #3b82f6;
-  color: white;
 }
 
 .shiftManagement_actionButton--primary:hover {
-  background: #2563eb;
 }
 
 /* Table Styles */
@@ -189,36 +180,33 @@
   vertical-align: middle;
 }
 
-/* Status Badges */
+/* Status Badges (used for request statuses) */
 .shiftManagement_statusBadge {
   display: inline-block;
   padding: var(--spacing-xs) var(--spacing-md);
   border-radius: 20px;
   font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.025em;
 }
 
 .shiftManagement_statusBadge--pending {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--warning-color-light);
+  color: var(--warning-color);
 }
 
 .shiftManagement_statusBadge--approved {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--success-color-light);
+  color: var(--success-color);
 }
 
 .shiftManagement_statusBadge--rejected {
-  background: #fecaca;
-  color: #991b1b;
+  background: var(--danger-color-light);
+  color: var(--danger-color);
 }
 
-.shiftManagement_statusBadge--scheduled {
-  background: #dbeafe;
-  color: #1e40af;
-}
+/* Note: 'scheduled' badge removed as shift rows no longer render a status column */
 
 /* Loading State */
 .shiftManagement_loading {
@@ -278,25 +266,19 @@
 }
 
 .shiftManagement_closeButton {
-  background: none;
+  background: var(--danger-color);
   border: none;
   font-size: var(--font-size-xl);
-  color: #64748b;
+  color: white;
   cursor: pointer;
-  padding: var(--spacing-xs);
-  line-height: 1;
-  border-radius: var(--border-radius-sm);
-  transition: all 0.2s ease;
-}
-
-.shiftManagement_closeButton:hover {
-  background: #f1f5f9;
-  color: #374151;
+  height: 36px;
+  width: 36px;
+  border-radius: 50%;
 }
 
 /* Form Styles */
 .shiftManagement_form {
-  padding: var(--spacing-lg) var(--spacing-xl) var(--spacing-xl);
+  padding: var(--spacing-lg) var(--spacing-xl);
 }
 
 .shiftManagement_formGroup {
@@ -349,9 +331,11 @@
   display: flex;
   gap: var(--spacing-sm);
   justify-content: flex-end;
-  margin-top: var(--spacing-lg);
-  padding-top: var(--spacing-md);
+  padding: var(--spacing-lg) var(--spacing-xl);
   border-top: 1px solid #e2e8f0;
+}
+.shiftManagement_modalBody{
+  padding: var(--spacing-lg) var(--spacing-xl);
 }
 
 /* Responsive Design */
@@ -364,9 +348,6 @@
   }
   .shiftManagement_statsRow {
     grid-template-columns: 1fr;
-  }
-  .shiftManagement_header {
-    padding: var(--spacing-lg);
   }
   .shiftManagement_title {
     font-size: var(--font-size-lg);

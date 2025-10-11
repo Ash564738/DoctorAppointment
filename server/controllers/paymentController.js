@@ -5,6 +5,10 @@ const Appointment = require("../models/appointmentModel");
 const User = require("../models/userModel");
 const Doctor = require("../models/doctorModel");
 const Notification = require("../models/notificationModel");
+const TimeSlot = require("../models/timeSlotModel");
+const LeaveRequest = require("../models/leaveRequestModel");
+const Shift = require("../models/shiftModel");
+const logger = require('../utils/logger');
 const fs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
@@ -13,21 +17,18 @@ const createPaymentIntent = async (req, res) => {
   try {
     const { appointmentData, amount, currency = 'USD' } = req.body;
     const userId = req.userId;
-
     if (!appointmentData || !amount || !userId) {
       return res.status(400).json({
         success: false,
         message: 'Missing required fields: appointmentData, amount, or user authentication'
       });
     }
-
     if (!appointmentData.doctorId || !appointmentData.date || !appointmentData.time || !appointmentData.symptoms) {
       return res.status(400).json({
         success: false,
         message: 'Invalid appointment data: missing required fields'
       });
     }
-
     const doctor = await Doctor.findOne({ userId: appointmentData.doctorId }) || await Doctor.findById(appointmentData.doctorId);
     if (!doctor) {
       return res.status(404).json({
@@ -35,7 +36,6 @@ const createPaymentIntent = async (req, res) => {
         message: "Doctor not found"
       });
     }
-
     const patient = await User.findById(userId);
     if (!patient) {
       return res.status(404).json({
@@ -43,12 +43,10 @@ const createPaymentIntent = async (req, res) => {
         message: "Patient not found"
       });
     }
-
     const consultationFee = amount;
     const platformFeePercent = 10;
     const platformFee = Math.round(consultationFee * platformFeePercent / 100);
     const doctorEarnings = consultationFee - platformFee;
-
     const paymentIntent = await stripe.paymentIntents.create({
       amount: consultationFee * 100,
       currency: currency.toLowerCase(),
@@ -60,7 +58,6 @@ const createPaymentIntent = async (req, res) => {
         platformFee: platformFee.toString()
       }
     });
-
     res.json({
       success: true,
       clientSecret: paymentIntent.client_secret,
@@ -69,7 +66,6 @@ const createPaymentIntent = async (req, res) => {
       platformFee,
       doctorEarnings
     });
-
   } catch (error) {
     console.error('Error creating payment intent:', error);
     res.status(500).json({
@@ -78,7 +74,6 @@ const createPaymentIntent = async (req, res) => {
     });
   }
 };
-
 const confirmPayment = async (req, res) => {
   try {
     const { paymentIntentId } = req.body;
@@ -86,19 +81,15 @@ const confirmPayment = async (req, res) => {
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
       expand: ['charges']
     });
-    console.log('Stripe PaymentIntent:', JSON.stringify(paymentIntent, null, 2));
-
     if (paymentIntent.status !== 'succeeded') {
       return res.status(400).json({
         success: false,
         message: "Payment not successful"
       });
     }
-
     let firstCharge = paymentIntent.charges?.data?.[0];
     let receiptUrl = firstCharge?.receipt_url || null;
     let stripeChargeId = firstCharge?.id || null;
-
     if (!firstCharge && paymentIntent.latest_charge) {
       try {
         const charge = await stripe.charges.retrieve(paymentIntent.latest_charge);
@@ -108,7 +99,6 @@ const confirmPayment = async (req, res) => {
         console.error('Could not fetch latest_charge:', err);
       }
     }
-
     let appointmentData;
     try {
       appointmentData = JSON.parse(paymentIntent.metadata.appointmentData);
@@ -119,6 +109,93 @@ const confirmPayment = async (req, res) => {
       });
     }
     const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : undefined;
+
+    // Validate availability again at confirmation time to avoid double booking
+    const parseTimeToMinutes = (t) => {
+      const [hh, mm] = (t || '').split(':').map(Number);
+      if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
+      return hh * 60 + mm;
+    };
+    const isWithin = (start, end, val) => {
+      if (end >= start) return val >= start && val < end;
+      return val >= start || val < end; // overnight
+    };
+    const sameDayBounds = (d) => {
+      const dt = new Date(d);
+      const start = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+      const end = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + 1);
+      return { start, end };
+    };
+    const dayName = (d) => ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date(d).getDay()];
+    const validateDoctorAvailability = async (doctorUserId, d, t) => {
+      const { start, end } = sameDayBounds(d);
+      const onLeave = await LeaveRequest.findOne({
+        doctorId: doctorUserId,
+        status: 'approved',
+        startDate: { $lte: end },
+        endDate: { $gte: start }
+      }).lean();
+      if (onLeave) {
+        return { ok: false, reason: 'Doctor is on approved leave for the selected date' };
+      }
+      const shifts = await Shift.find({
+        doctorId: doctorUserId,
+        isActive: true,
+        status: { $in: ['approved', undefined] },
+        daysOfWeek: { $in: [dayName(d)] }
+      }).lean();
+      if (!shifts || shifts.length === 0) {
+        return { ok: false, reason: 'No active shift scheduled for the selected day' };
+      }
+      const minutes = parseTimeToMinutes(t);
+      const matchingShift = shifts.find(s => {
+        const ss = parseTimeToMinutes(s.startTime);
+        const se = parseTimeToMinutes(s.endTime);
+        if (ss == null || se == null || minutes == null) return false;
+        return isWithin(ss, se, minutes);
+      });
+      if (!matchingShift) {
+        return { ok: false, reason: 'Selected time is outside the doctor\'s working hours' };
+      }
+      const slot = await (async () => {
+        try {
+          const { start: ds, end: de } = sameDayBounds(d);
+          return await TimeSlot.findOne({
+            doctorId: doctorUserId,
+            date: { $gte: ds, $lt: de },
+            startTime: t,
+          });
+        } catch { return null; }
+      })();
+      if (slot) {
+        if (!slot.isAvailable || slot.isBlocked || slot.bookedPatients >= slot.maxPatients) {
+          return { ok: false, reason: 'Selected time slot is full or unavailable' };
+        }
+      } else {
+        const existing = await Appointment.findOne({
+          doctorId: doctorUserId,
+          date: { $gte: start, $lt: end },
+          time: t,
+          status: { $nin: ['Cancelled'] }
+        }).lean();
+        if (existing) {
+          return { ok: false, reason: 'Selected time is already booked' };
+        }
+      }
+      return { ok: true, shift: matchingShift, slot };
+    };
+
+    const validation = await validateDoctorAvailability(appointmentData.doctorId, appointmentData.date, appointmentData.time);
+    if (!validation.ok) {
+      // Immediately refund since slot is no longer available
+      try {
+        await stripe.refunds.create({ payment_intent: paymentIntentId, amount: parseInt(paymentIntent.metadata.consultationFee) * 100 });
+      } catch (e) {
+        logger.error('Auto-refund failed after unavailable slot', { err: e?.message });
+      }
+      return res.status(409).json({ success: false, message: validation.reason || 'Selected time is no longer available. Payment has been refunded.' });
+    }
+
     const newAppointment = new Appointment({
       userId: userId,
       doctorId: appointmentData.doctorId,
@@ -135,12 +212,13 @@ const confirmPayment = async (req, res) => {
         frequency: capitalize(appointmentData.recurringPattern.frequency)
       } : undefined
     });
-
     let savedAppointment;
     try {
       savedAppointment = await newAppointment.save();
     } catch (err) {
-      console.error('Error saving appointment:', err);
+      logger.error('Error saving appointment after payment', { err: err?.message });
+      // Best effort refund
+      try { await stripe.refunds.create({ payment_intent: paymentIntentId, amount: parseInt(paymentIntent.metadata.consultationFee) * 100 }); } catch (e) {}
       return res.status(500).json({
         success: false,
         message: "Failed to create appointment after payment"
@@ -161,11 +239,25 @@ const confirmPayment = async (req, res) => {
       platformFee: parseInt(paymentIntent.metadata.platformFee),
       doctorEarnings: parseInt(paymentIntent.metadata.consultationFee) - parseInt(paymentIntent.metadata.platformFee)
     });
-
     await payment.save();
     savedAppointment.paymentId = payment._id;
     savedAppointment.paymentStatus = 'Paid';
     await savedAppointment.save();
+
+    // Book the associated TimeSlot if exists
+    try {
+      const { start: ds, end: de } = sameDayBounds(appointmentData.date);
+      const slotDoc = await TimeSlot.findOne({
+        doctorId: appointmentData.doctorId,
+        date: { $gte: ds, $lt: de },
+        startTime: appointmentData.time,
+      });
+      if (slotDoc && slotDoc.canAcceptBooking()) {
+        await slotDoc.bookSlot(savedAppointment._id);
+      }
+    } catch (e) {
+      logger.warn('Failed to book slot during payment confirmation', { err: e?.message });
+    }
     const appointment = await Appointment.findById(savedAppointment._id)
       .populate('doctorId')
       .populate('userId');
@@ -177,12 +269,10 @@ const confirmPayment = async (req, res) => {
       userId: payment.doctorId,
       content: `Payment received for appointment with ${appointment.userId.firstname} ${appointment.userId.lastname} on ${appointment.date} at ${appointment.time}. You will earn $${payment.doctorEarnings}`
     });
-
     await Promise.all([
       patientNotification.save(),
       doctorNotification.save()
     ]);
-
     res.json({
       success: true,
       message: "Payment confirmed successfully",
@@ -280,7 +370,7 @@ const requestRefund = async (req, res) => {
     const payment = await Payment.findOne({
       _id: paymentId,
       patientId: userId,
-      status: 'Succeeded'
+      status: { $in: ['Succeeded', 'Partially_Refunded'] }
     });
 
     if (!payment) {
@@ -290,21 +380,61 @@ const requestRefund = async (req, res) => {
       });
     }
 
-    if (!payment.canRefund()) {
+    if (payment.refundAmount >= payment.amount) {
       return res.status(400).json({
         success: false,
         message: "Payment cannot be refunded"
       });
     }
 
-    const actualRefundAmount = payment.calculateRefund(refundAmount);
+    // Load appointment to apply refund policy (based on type and timing)
+    const appointment = await Appointment.findById(payment.appointmentId);
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Associated appointment not found' });
+    }
+
+    // Refund policies (mirror refundController)
+    const POLICIES = {
+      'Emergency': { full: 2, partial: 0, percent: 0 },
+      'Consultation': { full: 24, partial: 4, percent: 50 },
+      'Follow-up': { full: 12, partial: 2, percent: 75 },
+      'Regular': { full: 24, partial: 6, percent: 60 }
+    };
+    const policy = POLICIES[appointment.appointmentType] || POLICIES['Regular'];
+    const appointmentDate = new Date(appointment.date);
+    const [hh, mm] = (appointment.time || '00:00').split(':');
+    appointmentDate.setHours(parseInt(hh || '0'), parseInt(mm || '0'), 0, 0);
+    const now = new Date();
+    const hoursBefore = (appointmentDate - now) / (1000 * 60 * 60);
+
+    let policyAllowed = 0;
+    if (hoursBefore >= policy.full) {
+      policyAllowed = payment.amount - (payment.refundAmount || 0);
+    } else if (hoursBefore >= policy.partial) {
+      policyAllowed = Math.round(payment.amount * (policy.percent / 100)) - (payment.refundAmount || 0);
+    } else if (appointment.status === 'Cancelled') {
+      // If already cancelled, use the same policy calculation at cancellation time (best-effort now)
+      policyAllowed = 0; // too late for refund under policy
+    } else {
+      policyAllowed = 0;
+    }
+    policyAllowed = Math.max(0, policyAllowed);
+
+    // Determine refundable remaining amount and requested amount
+    const remaining = Math.max(0, (payment.amount || 0) - (payment.refundAmount || 0));
+    const desired = typeof refundAmount === 'number' && !isNaN(refundAmount) ? refundAmount : remaining;
+    const cappedByPolicy = Math.min(desired, policyAllowed);
+    const actualRefundAmount = Math.min(cappedByPolicy, remaining);
+    if (actualRefundAmount <= 0) {
+      return res.status(400).json({ success: false, message: 'Not eligible for refund under current policy/timing' });
+    }
 
     const refund = await stripe.refunds.create({
       payment_intent: payment.stripePaymentIntentId,
       amount: actualRefundAmount * 100
     });
 
-    payment.refundAmount += actualRefundAmount;
+  payment.refundAmount = (payment.refundAmount || 0) + actualRefundAmount;
     payment.refundReason = reason;
     payment.refundDate = new Date();
     payment.status = payment.refundAmount >= payment.amount ? 'Refunded' : 'Partially_Refunded';

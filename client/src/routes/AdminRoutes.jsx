@@ -6,9 +6,6 @@ import DoctorManagement from "../pages/Admin/DoctorManagement/DoctorManagement";
 import AppointmentManagement from "../pages/Admin/AppointmentManagement/AppointmentManagement";
 import DoctorScheduling from "../pages/Admin/DoctorScheduling/DoctorScheduling";
 import BillingReports from "../pages/Admin/BillingReports/BillingReports";
-import SystemConfig from "../pages/Admin/SystemConfig/SystemConfig";
-import BranchManagement from "../pages/Admin/BranchManagement/BranchManagement";
-import AuditLogs from "../pages/Admin/AuditLogs/AuditLogs";
 
 const AdminRoutes = () => (
   <Routes>
@@ -20,9 +17,6 @@ const AdminRoutes = () => (
     <Route path="appointments" element={<AppointmentManagement />} />
     <Route path="schedule" element={<DoctorScheduling />} />
     <Route path="billing" element={<BillingReports />} />
-    <Route path="system-config" element={<SystemConfig />} />
-    <Route path="branch-management" element={<BranchManagement />} />
-    <Route path="audit-logs" element={<AuditLogs />} />
   </Routes>
 );
 

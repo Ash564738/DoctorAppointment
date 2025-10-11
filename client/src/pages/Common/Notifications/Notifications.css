@@ -1,16 +1,21 @@
 /* Notifications Component Styles */
-.notifications_container {
+.notifications_page{
   min-height: 100vh;
-  background: var(--secondary-color);
+  background-color: #f8fafc;
+  font-size: var(--font-size-base);
   font-family: var(--font-family);
-  padding: var(--spacing-lg) 0;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
 }
 
-.notifications_content {
+.notifications_container {
+  margin: 0 auto;
+  padding: var(--spacing-md) 0;
+  width: 70vw;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  height: 100vh;
 }
+
 
 /* Header Styles */
 .notifications_header {
@@ -51,6 +56,10 @@
 
 /* Section Styles */
 .notifications_section {
+  /* Match card look used across tables */
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
@@ -66,7 +75,8 @@
 }
 
 .notifications_tableHeader {
-  background: var(--secondary-color);
+  /* Consistent header background */
+  background: #f8fafc;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -74,8 +84,10 @@
   padding: var(--spacing-md) var(--spacing-lg);
   text-align: left;
   color: var(--text-color);
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   border-bottom: 1px solid #e2e8f0;
   white-space: nowrap;
 }
@@ -90,7 +102,13 @@
 }
 
 .notifications_tableRow:hover {
-  background: var(--secondary-color);
+  /* Match hover color used elsewhere */
+  background: #f8fafc;
+}
+
+/* Last row clean edge */
+.notifications_tableRow:last-child {
+  border-bottom: none;
 }
 
 .notifications_tableCell {
@@ -119,23 +137,24 @@
 
 .notifications_paginationButton {
   padding: var(--spacing-xs) var(--spacing-md);
-  background: var(--white);
+  background: #f3f4f6;
   border: 1px solid #d1d5db;
   border-radius: var(--border-radius-md);
-  color: var(--text-color);
+  color: #374151;
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
   min-width: 40px;
 }
 
 .notifications_paginationButton:hover {
-  background: var(--secondary-color);
-  border-color: var(--primary-color);
+  background: #e5e7eb;
 }
 
-.notifications_paginationButton--active {
+.notifications_paginationButton--active,
+/* Support alternate active class naming if needed */
+.notifications_paginationButton.active {
   background: var(--primary-color);
   border-color: var(--primary-color);
   color: var(--white);
@@ -144,6 +163,11 @@
 .notifications_paginationButton--active:hover {
   background: var(--primary-color-dark);
   border-color: var(--primary-color-dark);
+}
+
+.notifications_paginationButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Empty State */
@@ -159,8 +183,6 @@
 }
 
 @media (max-width: 600px) {
-  .notifications_content {
-  }
   .notifications_header {
     flex-direction: column;
     gap: var(--spacing-sm);
@@ -168,8 +190,6 @@
   }
   .notifications_title {
     font-size: var(--font-size-lg);
-  }
-  .notifications_tableCell.notifications_content {
   }
   .notifications_headerCell,
   .notifications_tableCell {
@@ -183,8 +203,6 @@
 }
 
 @media (max-width: 480px) {
-  .notifications_content {
-  }
   .notifications_header {
     padding: var(--spacing-md);
   }
@@ -195,8 +213,6 @@
   .notifications_tableCell {
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: var(--font-size-xs);
-  }
-  .notifications_tableCell.notifications_content {
   }
   .notifications_pagination {
     gap: 4px;

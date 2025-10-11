@@ -1,0 +1,326 @@
+// Auto-generated DBML from Mongoose models
+// Paste into https://dbdiagram.io
+
+Table appointment {
+  userId varchar
+  doctorId varchar
+  prescriptionId varchar
+  medicalRecordId varchar
+  paymentId varchar
+  date datetime
+  time varchar
+  symptoms varchar
+  status varchar
+  notes varchar
+  timeSlotId varchar
+  appointmentType varchar
+  priority varchar
+  paymentStatus varchar
+  cancellationReason varchar
+  cancellationDate datetime
+  reminderSent boolean
+  recurringPattern_frequency varchar
+  recurringPattern_endDate datetime
+  recurringPattern_occurrences int
+  estimatedDuration int
+  _id varchar [pk]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Table chatroom {
+  appointmentId varchar
+  isDirectChat boolean
+  patientId varchar
+  doctorId varchar
+  status varchar
+  lastMessageAt datetime
+  isPatientOnline boolean
+  isDoctorOnline boolean
+  unreadCountPatient int
+  unreadCountDoctor int
+  _id varchar [pk]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Table message {
+  chatRoomId varchar
+  senderId varchar
+  senderRole varchar
+  messageType varchar
+  content varchar
+  fileAttachment_fileName varchar
+  fileAttachment_fileUrl varchar
+  fileAttachment_fileSize int
+  fileAttachment_fileType varchar
+  fileAttachment_thumbnailUrl varchar
+  isRead boolean
+  readAt datetime
+  isEdited boolean
+  editedAt datetime
+  replyTo varchar
+  _id varchar [pk]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Table doctor {
+  userId varchar
+  specialization varchar
+  experience int
+  fees int
+  department varchar
+  isDoctor boolean
+  _id varchar [pk]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Table healthmetrics {
+  userId varchar
+  weight int
+  height int
+  bloodPressure_systolic int
+  bloodPressure_diastolic int
+  bloodPressure_formatted varchar
+  heartRate int
+  temperature_value int
+  temperature_unit varchar
+  bloodSugar_value int
+  bloodSugar_testType varchar
+  bloodSugar_unit varchar
+  oxygenSaturation int
+  respiratoryRate int
+  notes varchar
+  _id varchar [pk]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Table medicalrecord {
+  patientId varchar
+  doctorId varchar
+  appointmentId varchar
+  chiefComplaint varchar
+  historyOfPresentIllness varchar
+  pastMedicalHistory varchar
+  familyHistory varchar
+  socialHistory_smoking_status varchar
+  socialHistory_smoking_details varchar
+  socialHistory_alcohol_status varchar
+  socialHistory_alcohol_details varchar
+  socialHistory_drugs_status varchar
+  socialHistory_drugs_details varchar
+  symptoms varchar
+  allergies json
+  healthMetricsIds varchar
+  physicalExamination_general varchar
+  physicalExamination_head varchar
+  physicalExamination_neck varchar
+  physicalExamination_chest varchar
+  physicalExamination_abdomen varchar
+  physicalExamination_extremities varchar
+  physicalExamination_neurological varchar
+  physicalExamination_other varchar
+  assessment varchar
+  diagnosis json
+  treatment varchar
+  prescriptionIds varchar
+  attachments json
+  _id varchar [pk]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Table overtime {
+  doctorId varchar
+  shiftId varchar
+  date datetime
+  hours int
+  reason varchar
+  status varchar
+  requestedAt datetime
+  decisionAt datetime
+  adminComment varchar
+  _id varchar [pk]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Table payment {
+  appointmentId varchar
+  patientId varchar
+  doctorId varchar
+  amount int
+  currency varchar
+  paymentMethod varchar
+  stripePaymentIntentId varchar
+  stripeChargeId varchar
+  status varchar
+  paymentDate datetime
+  refundAmount int
+  refundReason varchar
+  refundDate datetime
+  refundProcessedBy varchar
+  platformFee int
+  doctorEarnings int
+  paymentMetadata_customerEmail varchar
+  paymentMetadata_customerName varchar
+  paymentMetadata_billingAddress_line1 varchar
+  paymentMetadata_billingAddress_line2 varchar
+  paymentMetadata_billingAddress_city varchar
+  paymentMetadata_billingAddress_state varchar
+  paymentMetadata_billingAddress_postal_code varchar
+  paymentMetadata_billingAddress_country varchar
+  receiptUrl varchar
+  failureReason varchar
+  notes varchar
+  _id varchar [pk]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Table prescription {
+  doctorId varchar
+  patientId varchar
+  appointmentId varchar
+  medications json
+  _id varchar [pk]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Table shift {
+  doctorId varchar
+  title varchar
+  startTime varchar
+  endTime varchar
+  daysOfWeek json
+  maxPatientsPerHour int
+  slotDuration int
+  department varchar
+  status varchar
+  requestedBy varchar
+  adminComment varchar
+  isActive boolean
+  specialNotes varchar
+  breakTime_start varchar
+  breakTime_end varchar
+  _id varchar [pk]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Table shiftswap {
+  requesterId varchar
+  originalShiftId varchar
+  requestedShiftId varchar
+  swapType varchar
+  swapDate datetime
+  swapStartDate datetime
+  swapEndDate datetime
+  swapWithId varchar
+  status varchar
+  reason varchar
+  adminComment varchar
+  partnerDecision varchar
+  partnerDecisionAt datetime
+  requestedAt datetime
+  decisionAt datetime
+  _id varchar [pk]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Table timeslot {
+  shiftId varchar
+  doctorId varchar
+  date datetime
+  startTime varchar
+  endTime varchar
+  maxPatients int
+  bookedPatients int
+  isAvailable boolean
+  isBlocked boolean
+  blockReason varchar
+  appointments varchar
+  _id varchar [pk]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Table user {
+  firstname varchar
+  lastname varchar
+  email varchar
+  password varchar
+  role varchar
+  isAdmin boolean
+  age int
+  dateOfBirth datetime
+  bloodGroup varchar
+  familyDiseases varchar
+  gender varchar
+  mobile varchar
+  address varchar
+  status varchar
+  pic varchar
+  lastLogin datetime
+  isEmailVerified boolean
+  emailVerificationToken varchar
+  passwordResetToken varchar
+  passwordResetExpires datetime
+  _id varchar [pk]
+  createdAt datetime
+  updatedAt datetime
+}
+
+Table medicine {
+  _id varchar [pk]
+  prescriptionId varchar
+  name varchar
+  dosage varchar
+  frequency varchar
+  duration varchar
+  instructions varchar
+  quantity varchar
+}
+
+Ref: appointment.userId > user._id
+Ref: appointment.doctorId > user._id
+Ref: appointment.prescriptionId > prescription._id
+Ref: appointment.medicalRecordId > medicalrecord._id
+Ref: appointment.paymentId > payment._id
+Ref: appointment.timeSlotId > timeslot._id
+Ref: chatroom.appointmentId > appointment._id
+Ref: chatroom.patientId > user._id
+Ref: chatroom.doctorId > user._id
+Ref: message.chatRoomId > chatroom._id
+Ref: message.senderId > user._id
+Ref: doctor.userId > user._id
+Ref: healthmetrics.userId > user._id
+Ref: medicalrecord.patientId > user._id
+Ref: medicalrecord.doctorId > user._id
+Ref: medicalrecord.appointmentId > appointment._id
+Ref: medicalrecord.healthMetricsIds > healthmetrics._id
+Ref: medicalrecord.prescriptionIds > prescription._id
+Ref: overtime.doctorId > user._id
+Ref: overtime.shiftId > shift._id
+Ref: payment.appointmentId > appointment._id
+Ref: payment.patientId > user._id
+Ref: payment.doctorId > user._id
+Ref: payment.refundProcessedBy > user._id
+Ref: prescription.doctorId > user._id
+Ref: prescription.patientId > user._id
+Ref: prescription.appointmentId > appointment._id
+Ref: shift.doctorId > user._id
+Ref: shift.requestedBy > user._id
+Ref: shiftswap.requesterId > user._id
+Ref: shiftswap.originalShiftId > shift._id
+Ref: shiftswap.requestedShiftId > shift._id
+Ref: shiftswap.swapWithId > user._id
+Ref: timeslot.shiftId > shift._id
+Ref: timeslot.doctorId > user._id
+Ref: timeslot.appointments > appointment._id
+Ref: medicine.prescriptionId > prescription._id

@@ -2,12 +2,9 @@ import React from 'react';
 import './MessageBubble.css';
 
 const MessageBubble = ({ message, isOwn }) => {
-  // Safety check for message data
   if (!message) {
     return null;
   }
-
-  // Ensure sender object exists with fallback values
   const safeSender = message.sender || {
     firstname: 'Unknown',
     lastname: 'User',
@@ -100,7 +97,7 @@ const MessageBubble = ({ message, isOwn }) => {
               </div>
               <button
                 onClick={() => handleFileDownload(
-                  message.fileAttachment.fileUrl,
+                  message.fileAttachment.downloadUrl || message.fileAttachment.fileUrl,
                   message.fileAttachment.fileName
                 )}
                 className="messageBubble_downloadBtn"

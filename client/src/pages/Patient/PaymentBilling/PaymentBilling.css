@@ -17,7 +17,6 @@
 }
 
 .paymentBilling_header {
-  text-align: center;
 }
 
 .paymentBilling_title {
@@ -83,12 +82,11 @@
 }
 
 .paymentBilling_invoiceCard {
-  background: white;
+  background: var(--white);
+  border: 1px solid rgba(0,0,0,0.05);
   border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
   padding: var(--spacing-lg);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e9ecef;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .paymentBilling_invoiceCard:hover {
@@ -130,12 +128,40 @@
 }
 
 .paymentBilling_status {
-  padding: var(--spacing-xs) var(--spacing-md);
-  border-radius: 20px;
-  color: white;
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+/* Status color variants to align with other views */
+.paymentBilling_status--paid {
+  background: var(--success-color-light);
+  color: var(--success-color);
+}
+.paymentBilling_status--refunded {
+  background: var(--info-color-light);
+  color: var(--info-color);
+}
+.paymentBilling_status--pending,
+.paymentBilling_status--processing,
+.paymentBilling_status--awaiting-payment {
+  background: var(--warning-color-light);
+  color: var(--warning-color);
+}
+.paymentBilling_status--failed,
+.paymentBilling_status--overdue,
+.paymentBilling_status--cancelled {
+  background: var(--danger-color-light);
+  color: var(--danger-color);
+}
+.paymentBilling_status--partially-refunded,
+.paymentBilling_status--partial {
+  background: #f0e6ff;
+  color: #5b21b6;
 }
 
 .paymentBilling_invoiceDetails {
@@ -342,6 +368,155 @@
   .paymentBilling_modalActions button {
     width: 100%;
   }
+}
+
+/* Refund Styles */
+.paymentBilling_refundButton {
+  background-color: #ffc107;
+  color: #212529;
+  border: 1px solid #ffc107;
+}
+
+.paymentBilling_refundButton:hover:not(:disabled) {
+  background-color: #e0a800;
+  border-color: #d39e00;
+  color: #212529;
+}
+
+.paymentBilling_refundButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.paymentBilling_refundStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+.paymentBilling_refundStatus.paymentBilling_refundPending {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.paymentBilling_refundModal {
+  background: white;
+  border-radius: 8px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.paymentBilling_modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.paymentBilling_refundDetails {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border-left: 4px solid #007bff;
+}
+
+.paymentBilling_refundDetails p {
+  margin: 8px 0;
+  color: #495057;
+}
+
+.paymentBilling_refundWarning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border: 1px solid #ffeaa7;
+}
+
+.paymentBilling_formGroup {
+  margin-bottom: 20px;
+}
+
+.paymentBilling_formGroup label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.paymentBilling_select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #374151;
+  background-color: white;
+}
+
+.paymentBilling_select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.paymentBilling_btnCancel {
+  padding: 10px 20px;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.paymentBilling_btnCancel:hover {
+  background-color: #e5e7eb;
+}
+
+.paymentBilling_btnSubmit {
+  padding: 10px 20px;
+  background-color: #ffc107;
+  color: #212529;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.paymentBilling_btnSubmit:hover:not(:disabled) {
+  background-color: #e0a800;
+  border-color: #d39e00;
+}
+
+.paymentBilling_btnSubmit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 480px) {

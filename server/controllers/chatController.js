@@ -5,9 +5,7 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { info, error: logError, chat, api, database } = require('../utils/logger');
-
-// Create chat room for appointment
+const { info, error: logError, db, api } = require('../utils/logger');
 const createChatRoom = async (req, res) => {
   const startTime = Date.now();
   const requestId = req.requestId || 'unknown';
@@ -23,14 +21,10 @@ const createChatRoom = async (req, res) => {
       userAgent: req.get('User-Agent'),
       ip: req.ip
     });
-
-    // Validate appointment exists
     const appointment = await Appointment.findById(appointmentId)
       .populate('doctorId')
       .populate('userId');
-
-    database('findById', 'Appointment', { appointmentId }, appointment, { requestId });
-
+    db('findById', 'Appointment', { appointmentId }, appointment, { requestId });
     if (!appointment) {
       logError('Appointment not found for chat room creation', null, {
         requestId,
@@ -42,8 +36,6 @@ const createChatRoom = async (req, res) => {
         message: "Appointment not found"
       });
     }
-
-    // Check if user has access to this appointment
     const hasAccess = appointment.userId._id.toString() === userId ||
                      appointment.doctorId._id.toString() === userId;
 
@@ -60,10 +52,8 @@ const createChatRoom = async (req, res) => {
         message: "Unauthorized access to appointment"
       });
     }
-
-    // Check if chat room already exists
     let chatRoom = await ChatRoom.findOne({ appointmentId });
-    database('findOne', 'ChatRoom', { appointmentId }, chatRoom, { requestId });
+    db('findOne', 'ChatRoom', { appointmentId }, chatRoom, { requestId });
 
     if (!chatRoom) {
       info('Creating new chat room for appointment', {
@@ -72,20 +62,13 @@ const createChatRoom = async (req, res) => {
         patientId: appointment.userId._id,
         doctorId: appointment.doctorId._id
       });
-
-      // Create new chat room
       chatRoom = new ChatRoom({
         appointmentId,
         patientId: appointment.userId._id,
         doctorId: appointment.doctorId._id
       });
-
       await chatRoom.save();
-      database('save', 'ChatRoom', { appointmentId }, chatRoom, { requestId });
-
-      // Chat room created successfully - no automatic welcome message needed
-      // Users can start chatting immediately
-
+      db('save', 'ChatRoom', { appointmentId }, chatRoom, { requestId });
       info('Chat room created successfully', {
         requestId,
         chatRoomId: chatRoom._id,
@@ -100,11 +83,8 @@ const createChatRoom = async (req, res) => {
         processingTime: `${Date.now() - startTime}ms`
       });
     }
-
-    // Populate chat room data
     await chatRoom.populate('patientId', 'firstname lastname email');
     await chatRoom.populate('doctorId', 'firstname lastname email');
-
     res.json({
       success: true,
       chatRoom: {
@@ -116,7 +96,6 @@ const createChatRoom = async (req, res) => {
         createdAt: chatRoom.createdAt
       }
     });
-
   } catch (error) {
     console.error('Error creating chat room:', error);
     res.status(500).json({
@@ -130,38 +109,32 @@ const createDirectChatRoom = async (req, res) => {
   try {
     const { targetUserId } = req.body;
     const currentUserId = req.locals;
-
     if (!targetUserId) {
       return res.status(400).json({
         success: false,
         message: "Target user ID is required"
       });
     }
-
     if (targetUserId === currentUserId) {
       return res.status(400).json({
         success: false,
         message: "Cannot create chat room with yourself"
       });
     }
-
     const currentUser = await User.findById(currentUserId);
     const targetUser = await User.findById(targetUserId);
-
     if (!currentUser || !targetUser) {
       return res.status(404).json({
         success: false,
         message: "User not found"
       });
     }
-
     let chatRoom = await ChatRoom.findOne({
       $or: [
         { patientId: currentUserId, doctorId: targetUserId, isDirectChat: true },
         { patientId: targetUserId, doctorId: currentUserId, isDirectChat: true }
       ]
     });
-
     if (!chatRoom) {
       let patientId, doctorId;
       if (currentUser.role === 'Patient' && targetUser.role === 'Doctor') {
@@ -175,14 +148,12 @@ const createDirectChatRoom = async (req, res) => {
         doctorId = targetUserId;
       }
       const directChatId = new mongoose.Types.ObjectId();
-
       chatRoom = new ChatRoom({
         patientId,
         doctorId,
         appointmentId: directChatId,
         isDirectChat: true
       });
-
       try {
         await chatRoom.save();
       } catch (saveError) {
@@ -193,7 +164,6 @@ const createDirectChatRoom = async (req, res) => {
               { patientId: targetUserId, doctorId: currentUserId, isDirectChat: true }
             ]
           });
-
           if (!chatRoom) {
             throw saveError;
           }
@@ -202,10 +172,8 @@ const createDirectChatRoom = async (req, res) => {
         }
       }
     }
-
     await chatRoom.populate('patientId', 'firstname lastname email pic role');
     await chatRoom.populate('doctorId', 'firstname lastname email pic role');
-
     res.json({
       success: true,
       chatRoom: {
@@ -217,7 +185,6 @@ const createDirectChatRoom = async (req, res) => {
         createdAt: chatRoom.createdAt
       }
     });
-
   } catch (error) {
     console.error('Error creating direct chat room:', error);
     if (error.code === 11000) {
@@ -226,7 +193,6 @@ const createDirectChatRoom = async (req, res) => {
         message: "Chat room already exists between these users"
       });
     }
-
     res.status(500).json({
       success: false,
       message: "Failed to create chat room",
@@ -242,10 +208,8 @@ const getAvailableUsers = async (req, res) => {
     if (!currentUser) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
-
     let users = [];
     if (currentUser.role === 'Patient') {
-      // Patient: only doctors they have appointments with (confirmed/active/completed)
       const doctorIds = await Appointment.distinct("doctorId", {
         userId: currentUserId,
         status: { $in: ["Confirmed", "Active", "Completed"] }
@@ -256,7 +220,6 @@ const getAvailableUsers = async (req, res) => {
         status: 'Active'
       }).select('firstname lastname email pic role specialization');
     } else if (currentUser.role === 'Doctor') {
-      // Doctor: patients they have appointments with, all doctors (except self), and all admins
       const patientIds = await Appointment.distinct("userId", {
         doctorId: currentUserId,
         status: { $in: ["Confirmed", "Active", "Completed"] }
@@ -277,18 +240,15 @@ const getAvailableUsers = async (req, res) => {
       }).select('firstname lastname email pic role specialization');
       users = [...patients, ...doctors, ...admins];
     } else if (currentUser.role === 'Admin') {
-      // Admin: all doctors
       users = await User.find({
         role: 'Doctor',
         status: 'Active'
       }).select('firstname lastname email pic role specialization');
     }
-
     res.json({
       success: true,
       users
     });
-
   } catch (error) {
     console.error('Error fetching available users:', error);
     res.status(500).json({
@@ -298,7 +258,6 @@ const getAvailableUsers = async (req, res) => {
   }
 };
 
-// Get chat rooms for user
 const getUserChatRooms = async (req, res) => {
   try {
     const userId = req.locals;
@@ -312,8 +271,6 @@ const getUserChatRooms = async (req, res) => {
     .populate('doctorId', 'firstname lastname email pic role')
     .populate('appointmentId', 'date time status')
     .sort({ lastMessageAt: -1 });
-
-    // Get last message for each chat room
     const chatRoomsWithLastMessage = await Promise.all(
       chatRooms.map(async (chatRoom) => {
         const lastMessage = await Message.findOne({ chatRoomId: chatRoom._id })
@@ -383,7 +340,7 @@ const getChatMessages = async (req, res) => {
       .populate('patientId', 'firstname lastname pic role')
       .populate('doctorId', 'firstname lastname pic role');
 
-    database('findById', 'ChatRoom', { chatRoomId }, chatRoom, { requestId, populated: true });
+    db('findById', 'ChatRoom', { chatRoomId }, chatRoom, { requestId, populated: true });
 
     if (!chatRoom || !chatRoom.canUserAccess(userId)) {
       logError('Unauthorized access to chat room messages', null, {
@@ -408,7 +365,7 @@ const getChatMessages = async (req, res) => {
 
     const total = await Message.countDocuments({ chatRoomId });
 
-    database('find', 'Message', { chatRoomId, page, limit }, { count: messages.length, total }, { requestId });
+    db('find', 'Message', { chatRoomId, page, limit }, { count: messages.length, total }, { requestId });
 
     const transformedMessages = messages.reverse().map(message => ({
       ...message.toObject(),
@@ -521,15 +478,13 @@ const uploadChatFile = async (req, res) => {
       });
     }
 
-    const fileUrl = `/uploads/chat-files/${req.file.filename}`;
+  const fileUrl = `/api/chat/download/REPLACE_WITH_FILE_ID`;
     const isImage = req.file.mimetype.startsWith('image/');
-
-    // Create file upload record
     const fileUpload = new FileUpload({
       uploaderId: userId,
       fileName: req.file.filename,
       originalName: req.file.originalname,
-      fileUrl,
+      fileUrl: `/uploads/chat-files/${req.file.filename}`,
       fileSize: req.file.size,
       fileType: req.file.mimetype,
       mimeType: req.file.mimetype,
@@ -537,24 +492,25 @@ const uploadChatFile = async (req, res) => {
     });
 
     await fileUpload.save();
-
-    // Create message with file attachment
     const message = new Message({
       chatRoomId,
       senderId: userId,
-      senderRole: req.userRole, // This should be set by auth middleware
+      senderRole: req.userRole,
       messageType: isImage ? 'image' : 'file',
       fileAttachment: {
         fileName: req.file.originalname,
-        fileUrl,
+        fileUrl: '',
         fileSize: req.file.size,
         fileType: req.file.mimetype
       }
     });
 
-    await message.save();
-    fileUpload.messageId = message._id;
-    await fileUpload.save();
+  await message.save();
+  fileUpload.messageId = message._id;
+  await fileUpload.save();
+  message.fileAttachment.fileUrl = `/uploads/chat-files/${req.file.filename}`;
+  message.fileAttachment.downloadUrl = `/api/chat/download/${fileUpload._id}`;
+  await message.save();
 
     await message.populate('senderId', 'firstname lastname role pic');
 
@@ -585,7 +541,6 @@ const uploadChatFile = async (req, res) => {
   }
 };
 
-// Download chat file
 const downloadChatFile = async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -605,8 +560,6 @@ const downloadChatFile = async (req, res) => {
         message: "File not found"
       });
     }
-
-    // Check if user has access to the chat room
     const chatRoom = fileUpload.messageId.chatRoomId;
     if (!chatRoom.canUserAccess(userId)) {
       return res.status(403).json({
@@ -614,8 +567,6 @@ const downloadChatFile = async (req, res) => {
         message: "Unauthorized access to file"
       });
     }
-
-    // Increment download count
     fileUpload.downloadCount += 1;
     await fileUpload.save();
 
@@ -638,8 +589,6 @@ const downloadChatFile = async (req, res) => {
     });
   }
 };
-
-// Close chat room
 const closeChatRoom = async (req, res) => {
   try {
     const { chatRoomId } = req.params;

@@ -4,7 +4,8 @@ import './DoctorEarning.css';
 import { apiCall } from '../../../helper/apiCall';
 import NavbarWrapper from '../../../components/Common/NavbarWrapper/NavbarWrapper';
 import Footer from '../../../components/Common/Footer/Footer';
-import { FaDollarSign, FaCalendarAlt, FaChartLine, FaDownload } from 'react-icons/fa';
+import { FaDollarSign, FaCalendarAlt, FaChartLine, FaDownload, FaUndo, FaExclamationTriangle } from 'react-icons/fa';
+import PageHeader from '../../../components/Common/PageHeader/PageHeader';
 
 
 const DoctorEarning = () => {
@@ -12,11 +13,15 @@ const DoctorEarning = () => {
   const [loading, setLoading] = useState(true);
   const [recentPayouts, setRecentPayouts] = useState([]);
   const [payoutsLoading, setPayoutsLoading] = useState(true);
-  const [downloading, setDownloading] = useState(null); // payout id being downloaded
-
+  const [downloading, setDownloading] = useState(null);
+  
+  // Refund impact data
+  const [refundImpact, setRefundImpact] = useState(null);
+  const [refundLoading, setRefundLoading] = useState(true);
   useEffect(() => {
     fetchEarnings();
     fetchRecentPayouts();
+    fetchRefundImpact();
   }, []);
 
   const fetchEarnings = async () => {
@@ -51,18 +56,35 @@ const DoctorEarning = () => {
     }
   };
 
+  const fetchRefundImpact = async () => {
+    setRefundLoading(true);
+    try {
+  const res = await apiCall.get('/refunds/doctor-impact');
+      if (res && res.success && res.data) {
+        setRefundImpact(res.data);
+      } else {
+        setRefundImpact(null);
+      }
+    } catch (err) {
+      setRefundImpact(null);
+    } finally {
+      setRefundLoading(false);
+    }
+  };
+
   const downloadInvoice = async (invoiceId) => {
     setDownloading(invoiceId);
     try {
-      const response = await apiCall.get(`payment/download/${invoiceId}/`, { responseType: 'blob' });
-      if (response && response.data) {
-        const url = window.URL.createObjectURL(response.data);
+      const blob = await apiCall.get(`payment/download/${invoiceId}/`, { responseType: 'blob' });
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.setAttribute('download', `invoice-${invoiceId}.pdf`);
         document.body.appendChild(link);
         link.click();
         link.remove();
+        window.URL.revokeObjectURL(url);
       } else {
         alert('Failed to download invoice');
       }
@@ -77,7 +99,11 @@ const DoctorEarning = () => {
     <div className="doctorEarning_page">
       <NavbarWrapper />
       <div className="doctorEarning_container">
-        <h2 className="doctorEarning_title">My Earnings</h2>
+        <PageHeader
+          title="My Earnings"
+          subtitle="Track your earnings, monthly breakdown, and recent payouts"
+          className="doctorEarning_header"
+        />
         {loading ? (
           <div className="doctorEarning_loading">Loading...</div>
         ) : !earnings ? (
@@ -107,6 +133,26 @@ const DoctorEarning = () => {
                   <div className="doctorEarning_statLabel">Last Month</div>
                 </div>
               </div>
+              
+              {/* Refund Impact Cards */}
+              {!refundLoading && refundImpact && (
+                <>
+                  <div className="doctorEarning_statCard doctorEarning_refundCard">
+                    <div className="doctorEarning_statIcon"><FaUndo /></div>
+                    <div className="doctorEarning_statContent">
+                      <div className="doctorEarning_statNumber">${refundImpact.totalRefunded?.toFixed(2) ?? '0.00'}</div>
+                      <div className="doctorEarning_statLabel">Total Refunded</div>
+                    </div>
+                  </div>
+                  <div className="doctorEarning_statCard doctorEarning_refundCard">
+                    <div className="doctorEarning_statIcon"><FaExclamationTriangle /></div>
+                    <div className="doctorEarning_statContent">
+                      <div className="doctorEarning_statNumber">{refundImpact.refundsProcessed ?? 0}</div>
+                      <div className="doctorEarning_statLabel">Refunds Processed</div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Monthly Breakdown Table */}
@@ -132,6 +178,32 @@ const DoctorEarning = () => {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            )}
+
+            {/* Refund Impact Section */}
+            {!refundLoading && refundImpact && refundImpact.recentRefunds && refundImpact.recentRefunds.length > 0 && (
+              <div className="doctorEarning_section">
+                <h3 className="doctorEarning_sectionTitle">Recent Refunds Impact</h3>
+                <div className="doctorEarning_refundNote">
+                  <FaExclamationTriangle />
+                  <span>Refunds you've processed are deducted from your earnings. Review your refund activity below.</span>
+                </div>
+                <div className="doctorEarning_refundsList">
+                  {refundImpact.recentRefunds.map((refund, idx) => (
+                    <div key={idx} className="doctorEarning_refundCard">
+                      <div className="doctorEarning_refundInfo">
+                        <div><strong>Patient:</strong> {refund.patientName}</div>
+                        <div><strong>Date:</strong> {new Date(refund.processedDate).toLocaleDateString()}</div>
+                        <div><strong>Reason:</strong> {refund.reason}</div>
+                      </div>
+                      <div className="doctorEarning_refundAmount">
+                        <span>-${refund.amount.toFixed(2)}</span>
+                        <small>Deducted from earnings</small>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

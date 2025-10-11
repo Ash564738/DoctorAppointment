@@ -5,6 +5,7 @@ import NavbarWrapper from '../../../components/Common/NavbarWrapper/NavbarWrappe
 import Footer from '../../../components/Common/Footer/Footer';
 import MedicalRecordForm from './MedicalRecordForm';
 import './DoctorRecords.css';
+import PageHeader from '../../../components/Common/PageHeader/PageHeader';
 
 const DoctorRecords = () => {
   const [appointments, setAppointments] = useState([]);
@@ -58,11 +59,6 @@ const DoctorRecords = () => {
     prescriptions: [
       { medication: '', dosage: '', frequency: '', duration: '', instructions: '', quantity: '', symptoms: '' }
     ],
-    followUp: {
-      required: false,
-      timeframe: '',
-      instructions: ''
-    },
     attachments: []
   });
   useEffect(() => {
@@ -435,11 +431,6 @@ const DoctorRecords = () => {
       prescriptions: [
         { medication: '', dosage: '', frequency: '', duration: '', instructions: '', quantity: '' }
       ],
-      followUp: {
-        required: false,
-        timeframe: '',
-        instructions: ''
-      },
       attachments: []
     });
     setSelectedAppointment(null);
@@ -535,7 +526,6 @@ const DoctorRecords = () => {
         prescriptions,
         labOrders: viewingRecordData.labOrders || [],
         imagingOrders: viewingRecordData.imagingOrders || [],
-        followUp: viewingRecordData.followUp || prev.followUp,
         referrals: viewingRecordData.referrals || [],
         isConfidential: viewingRecordData.isConfidential || false
       }));
@@ -551,15 +541,13 @@ const DoctorRecords = () => {
     <div className="doctorRecords_page">
       <NavbarWrapper />
       <div className="doctorRecords_container">
-        <div className="doctorRecords_header">
-          <div className="doctorRecords_headerContent">
-            <h2 className="doctorRecords_title">Medical Records Management</h2>
-            <p className="doctorRecords_subtitle">Create and manage medical records for completed appointments</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Medical Records Management"
+          subtitle="Create and manage medical records for completed appointments"
+          className="doctorRecords_header"
+        />
         {!showRecordForm && !viewingRecord && (
           <div className="doctorRecords_appointmentsSection">
-            <h3 className="doctorRecords_sectionTitle">Completed Appointments</h3>
             {loading && <div className="doctorRecords_loading">Loading appointments...</div>}
             {appointments.length === 0 && !loading ? (
               <div className="doctorRecords_emptyState">
@@ -569,17 +557,84 @@ const DoctorRecords = () => {
               <div className="doctorRecords_appointmentsGrid">
                 {appointments.map(appointment => (
                   <div key={appointment._id} className="doctorRecords_appointmentCard">
-                    <div className="doctorRecords_patientInfo">
-                      <h4 className="doctorRecords_patientName">{appointment.userId.firstname} {appointment.userId.lastname}</h4>
-                      <p className="doctorRecords_appointmentDate">
-                        {new Date(appointment.date).toLocaleDateString()} at {appointment.time}
-                      </p>
-                      <p className="doctorRecords_symptoms">{appointment.symptoms}</p>
+                    {/* Card Header */}
+                    <div className="doctorRecords_cardHeader">
+                      <div className="doctorRecords_headerLeft">
+                        <h4 className="doctorRecords_patientName">
+                          {appointment.userId.firstname} {appointment.userId.lastname}
+                        </h4>
+                        <p className="doctorRecords_appointmentDateTime">
+                          {new Date(appointment.date).toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                          })}{appointment.time}
+                        </p>
+                      </div>
+                      <div className="doctorRecords_headerRight">
+                        <span className={`doctorRecords_statusBadge doctorRecords_status--${(appointment.status || 'Confirmed').toLowerCase()}`}>
+                          {appointment.status || 'Confirmed'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="doctorRecords_cardActions">
+                    <div className="doctorRecords_cardBody">
+                      <div className="doctorRecords_quickInfo">
+                        <div className="doctorRecords_infoItem">
+                          <div className="doctorRecords_infoContent">
+                            <span className="doctorRecords_infoLabel">Type</span>
+                            <span className="doctorRecords_infoValue">{appointment.appointmentType || 'Regular'}</span>
+                          </div>
+                        </div>
+                        <div className="doctorRecords_infoItem">
+                          <div className="doctorRecords_infoContent">
+                            <span className="doctorRecords_infoLabel">Priority</span>
+                            <span className={`doctorRecords_priorityBadge doctorRecords_priority--${(appointment.priority || 'Normal').toLowerCase()}`}>
+                              {appointment.priority || 'Normal'}
+                            </span>
+                          </div>
+                        </div>
+                        {appointment.estimatedDuration && (
+                          <div className="doctorRecords_infoItem">
+                            <div className="doctorRecords_infoContent">
+                              <span className="doctorRecords_infoLabel">Duration</span>
+                              <span className="doctorRecords_infoValue">{appointment.estimatedDuration} min</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Symptoms Section */}
+                      <div className="doctorRecords_symptomsSection">
+                        <div className="doctorRecords_sectionHeader">
+                          <span className="doctorRecords_sectionTitle">Symptoms</span>
+                        </div>
+                        <p className="doctorRecords_symptomsText">{appointment.symptoms}</p>
+                      </div>
+
+                      {/* Contact Info Section */}
+                      {(appointment.userId.phone || appointment.userId.email) && (
+                        <div className="doctorRecords_contactSection">
+                          {appointment.userId.phone && (
+                            <div className="doctorRecords_contactItem">
+                              <span className="doctorRecords_contactLabel">Phone:</span>
+                              <span className="doctorRecords_contactValue">{appointment.userId.phone}</span>
+                            </div>
+                          )}
+                          {appointment.userId.email && (
+                            <div className="doctorRecords_contactItem">
+                              <span className="doctorRecords_contactLabel">Email:</span>
+                              <span className="doctorRecords_contactValue">{appointment.userId.email}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="doctorRecords_cardFooter">
                       {appointment.medicalRecordId ? (
                         <button 
-                          className="doctorRecords_actionButton doctorRecords_actionButton--secondary"
+                          className="doctorRecords_actionButton doctorRecords_actionButton--view"
                           onClick={() => setViewingRecord(appointment.medicalRecordId)}
                           type="button"
                         >
@@ -587,7 +642,7 @@ const DoctorRecords = () => {
                         </button>
                       ) : (
                         <button 
-                          className="doctorRecords_actionButton doctorRecords_actionButton--primary"
+                          className="doctorRecords_actionButton doctorRecords_actionButton--create"
                           onClick={() => handleCreateRecord(appointment)}
                           type="button"
                         >
@@ -595,7 +650,7 @@ const DoctorRecords = () => {
                         </button>
                       )}
                       <button 
-                        className="doctorRecords_actionButton doctorRecords_actionButton--info"
+                        className="doctorRecords_actionButton doctorRecords_actionButton--history"
                         onClick={() => viewPatientHistory(appointment)}
                         type="button"
                       >
@@ -667,8 +722,7 @@ const DoctorRecords = () => {
             assessment: viewingRecordData.assessment || '',
             diagnosis: viewingRecordData.diagnosis || [],
             treatment: viewingRecordData.treatment || '',
-            prescriptions,
-            followUp: viewingRecordData.followUp || {},
+            prescriptions
           };
           return (
             <div className="doctorRecords_recordFormContainer">
@@ -766,7 +820,22 @@ const DoctorRecords = () => {
               {patientRecords.map(record => (
                 <div key={record._id} className="doctorRecords_recordItem">
                   <div className="doctorRecords_recordDate">
-                    {new Date(record.visitDate).toLocaleDateString()}
+                    {record.appointmentId?.date 
+                      ? new Date(record.appointmentId.date).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })
+                      : record.createdAt 
+                        ? new Date(record.createdAt).toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })
+                        : 'Date not available'
+                    }
                   </div>
                   <div className="doctorRecords_recordContent">
                     <h5 className="doctorRecords_recordTitle">{record.chiefComplaint}</h5>

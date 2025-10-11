@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const schema = mongoose.Schema(
   {
     userId: {
@@ -92,10 +91,6 @@ const schema = mongoose.Schema(
       type: Boolean,
       default: false
     },
-    isRecurring: {
-      type: Boolean,
-      default: false
-    },
     recurringPattern: {
       frequency: {
         type: String,
@@ -117,14 +112,12 @@ const schema = mongoose.Schema(
 schema.index({ doctorId: 1, date: 1 });
 schema.index({ userId: 1, status: 1 });
 schema.index({ date: 1, status: 1 });
-
 schema.virtual('appointmentDateTime').get(function() {
   const [hours, minutes] = this.time.split(':');
   const datetime = new Date(this.date);
   datetime.setHours(parseInt(hours), parseInt(minutes));
   return datetime;
 });
-
 schema.pre('save', function(next) {
   if (this.isNew) {
     const appointmentDate = this.date instanceof Date ? this.date : new Date(this.date);
@@ -142,6 +135,5 @@ schema.pre('save', function(next) {
   }
   next();
 });
-
 const Appointment = mongoose.model("Appointment", schema);
 module.exports = Appointment;

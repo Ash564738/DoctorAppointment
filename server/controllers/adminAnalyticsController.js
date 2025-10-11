@@ -560,7 +560,13 @@ const getFinancialAnalytics = async (req, res) => {
         period: `${daysAgo} days`
       };
     } catch (error) {
-      logger.info("Payment model not found, returning placeholder financial data");
+      financialData = {
+        totalRevenue: 0,
+        monthlyRevenue: [],
+        paymentMethods: [],
+        refunds: { total: 0, count: 0 },
+        period: `${daysAgo} days`
+      };
     }
 
     res.status(200).json({
@@ -705,7 +711,8 @@ const getBillingReports = async (req, res) => {
         monthRevenueResult,
         pendingPaymentsResult,
         totalInvoicesCount,
-        statusCounts
+        statusCounts,
+        refundsAgg
       ] = await Promise.all([
         Payment.aggregate([
           { $match: { status: "Succeeded" } },
@@ -733,6 +740,10 @@ const getBillingReports = async (req, res) => {
               amount: { $sum: "$amount" }
             }
           }
+        ]),
+        Payment.aggregate([
+          { $match: { refundAmount: { $gt: 0 } } },
+          { $group: { _id: null, totalRefunds: { $sum: "$refundAmount" }, count: { $sum: 1 } } }
         ])
       ]);
 
@@ -756,9 +767,13 @@ const getBillingReports = async (req, res) => {
         }
       });
 
+      // include refunds in summary to power UI cards
+      billingData.summary.totalRefunds = refundsAgg?.[0]?.totalRefunds || 0;
+      billingData.summary.totalRefundCount = refundsAgg?.[0]?.count || 0;
+
       const skip = (page - 1) * limit;
       const payments = await Payment.find(filter)
-        .populate('appointmentId', 'date status')
+        .populate('appointmentId', 'date status appointmentType')
         .populate('patientId', 'firstname lastname email')
         .populate('doctorId', 'firstname lastname email')
         .sort({ paymentDate: -1 })
@@ -778,7 +793,7 @@ const getBillingReports = async (req, res) => {
         status: payment.status,
         date: payment.paymentDate.toISOString().split('T')[0],
         dueDate: payment.appointmentId?.date || payment.paymentDate.toISOString().split('T')[0],
-        services: 'Medical Consultation',
+        services: payment.appointmentId?.appointmentType || 'Consultation',
         paymentMethod: payment.paymentMethod,
         currency: payment.currency
       }));
@@ -789,62 +804,25 @@ const getBillingReports = async (req, res) => {
       billingData.currentPage = parseInt(page);
 
     } catch (error) {
-      logger.info("Payment model not found or error occurred, returning sample data");
+      logger.error("Payment model error while fetching billing reports:", error);
+      // Return empty real-shaped response instead of fake sample data
       billingData = {
         summary: {
-          totalRevenue: 125000,
-          pendingPayments: 15000,
-          monthRevenue: 28000,
-          overdueAmount: 5000,
-          totalInvoices: 245,
-          paidInvoices: 215,
-          pendingInvoices: 20,
-          overdueInvoices: 10
+          totalRevenue: 0,
+          pendingPayments: 0,
+          monthRevenue: 0,
+          overdueAmount: 0,
+          totalInvoices: 0,
+          paidInvoices: 0,
+          pendingInvoices: 0,
+          overdueInvoices: 0,
+          totalRefunds: 0,
+          totalRefundCount: 0
         },
-        reports: [
-          {
-            _id: '1',
-            invoiceNumber: 'INV-2025-001',
-            patientName: 'John Doe',
-            doctorName: 'Dr. Smith',
-            amount: 250,
-            status: 'Succeeded',
-            date: '2025-08-10',
-            dueDate: '2025-08-25',
-            services: 'General Consultation',
-            paymentMethod: 'card',
-            currency: 'USD'
-          },
-          {
-            _id: '2',
-            invoiceNumber: 'INV-2025-002',
-            patientName: 'Jane Smith',
-            doctorName: 'Dr. Johnson',
-            amount: 180,
-            status: 'Pending',
-            date: '2025-08-11',
-            dueDate: '2025-08-26',
-            services: 'Blood Test',
-            paymentMethod: 'card',
-            currency: 'USD'
-          },
-          {
-            _id: '3',
-            invoiceNumber: 'INV-2025-003',
-            patientName: 'Mike Johnson',
-            doctorName: 'Dr. Wilson',
-            amount: 320,
-            status: 'Failed',
-            date: '2025-07-15',
-            dueDate: '2025-07-30',
-            services: 'Surgery Consultation',
-            paymentMethod: 'card',
-            currency: 'USD'
-          }
-        ],
+        reports: [],
         totalPages: 1,
         currentPage: 1,
-        total: 3
+        total: 0
       };
     }
 

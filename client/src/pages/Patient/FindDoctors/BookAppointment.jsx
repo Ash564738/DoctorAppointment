@@ -20,11 +20,9 @@ const BookAppointment_paymentForm = ({
   const elements = useElements();
   const [BookAppointment_clientSecret, setBookAppointment_clientSecret] = useState('');
   const [BookAppointment_paymentIntentId, setBookAppointment_paymentIntentId] = useState('');
-
   useEffect(() => {
     createPaymentIntent();
   }, []);
-
   const createPaymentIntent = async () => {
     try {
       const response = await apiCall.post('/payment/create-payment-intent', {
@@ -32,7 +30,6 @@ const BookAppointment_paymentForm = ({
         amount: consultationFee,
         currency: 'USD'
       });
-
       if (response.success) {
         setBookAppointment_clientSecret(response.clientSecret);
         setBookAppointment_paymentIntentId(response.paymentIntentId);
@@ -43,30 +40,23 @@ const BookAppointment_paymentForm = ({
       toast.error('Failed to initialize payment');
     }
   };
-
   const handlePayment = async (event) => {
     event.preventDefault();
-
     if (!stripe || !elements) {
       return;
     }
-
     const cardElement = elements.getElement(CardElement);
-
     if (!cardElement) {
       toast.error('Payment form not loaded');
       return;
     }
-
     setIsLoading(true);
-
     try {
       const { error, paymentIntent } = await stripe.confirmCardPayment(BookAppointment_clientSecret, {
         payment_method: {
           card: cardElement,
         }
       });
-
       if (error) {
         toast.error(error.message || 'Payment failed');
         onPaymentError(error);
@@ -90,7 +80,6 @@ const BookAppointment_paymentForm = ({
       setIsLoading(false);
     }
   };
-
   const cardElementOptions = {
     style: {
       base: {
@@ -106,7 +95,6 @@ const BookAppointment_paymentForm = ({
     },
     hidePostalCode: true,
   };
-
   return (
     <form onSubmit={handlePayment} className="BookAppointment_paymentForm" name="BookAppointment_paymentForm">
       <div className="BookAppointment_cardElementContainer" name="BookAppointment_cardElementContainer">
@@ -129,7 +117,6 @@ const BookAppointment_paymentForm = ({
           <span><strong>${consultationFee}</strong></span>
         </div>
       </div>
-
       <button
         type="submit"
         disabled={!stripe || isLoading || !BookAppointment_clientSecret}
@@ -155,46 +142,85 @@ const BookAppointment = ({
   const [BookAppointment_isLoading, setBookAppointment_isLoading] = useState(false);
   const [BookAppointment_showPayment, setBookAppointment_showPayment] = useState(false);
   const [BookAppointment_doctorAvailability, setBookAppointment_doctorAvailability] = useState([]);
-
+  const [BookAppointment_availabilityStatus, setBookAppointment_availabilityStatus] = useState(null);
   const consultationFee = ele?.fees || 100;
-
   useEffect(() => {
     if (ele?._id && BookAppointment_formDetails.date) {
       fetchDoctorAvailability();
     }
   }, [ele?._id, BookAppointment_formDetails.date]);
-
   const fetchDoctorAvailability = async () => {
     try {
-      const defaultSlots = [
-        '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-        '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
-      ];
-
-      const selectedDate = new Date(BookAppointment_formDetails.date);
-      const today = new Date();
-
-      if (selectedDate.toDateString() === today.toDateString()) {
-        const currentHour = today.getHours();
-        const currentMinute = today.getMinutes();
-
-        const availableSlots = defaultSlots.filter(slot => {
-          const [hour, minute] = slot.split(':').map(Number);
-          return hour > currentHour || (hour === currentHour && minute > currentMinute);
-        });
-
+      const response = await apiCall.get(`/doctor/${ele._id}/availability?date=${BookAppointment_formDetails.date}`);
+      
+      if (response.success) {
+        if (!response.available) {
+          // Try to auto-suggest the next available day within 14 days
+          const suggestion = await findNextAvailableDay(ele._id, BookAppointment_formDetails.date, 14);
+          if (suggestion) {
+            // Auto-move to next available day to avoid dead-end UX
+            setBookAppointment_formDetails(prev => ({ ...prev, date: suggestion.date, time: '' }));
+            setBookAppointment_doctorAvailability(suggestion.availableSlots.map(s => s.time));
+            setBookAppointment_availabilityStatus({
+              available: true,
+              reason: `Auto-selected next available day: ${new Date(suggestion.date).toLocaleDateString()}`,
+              shifts: suggestion.shifts
+            });
+            toast.success(`No slots on selected day. Showing availability for ${new Date(suggestion.date).toLocaleDateString()}.`);
+            return;
+          }
+          // No availability found in the lookahead window
+          setBookAppointment_doctorAvailability([]);
+          setBookAppointment_availabilityStatus({
+            available: false,
+            reason: response.reason
+          });
+          return;
+        }
+        
+        const availableSlots = response.availableSlots.map(slot => slot.time);
         setBookAppointment_doctorAvailability(availableSlots);
+        setBookAppointment_availabilityStatus({
+          available: true,
+          reason: response.reason,
+          shifts: response.shifts
+        });
       } else {
-        setBookAppointment_doctorAvailability(defaultSlots);
+        // No fake default slots: indicate unavailability clearly
+        setBookAppointment_doctorAvailability([]);
+        setBookAppointment_availabilityStatus({
+          available: false,
+          reason: 'No availability found for the selected date.'
+        });
       }
     } catch (error) {
-      setBookAppointment_doctorAvailability([
-        '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-        '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
-      ]);
+      // On error, show no availability instead of fake defaults
+      setBookAppointment_doctorAvailability([]);
+      setBookAppointment_availabilityStatus({
+        available: false,
+        reason: 'Unable to fetch availability. Please try another date.'
+      });
     }
   };
 
+  // Find next available day up to `daysAhead` days from `fromDate` (inclusive next day)
+  const findNextAvailableDay = async (doctorId, fromDate, daysAhead = 7) => {
+    try {
+      const start = new Date(fromDate);
+      for (let i = 1; i <= daysAhead; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const ymd = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const resp = await apiCall.get(`/doctor/${doctorId}/availability?date=${ymd}`);
+        if (resp?.success && resp.available && Array.isArray(resp.availableSlots) && resp.availableSlots.length > 0) {
+          return { date: ymd, availableSlots: resp.availableSlots, shifts: resp.shifts };
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  };
   const inputChange = (e) => {
     const { name, value } = e.target;
     setBookAppointment_formDetails({
@@ -202,57 +228,60 @@ const BookAppointment = ({
       [name]: value
     });
   };
-
   const validateForm = () => {
     if (!BookAppointment_formDetails.date || !BookAppointment_formDetails.time) {
       toast.error('Please select date and time');
       return false;
     }
 
+    // Check if doctor is available for selected date/time
+    if (BookAppointment_availabilityStatus && !BookAppointment_availabilityStatus.available) {
+      toast.error('Doctor is not available on the selected date');
+      return false;
+    }
+
     const selectedDate = new Date(BookAppointment_formDetails.date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
+    
     if (selectedDate < today) {
       toast.error('Please select a future date');
       return false;
     }
 
+    // Validate selected time is in available slots
+    if (BookAppointment_doctorAvailability.length > 0 && 
+        !BookAppointment_doctorAvailability.includes(BookAppointment_formDetails.time)) {
+      toast.error('Selected time slot is no longer available');
+      return false;
+    }
+
     return true;
   };
-
   const proceedToPayment = (e) => {
     e.preventDefault();
-
     if (!validateForm()) {
       return;
     }
-
     setBookAppointment_showPayment(true);
   };
-
   const handlePaymentSuccess = async (paymentIntent) => {
     try {
       setModalOpen(false);
       setBookAppointment_formDetails({ date: '', time: '', message: '' });
       setBookAppointment_showPayment(false);
-
       if (window.location.pathname.includes('patient')) {
         window.location.reload();
       }
     } catch (error) {
     }
   };
-
   const handlePaymentError = (error) => {
   };
-
   const handleBackToForm = () => {
     setBookAppointment_showPayment(false);
   };
-
   const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : undefined;
-
   const appointmentData = {
     doctorId: ele?._id,
     doctorname: `${ele?.firstname} ${ele?.lastname}`,
@@ -260,9 +289,7 @@ const BookAppointment = ({
     time: BookAppointment_formDetails.time,
     symptoms: BookAppointment_formDetails.message || 'No additional message',
   };
-
   if (!modalOpen) return null;
-
   return ReactDOM.createPortal(
     <Elements stripe={stripePromise}>
       <div className="BookAppointment_modalOverlay" name="BookAppointment_modalOverlay">
@@ -283,7 +310,6 @@ const BookAppointment = ({
               </svg>
             </button>
           </div>
-
           {!BookAppointment_showPayment ? (
             <form onSubmit={proceedToPayment} className="BookAppointment_form" name="BookAppointment_form">
               <div className="BookAppointment_formGroup" name="BookAppointment_formGroup_date">
@@ -302,38 +328,43 @@ const BookAppointment = ({
 
               <div className="BookAppointment_formGroup" name="BookAppointment_formGroup_time">
                 <label htmlFor="time" name="BookAppointment_label_time">Select Time:</label>
-                <select
-                  id="time"
-                  name="time"
-                  value={BookAppointment_formDetails.time}
-                  onChange={inputChange}
-                  required
-                  className="BookAppointment_select"
-                >
-                  <option value="">Choose a time</option>
-                  {BookAppointment_doctorAvailability.length > 0 ? (
-                    BookAppointment_doctorAvailability.map((timeSlot) => (
-                      <option key={timeSlot} value={timeSlot}>
-                        {timeSlot}
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="09:00">09:00 AM</option>
-                      <option value="09:30">09:30 AM</option>
-                      <option value="10:00">10:00 AM</option>
-                      <option value="10:30">10:30 AM</option>
-                      <option value="11:00">11:00 AM</option>
-                      <option value="11:30">11:30 AM</option>
-                      <option value="14:00">02:00 PM</option>
-                      <option value="14:30">02:30 PM</option>
-                      <option value="15:00">03:00 PM</option>
-                      <option value="15:30">03:30 PM</option>
-                      <option value="16:00">04:00 PM</option>
-                      <option value="16:30">04:30 PM</option>
-                    </>
-                  )}
-                </select>
+                {BookAppointment_availabilityStatus && !BookAppointment_availabilityStatus.available ? (
+                  <div className="BookAppointment_unavailableMessage">
+                    <p style={{color: '#dc3545', margin: '8px 0', fontSize: '14px'}}>
+                      {BookAppointment_availabilityStatus.reason}
+                    </p>
+                    <select disabled className="BookAppointment_select" style={{opacity: 0.5}}>
+                      <option>No time slots available</option>
+                    </select>
+                  </div>
+                ) : (
+                  <>
+                    {BookAppointment_availabilityStatus?.reason && (
+                      <p style={{color: '#6c757d', margin: '4px 0 8px 0', fontSize: '12px'}}>
+                        {BookAppointment_availabilityStatus.reason}
+                      </p>
+                    )}
+                    <select
+                      id="time"
+                      name="time"
+                      value={BookAppointment_formDetails.time}
+                      onChange={inputChange}
+                      required
+                      className="BookAppointment_select"
+                    >
+                      <option value="">Choose a time</option>
+                      {BookAppointment_doctorAvailability.length > 0 ? (
+                        BookAppointment_doctorAvailability.map((timeSlot) => (
+                          <option key={timeSlot} value={timeSlot}>
+                            {timeSlot}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>No time slots available</option>
+                      )}
+                    </select>
+                  </>
+                )}
               </div>
 
               <div className="BookAppointment_formGroup" name="BookAppointment_formGroup_message">
@@ -363,9 +394,13 @@ const BookAppointment = ({
                   type="submit"
                   className="BookAppointment_btnContinue"
                   name="BookAppointment_btnContinue"
-                  disabled={!BookAppointment_formDetails.date || !BookAppointment_formDetails.time}
+                  disabled={!BookAppointment_formDetails.date || !BookAppointment_formDetails.time || 
+                           (BookAppointment_availabilityStatus && !BookAppointment_availabilityStatus.available)}
                 >
-                  Continue to Payment
+                  {BookAppointment_availabilityStatus && !BookAppointment_availabilityStatus.available 
+                    ? 'No Available Slots' 
+                    : 'Continue to Payment'
+                  }
                 </button>
               </div>
             </form>

@@ -18,132 +18,132 @@
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: #1e293b;
-  margin-bottom: var(--spacing-md);
-  text-align: center;
 }
 
 .patientAppointments_content {
   margin-bottom: var(--spacing-md);
 }
 
-/* Controls Section */
-.patientAppointments_controls {
+/* Filters Section */
+.patientAppointments_filtersSection {
+  background: var(--white);
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+}
+
+.patientAppointments_filters {
   display: flex;
-  gap: var(--spacing-sm);
-  flex-wrap: wrap;
-  align-items: center;
-  margin-bottom: var(--spacing-md);
+  gap: var(--spacing-xs);
 }
 
-.patientAppointments_searchInput,
-.patientAppointments_filterSelect {
-  padding: 1rem;
-  border: 2px solid #e1e5e9;
-  border-radius: 12px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  background-color: #ffffff;
+.patientAppointments_searchInput {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid #e2e8f0;
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  transition: border-color 0.2s;
+  min-width: 220px;
 }
 
-.patientAppointments_searchInput:focus,
-.patientAppointments_filterSelect:focus {
+.patientAppointments_searchInput:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Statistics Section */
-.patientAppointments_stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+.patientAppointments_clearFiltersButton {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-base);
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.patientAppointments_statCard {
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid #e2e8f0;
-  transition: all 0.3s ease;
-}
-
-.patientAppointments_statCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.15);
-}
-
-.patientAppointments_statCard--total{
-  border-left: 4px solid #3b82f6;
-}
-
-.patientAppointments_statCard--pending {
-  border-left: 4px solid #f59e0b;
-}
-
-.patientAppointments_statCard--completed {
-  border-left: 4px solid #10b981;
-}
-
-.patientAppointments_statCard--cancelled {
-  border-left: 4px solid #ef4444;
-}
-
-.patientAppointments_statTitle {
-  font-size: 0.9rem;
-  margin: 0 0 0.5rem 0;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #64748b;
-}
-
-.patientAppointments_statNumber {
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0;
-  color: #1e293b;
+.patientAppointments_clearFiltersButton:hover {
+  background: #e5e7eb;
 }
 
 /* Table Section */
+.patientAppointments_tableSection {
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-top: var(--spacing-md);
+}
+
+.patientAppointments_sectionHeader {
+  padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md) var(--spacing-lg);
+}
+
+.patientAppointments_filterButton {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+}
+
+.patientAppointments_filterActive {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* Table Container */
 .patientAppointments_tableContainer {
   overflow-x: auto;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  margin-bottom: 2rem;
+  padding: 0 var(--spacing-lg) 0 var(--spacing-lg);
 }
 
 .patientAppointments_table {
   width: 100%;
   border-collapse: collapse;
-  background-color: #ffffff;
 }
 
 .patientAppointments_tableHeader {
-  padding: 1rem;
+  padding: var(--spacing-md);
   text-align: left;
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: var(--font-weight-bold);
+  color: #333;
+  border-bottom: 2px solid #dee2e6;
+  font-size: var(--font-size-sm);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  background-color: #f8fafc;
-  color: #64748b;
-  border-bottom: 2px solid #e2e8f0;
+  letter-spacing: 0.5px;
+  background: #f8fafc;
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
-.patientAppointments_tableBody .patientAppointments_tableRow:nth-child(even) {
-  background-color: #f9fafb;
+.patientAppointments_tableBody {
+  background: white;
+}
+
+.patientAppointments_tableRow {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s;
 }
 
 .patientAppointments_tableRow:hover {
-  background-color: #f1f5f9;
+  background: #f8fafc;
 }
 
 .patientAppointments_tableCell {
-  padding: 1rem;
-  border-bottom: 1px solid #e2e8f0;
-  font-size: 0.9rem;
-  color: #374151;
+  padding: var(--spacing-md);
+  color: #333;
+  font-size: var(--font-size-base);
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
 }
 
 /* Status Badges */
@@ -151,34 +151,30 @@
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: var(--font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 1px;
   display: inline-block;
 }
 
-.patientAppointments_statusBadge--status-pending {
-  background-color: #fef3c7;
-  color: #d97706;
-  border: 1px solid #fcd34d;
+.patientAppointments_statusBadge--status-confirmed {
+  background-color: var(--info-color-light);
+  color: var(--info-color);
 }
 
 .patientAppointments_statusBadge--status-completed {
-  background-color: #dcfce7;
-  color: #16a34a;
-  border: 1px solid #86efac;
+  background-color: var(--success-color-light);
+  color: var(--success-color);
 }
 
 .patientAppointments_statusBadge--status-cancelled {
-  background-color: #fee2e2;
-  color: #dc2626;
-  border: 1px solid #fca5a5;
+  background-color: var(--warning-color-light);
+  color: var(--warning-color);
 }
 
 .patientAppointments_statusBadge--status-default {
   background-color: #f1f5f9;
   color: #64748b;
-  border: 1px solid #cbd5e1;
 }
 
 /* Action Buttons */
@@ -289,38 +285,36 @@
 .patientAppointments_pagination {
   display: flex;
   justify-content: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-top: 1.5rem;
+  align-items: center;
+  gap: 4px;
+  margin: 20px;
 }
 
-.patientAppointments_paginationBtn {
-  padding: 0.75rem 1rem;
+.patientAppointments_pagination button {
+  background: #f3f4f6;
   border: 1px solid #d1d5db;
-  background-color: #ffffff;
   color: #374151;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.2s, color 0.2s;
 }
 
-.patientAppointments_paginationBtn:hover:not(:disabled) {
-  background-color: #f3f4f6;
-  transform: translateY(-1px);
+.patientAppointments_pagination button.active,
+.patientAppointments_pagination button:focus {
+  background: var(--primary-color);
+  color: #fff;
+  outline: none;
 }
 
-.patientAppointments_paginationBtn:disabled {
-  opacity: 0.5;
+.patientAppointments_pagination button:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
-  background-color: #f9fafb;
 }
 
-.patientAppointments_paginationBtn--active {
-  background-color: #3b82f6;
-  color: #ffffff;
-  border-color: #3b82f6;
+.patientAppointments_pagination button:hover:not(:disabled):not(.active) {
+  background: #e5e7eb;
 }
 
 /* Empty State */
@@ -362,28 +356,22 @@
     width: 90vw;
   }
 }
-@media (max-width: 1024px) {
-  .patientAppointments_container {
-  }
-
-  .patientAppointments_content {
-  }
-}
-
 @media (max-width: 768px) {
-  .patientAppointments_container {
-  }
-
   .patientAppointments_heading {
     font-size: 2rem;
   }
 
-  .patientAppointments_controls {
-    grid-template-columns: 1fr;
+  .patientAppointments_filtersSection {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .patientAppointments_stats {
-    grid-template-columns: repeat(2, 1fr);
+  .patientAppointments_filters {
+    flex-direction: column;
+  }
+
+  .patientAppointments_searchInput {
+    width: 100%;
   }
 
   .patientAppointments_tableCell {
@@ -400,10 +388,6 @@
     font-size: 1.8rem;
   }
 
-  .patientAppointments_stats {
-    grid-template-columns: 1fr;
-  }
-
   .patientAppointments_tableHeader,
   .patientAppointments_tableCell {
     padding: 0.5rem 0.25rem;
@@ -415,8 +399,8 @@
     font-size: 0.8rem;
   }
 
-  .patientAppointments_paginationBtn {
-    padding: 0.6rem 0.8rem;
+  .patientAppointments_pagination button {
+    padding: 6px 10px;
     font-size: 0.85rem;
   }
 }

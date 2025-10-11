@@ -4,9 +4,6 @@ import "./ForgotPassword.css";
 import NavbarWrapper from "../../../components/Common/NavbarWrapper/NavbarWrapper";
 import toast from "react-hot-toast";
 import { apiCall } from "../../../helper/apiCall";
-import axios from "axios";
-
-axios.defaults.baseURL = process.env.REACT_APP_SERVER_DOMAIN;
 
 function ForgotPassword() {
   const [formDetails, setFormDetails] = useState({
@@ -31,8 +28,9 @@ function ForgotPassword() {
     }
 
     try {
-      const response = await axios.post("/user/forgotpassword", { email });
-      if (response.status === 200) {
+      const response = await apiCall.post("/user/forgotpassword", { email });
+      // server returns { status: "Email sent successfully" } with 200
+      if (response?.status === "Email sent successfully") {
         toast.success("Password reset email sent successfully!!!!!");
         navigate('/login'); 
       } else {
